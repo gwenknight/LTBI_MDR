@@ -3,3 +3,7 @@
 .RData
 .Ruserdata
 data/
+
+ne_50m_admin_0_countries.geojson
+.DS_Store
+
