@@ -1,13 +1,20 @@
-####
+#### Plot and explore existing data on data_mdr_prev
+
+####**** Aggregated data ******************************************************************************************************************************************************************************************************************************** #####
+
+setwd("~/Documents/LTBI_MDR/data/")
+r <- read.csv("mdr_prop_all.csv")
+r$ref
 
 
-#### Countries plot
+
+####**** Map plot ******************************************************************************************************************************************************************************************************************************** #####
 
 library(rworldmap)
 library(RColorBrewer)
 
 ###### mdr-tb proportions
-r <- read.csv("mdr_prop_all.csv")
+
 
 n <- joinCountryData2Map(r, joinCode="NAME", nameJoinColumn="country")
 
