@@ -14,6 +14,7 @@ mapCountryData(n, nameColumnToPlot="perc_new_mdr", mapTitle="World",
 
 
 ## years
+setwd("../output")
 unique(r$source_drs_year_new)
 ggplot(r, aes(x = source_drs_year_new, y = perc_new_mdr,colour = factor(ref))) + geom_point() + 
   facet_wrap(~country, scales = "free")  + 
@@ -25,7 +26,16 @@ ggplot(r, aes(x = source_drs_year_new, y = perc_new_mdr, label = country, colour
   scale_y_continuous("Percentage of new cases with MDR") + scale_color_discrete("Reference")
 ggsave("mdr_perc_all_refs.pdf")
 
-## example
+w<-which(r$ref == "cohen_2014")
+ggplot(r[-w,], aes(x = source_drs_year_new, y = perc_new_mdr, label = country, colour = factor(ref))) + 
+  geom_point(alpha = 0.5) + geom_text(aes(label=country),hjust = 0, vjust = 0) + 
+  scale_y_continuous("Percentage of new cases with MDR") + scale_color_discrete("Reference")
+
+ggsave("who_mdr_perc_all_refs.pdf")
+
+
+
+  ## example
 w<-which(r$country == "Estonia")
 r_esto <- r[w,]  
 
