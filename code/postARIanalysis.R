@@ -1,6 +1,8 @@
 ## Analysis code for Houben & Dodd 2016, distributed under CC BY 4.0 license https://creativecommons.org/licenses/by/4.0/
 library(data.table)
 library(reshape2)
+
+####**** Load data ********************************************************************************************************************************************************************#####
 load('data/whokey.Rdata')
 load('data/All_3.Rdata')                #ARI data
 load('data/POP2014.Rdata')                   #population data
@@ -10,14 +12,15 @@ load('data/POP1997.Rdata')
 load('data/DSN2.Rdata') #INH data from Dodd,Sismanidis,Seddon
 
 All <- All[All$lari!=-Inf,]
-cnz <- unique(as.character(All$iso3))
+cnz <- unique(as.character(All$iso3)) # included countries
 
-## need to have run GP regression first to generate this data
+## need to have run GP regression first to generate this data (GPreg.R)
 RUNZ <- BDZ <- list()
-for(i in 1:length(cnz)){
+
+for(i in 1:length(cnz)){ # for all the countries
     cn <- cnz[i]
 
-    fn <- paste0('data/',cn,'.Rdata')
+    fn <- paste0('data/',cn,'.Rdata') # grab the ARI data 
     if(file.exists(fn)){
         load(fn)
         BDZ[[i]] <- erw
@@ -465,3 +468,4 @@ tmp[,list(mid=1e3*median(nLTBI),lo=1e3*lb(nLTBI),hi=1e3*ub(nLTBI))]*1e-6
 
 tmp <- pruns[,list(pLTBI=sum(pop97*P)/sum(pop97)),by=replicate]
 tmp[,list(mid=median(pLTBI),lo=lb(pLTBI),hi=ub(pLTBI))]
+
