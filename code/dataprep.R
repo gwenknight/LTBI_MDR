@@ -3,6 +3,7 @@
 ### GK: data preparation
 
 library(data.table)
+library(ggplot2)
 
 # Global TB database
 Nro <- read.csv('data/inputData_GTB_estimate.csv')
@@ -39,7 +40,7 @@ st <- unlist(lapply(X=as.character(C$AGE),FUN=function(x)regexpr('\\(',x)[[1]]))
 sp <- unlist(lapply(X=as.character(C$AGE),FUN=function(x)regexpr('\\)',x)[[1]]))
 age <- substr(as.character(C$AGE),start=st+1,stop=sp-1)
 C$age <- as.numeric(age)
-C$var <- (C$age*C$ari)/C$N # GK: variation? how calculate? 
+C$var <- (C$age*C$ari)/C$N # GK: variation from 2nd derivative of log likelihood (precision, supp H&D)
 ## log(x+dx) = log(x) + dx/x - .5*(dx/x)^2
 ## Var[log(X)] ~ Var[X]/E[X]^2  = E^2
 ## GK: same output for all: iso3 / year / ari / E / lari / type => E = error? 
@@ -219,5 +220,32 @@ summary(1e2*(1-NH2$S/NH3$S))             #0.14% IQR=[0.04 - 0.55]
 ## ALL (too big to read)
 #ggplot(All, aes(x=year, y = ari, colour = factor(iso3))) + geom_point() + facet_wrap(~iso3)
 # Just one country
-w<-which(All$iso3 == "BWA")
+w<-which(All$iso3 == "EST")
 ggplot(All[w,], aes(x=year, y = ari, colour = factor(iso3))) + geom_point()
+
+
+######*** MDR ***********************************************************************************************************************
+load('datar/mdr.Rdata')
+
+# Assume
+# (1) percentage new infections with MDR = proportion of ARI
+Allm <- All
+r2 <- r[,c("iso3","perc_new_mdr")]
+r2$year <- r$source_drs_year_new 
+r2$perc_new_mdr <- r2$perc_new_mdr / 100
+r2 <- r2[!is.na(r2$perc_new_mdr),]
+Allm <- merge(All,r2,by=c('iso3','year'),all=TRUE)
+# missing values for mdr
+100*length(which(is.na(Allm$perc_new_mdr))) / dim(Allm)[1] # 80% missing... 
+
+
+Allm$r_ari <- Allm$perc_new_mdr * Allm$ari
+Allm$lr_ari <- log(Allm$r_ari)
+
+save(Allm,file='datar/All_mdr.Rdata')
+
+# Plot
+w<-which(Allm$iso3 == "ZWE")
+ggplot(Allm[w,], aes(x=year, y = ari, colour = "red")) + geom_point() + geom_point(aes(x=year, y = perc_new_mdr), colour = "blue")
+
+
