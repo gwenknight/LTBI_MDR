@@ -68,5 +68,15 @@ r5 <- r[match(r$country, cc, 0L)>0L, ]
 
 ggplot(r5, aes(x = source_drs_year_new, y = perc_new_mdr,colour = factor(ref))) + geom_point() + facet_wrap(~country)  +
  scale_y_continuous("Percentage of new cases with MDR") + scale_color_discrete("Reference")
-ggsave("mdr_perc_all_res_bycountry.pdf")
+ggsave("mdr_perc_all_res_bycountry_greater5.pdf")
+
+
+#### ULTIMATELY
+save(r,file='datar/mdr.Rdata')
+
+
+
+# countries in ARI analysis
+ocn <- Reduce(intersect, list(cnz, r$iso3))
+length(ocn)
 
