@@ -119,7 +119,7 @@ getPredztonly <- function(x,tdz,tez,y,Vz){
 ####**** Load data ********************************************************************************************************************************************************************#####
 load('datar/All_mdr.Rdata')
 All0 <- Allm[Allm$lr_ari!=-Inf,]
-lin <- 0                              #linear or constant  --- CHANGE HERE! 
+lin <- 2                           #linear (2) or constant (1)  --- CHANGE HERE! 
 
 countries <- unique(as.character(All0$iso3))
 countries <- countries[!is.na(countries)]

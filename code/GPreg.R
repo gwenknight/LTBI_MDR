@@ -119,7 +119,7 @@ getPredztonly <- function(x,tdz,tez,y,Vz){
 ####**** Load data ********************************************************************************************************************************************************************#####
 load('data/All_3.Rdata')
 All0 <- All[All$lari!=-Inf,]
-lin <- 0                              #linear or constant  --- CHANGE HERE!
+lin <- 2                              #linear(1?) or constant (0)  --- CHANGE HERE!
 uu <- length(unique(as.character(All0$iso3))) # number of unique countries
 
 for(jj in 1:uu){
