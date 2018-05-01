@@ -119,16 +119,27 @@ getPredztonly <- function(x,tdz,tez,y,Vz){
 ####**** Load data ********************************************************************************************************************************************************************#####
 load('data/All_3.Rdata')
 All0 <- All[All$lari!=-Inf,]
-lin <- 2                              #linear(1?) or constant (0)  --- CHANGE HERE!
-uu <- length(unique(as.character(All0$iso3))) # number of unique countries
+lin <- 1                              #linear(2) or constant (0)  --- CHANGE HERE!
 
-for(jj in 1:uu){
+uu <- unique(as.character(All0$iso3)) # number of unique countries
+too_small_pop <- c("WSM","ABW","ATG","BHS","BLZ","BRB","BRN","CUW","FSM","GRD","GUM","ISL","KIR","LCA","MDV","MLT","NCL","PYF","STP","SYC","TON","VCT","VIR","VUT")
+tb_cnt_mismatch <- c("AIA", "AND", "ANT", "ASM","BMU","COK","CYM","DMA","GRL","KNA","MCO","MHL","MNP","MSR","NIU","NRU","PLW","SMR","SXM","TCA","TKL","TUV","VGB","WLF")
+remove_cnt <- c(too_small_pop,tb_cnt_mismatch)
+for(i in 1:length(remove_cnt)){
+  w_t <- which(uu == remove_cnt[i])
+  uu <- uu[-w_t]
+}
+skp <- c()
+
+for(jj in 1:length(uu)){
   
   print(jj)
   
   ####**** Load data ********************************************************************************************************************************************************************#####
-  cn <- unique(as.character(All0$iso3))[jj] # unique country for this run
+  cn <- uu[jj] # unique country for this run
   All <- All0[All0$iso3 %in% cn,]
+  if(dim(All)[1] < 15){print(paste0("skip ", cn, " ", jj));skp <- c(skp, jj)} 
+  if(dim(All)[1] < 15) next  ## New uu: skip 33 BES & 156 TLS (OLD: 15 cutoff in supp: Removes 40 "BES", 66 "CUW", 189 "SXM", 195 "TKL", 197 "TLS")
   
   ## ============== work ====================
   
@@ -176,6 +187,10 @@ for(jj in 1:uu){
   runsdf <- data.frame(year=tez+fyear,iso3=as.character(unique(All$iso3)),
                        lari=c(t(runs)),replicate=rep(1:nrow(runs),each=ncol(runs)))
   
-  save(runsdf,file=paste0('data/zz_',cn,'.Rdata'))
+  if(lin > 0){save(runsdf,file=paste0('data/zz_',cn,'.Rdata'))}
+  if(lin == 0){save(runsdf,file=paste0('data_const/zz_',cn,'.Rdata'))}
   
 }
+
+uu <- uu[-skp]
+save(uu,file='data/uu.Rdata')

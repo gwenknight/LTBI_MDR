@@ -11,23 +11,29 @@ load('data/POP2035.Rdata')
 load('data/POP2050.Rdata')
 load('data/POP1997.Rdata')
 load('data/DSN2.Rdata') #INH data from Dodd,Sismanidis,Seddon
+load('datar/uu.Rdata') # unique countries
 
 All <- Allm[Allm$lr_ari!=-Inf,] #***
-cnz <- unique(as.character(All$iso3)) # included countries
+cnz <- uu #unique(as.character(All$iso3)) # included countries
 
 ## need to have run GP regression first to generate this data (GPreg.R)
 RUNZ <- BDZ <- list()
 
 for(i in 1:length(cnz)){ # for all the countries
     cn <- cnz[i]
-
-    fn <- paste0('datar/',cn,'.Rdata') # grab the ARI data 
+    print(cn)
+    
+    if(lin > 0) {fn <- paste0('datar/',cn,'.Rdata')}# grab the ARI data 
+    if(lin == 0) {fn <- paste0('datar_const/',cn,'.Rdata')}
+    
     if(file.exists(fn)){
         load(fn)
         BDZ[[i]] <- erw
     }
     
-    fn <- paste0('datar/zz_',cn,'.Rdata')
+    if(lin > 0) {fn <- paste0('datar/',cn,'.Rdata')}# grab the ARI data 
+    if(lin == 0) {fn <- paste0('datar_const/',cn,'.Rdata')}
+    
     if(file.exists(fn)){
         load(fn)
         RUNZ[[i]] <- runsdf
@@ -70,8 +76,7 @@ alph <- rbeta(nrow(rundata),shape1=pb,shape2=pa)
 
 rundata[,P2:=alph*(H-dH) + (1-alph)*(exp(-dH)-exp(-H))]                  #anyrecent
 
-rundata <- rundata[,list(P=mean(P),P1=mean(P1),P2=mean(P2)),
-                   by=list(iso3,replicate,acat)]
+rundata <- rundata[,list(P=mean(P),P1=mean(P1),P2=mean(P2)),by=list(iso3,replicate,acat)]
 rundata <- merge(rundata,WHOkey[,c('iso3','g_whoregion')],by='iso3',all.x=TRUE)
 
 

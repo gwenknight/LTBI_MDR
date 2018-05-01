@@ -1,6 +1,8 @@
 ## Analysis code for Houben & Dodd 2016, distributed under CC BY 4.0 license https://creativecommons.org/licenses/by/4.0/
 library(data.table)
 library(reshape2)
+library(spant)
+
 
 ####**** Load data ********************************************************************************************************************************************************************#####
 load('data/whokey.Rdata')
@@ -10,23 +12,30 @@ load('data/POP2035.Rdata')
 load('data/POP2050.Rdata')
 load('data/POP1997.Rdata')
 load('data/DSN2.Rdata') #INH data from Dodd,Sismanidis,Seddon
+load('data/uu.Rdata') # unique countries
 
 All <- All[All$lari!=-Inf,]
-cnz <- unique(as.character(All$iso3)) # included countries
+cnz <- uu #unique(as.character(All$iso3)) # included countries
 
 ## need to have run GP regression first to generate this data (GPreg.R)
 RUNZ <- BDZ <- list()
 
+### Linear or constant? 
+lin = 2
+
 for(i in 1:length(cnz)){ # for all the countries
     cn <- cnz[i]
 
-    fn <- paste0('data/',cn,'.Rdata') # grab the ARI data 
+    if(lin > 0) {fn <- paste0('data/',cn,'.Rdata')}# grab the ARI data 
+    if(lin == 0) {fn <- paste0('data_const/',cn,'.Rdata')}
+    
     if(file.exists(fn)){
         load(fn)
         BDZ[[i]] <- erw
     }
     
-    fn <- paste0('data/zz_',cn,'.Rdata')
+    if(lin > 0) {fn <- paste0('data/zz_',cn,'.Rdata')}
+    if(lin == 0) {fn <- paste0('data_const/zz_',cn,'.Rdata')}
     if(file.exists(fn)){
         load(fn)
         RUNZ[[i]] <- runsdf
@@ -85,7 +94,7 @@ rundata <- merge(rundata,POP2014[,list(iso3,acat,pop)],by=c('iso3','acat'),all.x
 drpd <- as.character(rundata[is.na(pop),unique(iso3)]) #population data mismatch - 24
 rundata <- rundata[!is.na(pop),]        #9K record the countries
 
-## country size threshold 
+## country size threshold # DO THIS EARLIER NOW! 
 popsizes <- rundata[replicate==1,list(pop=sum(pop)),by=iso3]
 popsizes[,sum(pop<5e2)]                 #24
 drp2 <- as.character(popsizes[pop<5e2,iso3])
@@ -189,7 +198,7 @@ MID <- rundataic[,list(nLTBI=median(nLTBI),
                           nLTBIH=median(nLTBIH)),
                     by=list(iso3)]
 LO <- rundataic[,list(nLTBI=lq(nLTBI),
-                          nLTBI1=lq(nLTBI1),
+                          nLTBI1=lq(nLTBI1), 
                           nLTBI2=lq(nLTBI2),
                           nLTBIH=lq(nLTBIH)),
                     by=list(iso3)]
