@@ -124,8 +124,10 @@ lin <- 1                           #linear (1) or constant (0)  --- CHANGE HERE!
 uu <- unique(as.character(All0$iso3)) # number of unique countries
 uu <- uu[-is.na(uu)] 
 length(uu) # 137
-too_small_pop <- c("WSM","ABW","ATG","BHS","BLZ","BRB","BRN","CUW","FSM","GRD","GUM","ISL","KIR","LCA","MDV","MLT","NCL","PYF","STP","SYC","TON","VCT","VIR","VUT")
-tb_cnt_mismatch <- c("AIA", "AND", "ANT", "ASM","BMU","COK","CYM","DMA","GRL","KNA","MCO","MHL","MNP","MSR","NIU","NRU","PLW","SMR","SXM","TCA","TKL","TUV","VGB","WLF")
+too_small_pop <- c("WSM","ABW","ATG","BHS","BLZ","BRB","BRN","CUW","FSM","GRD","GUM","ISL","KIR",
+                   "LCA","MDV","MLT","NCL","PYF","STP","SYC","TON","VCT","VIR","VUT")
+tb_cnt_mismatch <- c("AIA", "AND", "ANT", "ASM","BMU","COK","CYM","DMA","GRL","KNA","MCO",
+                     "MHL","MNP","MSR","NIU","NRU","PLW","SMR","SXM","TCA","TKL","TUV","VGB","WLF")
 remove_cnt <- c(too_small_pop,tb_cnt_mismatch)
 for(i in 1:length(remove_cnt)){
   w_t <- which(uu == remove_cnt[i])
@@ -158,7 +160,7 @@ for(jj in 1:length(uu)){
   ## H
   H <- getHtonly(tdz,n=lin)  # Matrix of 1s
   Hs <- getHtonly(tez,n=lin) # Matrix of 1s
-  y <- All$lr_ari   # grab log ari from data ***
+  y <- All$lr_ari   # grab log ari from data *** MDR!! 
   vz <- (All$E)^2  # var is square of error
   sigz <- Diagonal(x=vz)                         #noise
   
