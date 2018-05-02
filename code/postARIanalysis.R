@@ -1,7 +1,6 @@
 ## Analysis code for Houben & Dodd 2016, distributed under CC BY 4.0 license https://creativecommons.org/licenses/by/4.0/
 library(data.table)
 library(reshape2)
-library(spant)
 
 
 ####**** Load data ********************************************************************************************************************************************************************#####
@@ -36,7 +35,9 @@ for(i in 1:length(cnz)){ # for all the countries
     
     if(lin > 0) {fn <- paste0('data/zz_',cn,'.Rdata')}
     if(lin == 0) {fn <- paste0('data_const/zz_',cn,'.Rdata')}
+    
     if(file.exists(fn)){
+      print(fn)
         load(fn)
         RUNZ[[i]] <- runsdf
     }
