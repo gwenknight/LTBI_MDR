@@ -122,6 +122,9 @@ rundata0 <- rundata[,list(LTBI=sum(pop*P)/sum(pop),
                           LTBIH=sum(pop*P2*INH)/sum(pop)),
                     by=list(acat,replicate,g_whoregion)]
 
+
+ub <- function(x)quantile(x,probs = .975)
+lb <- function(x)quantile(x,probs = .025)
 uq <- function(x)quantile(x,probs = .75)
 lq <- function(x)quantile(x,probs = .25)
 
