@@ -5,6 +5,10 @@
 data/
 output/
 datar/
+data_const/
+datar_const/
+datar_approx/
+datar_const_approx/
 
 ne_50m_admin_0_countries.geojson
 .DS_Store
