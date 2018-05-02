@@ -248,4 +248,21 @@ save(Allm,file='datar/All_mdr.Rdata')
 w<-which(Allm$iso3 == "ZWE")
 ggplot(Allm[w,], aes(x=year, y = ari, colour = "red")) + geom_point() + geom_point(aes(x=year, y = perc_new_mdr), colour = "blue")
 
+####*** For MDR approx (i.e. overestimate by using only global values from 2017)
+load('data/whokey.Rdata')
+Allm_approx <- merge(Allm,WHOkey[,c('iso3','g_whoregion')],by='iso3',all.x=TRUE)
+# WHO 2017 data
+who_2017_new_mdr <- as.data.frame(rbind(c("AFR", 2.7),
+                                        c("AMR", 2.9),
+                                        c("EMR", 4.2),
+                                        c("EUR", 19),
+                                        c("SEA", 2.8),
+                                        c("WPR", 5.3)),stringsAsFactors = FALSE)
+colnames(who_2017_new_mdr) <- c("g_whoregion", "approx_new_mdr")
+Allm_approx <- merge(Allm_approx,who_2017_new_mdr,by='g_whoregion',all.x=TRUE)
+Allm_approx$approx_new_mdr <- as.numeric(Allm_approx$approx_new_mdr)
+Allm_approx$r_ari <- Allm_approx$approx_new_mdr / 100 * Allm_approx$ari
+Allm_approx$lr_ari <- log(Allm_approx$r_ari)
+save(Allm_approx,file='datar/All_mdr_approx.Rdata')
+
 
