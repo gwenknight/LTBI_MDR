@@ -1,9 +1,10 @@
 ## Analysis code for Houben & Dodd 2016, distributed under CC BY 4.0 license https://creativecommons.org/licenses/by/4.0/
 
 ### GK: Gaussian Process regression to generate ARIs for countries without data and for uncertainty
-args <- commandArgs(TRUE) # used if running on cluster... 
-jj <- as.numeric(args[1]) # counter
-print(jj)
+#args <- commandArgs(TRUE) # used if running on cluster... 
+#jj <- as.numeric(args[1]) # counter
+#print(jj)
+
 library(MASS)
 library(Matrix)
 
@@ -145,9 +146,10 @@ for(jj in 1:length(uu)){
   cn <- uu[jj] # unique country for this run
   print(cn)
   All <- All0[All0$iso3 %in% cn,]
-  if(dim(All)[1] < 15){print(paste0("skip ", cn, " ", jj));skp <- c(skp, jj)} 
-  if(dim(All)[1] < 15) next  ## New uu: skip 33 BES & 156 TLS (OLD: 15 cutoff in supp: Removes 40 "BES", 66 "CUW", 189 "SXM", 195 "TKL", 197 "TLS")
-  
+  ### For MDR - can't have 15...? 
+  if(dim(All)[1] < 5){print(paste0("dim(All) = ", dim(All)," skip ", cn, " ", jj));skp <- c(skp, jj)} 
+  if(dim(All)[1] < 5) next  ## New uu: skip 33 BES & 156 TLS (OLD: 15 cutoff in supp: Removes 40 "BES", 66 "CUW", 189 "SXM", 195 "TKL", 197 "TLS")
+  All$year <- as.numeric(All$year)
   ## ============== work ====================
   
   ## time/country vectors for data/extrapolation
