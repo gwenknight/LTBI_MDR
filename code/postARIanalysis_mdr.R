@@ -1,22 +1,24 @@
 ## Analysis code for Houben & Dodd 2016, distributed under CC BY 4.0 license https://creativecommons.org/licenses/by/4.0/
+# Modified for MDR
 library(data.table)
 library(reshape2)
 
 ####**** Load data ********************************************************************************************************************************************************************#####
 load('data/whokey.Rdata')
-load('datar/All_mdr.Rdata')                #ARI data
-load('data/POP2014.Rdata')                   #population data
+load('datar/All_mdr.Rdata')                 #ARI data with MDR now
+load('data/POP2014.Rdata')                  #population data
 load('data/POP2035.Rdata')
 load('data/POP2050.Rdata')
 load('data/POP1997.Rdata')
-load('data/DSN2.Rdata') #INH data from Dodd,Sismanidis,Seddon
+#load('data/DSN2.Rdata') #INH data from Dodd,Sismanidis,Seddon
 load('datar/uu.Rdata') # unique countries
 
-All <- Allm[Allm$lr_ari!=-Inf,] #***
-cnz <- uu #unique(as.character(All$iso3)) # included countries
+All <- Allm[Allm$lr_ari!=-Inf,] 
+cnz <- uu #unique(as.character(All$iso3)) # included countries - accounts for too few entries 
 
 ## need to have run GP regression first to generate this data (GPreg.R)
 RUNZ <- BDZ <- list()
+lin = 1 # for non-constant
 
 for(i in 1:length(cnz)){ # for all the countries
     cn <- cnz[i]
