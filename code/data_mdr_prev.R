@@ -71,7 +71,7 @@ ggplot(r[-w,], aes(x = source_drs_year_new, y = perc_new_mdr, label = country, c
 ggsave("mdr_perc_all_refs_no_subnat.pdf")
 
 ## example
-w<-which(r$country == "Israel")
+w<-which(r$country == "India")
 r_esto <- r[w,]  
 
 ggplot(r_esto, aes(x = source_drs_year_new, y = perc_new_mdr, ymin = perc_new_mdr_lo,  ymax = perc_new_mdr_hi, label = country, colour = factor(ref))) + 
@@ -91,9 +91,16 @@ ggsave("mdr_perc_all_res_bycountry_greater5.pdf", width = 15, height = 15)
 
 
 #### ULTIMATELY
-save(r,file='datar/mdr.Rdata')
+save(r,file='~/Documents/LTBI_MDR/datar/mdr.Rdata')
+save(r,file='~/Dropbox/MRC SD Fellowship/Research/MDR/data/mdr.Rdata')
 
 ### What percentage of high burden do these countries represent?
+hb <- read.csv("high_b_mdr_countries_16to20.csv")
+setdiff(hb$iso3,unique(r5$iso3))
+w<-which(hb$iso3 %in% unique(r5$iso3))
+sum(hb[w,"perc_number"]) # percentage of all MDR-TB cases by number included in data in top 20 countries
+100*sum(hb[w,"perc_number"])/sum(hb[,"perc_number"]) # percentage of MDR-TB cases by number in top 20 countries
+
 
 # countries in ARI analysis
 ocn <- Reduce(intersect, list(cnz, r$iso3))
