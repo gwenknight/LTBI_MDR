@@ -52,8 +52,10 @@ rundr <- data.table(rundatar)
 
 ## rundatar
 rundatar[,year:=2014-year]               #now age
-rundatar[,lari:=exp(lari)]               #now real ari
-rundatar <- rundatar[order(replicate,iso3,year),list(ari=lari,H=cumsum(lari),year=year),by=list(iso3=iso3,replicate=replicate)]
+rundatar[,lari:=exp(lari)]               #now real ari!! 
+rundatar <- rundatar[order(replicate,iso3,year),
+                     list(ari=lari,H=cumsum(lari),year=year),
+                     by=list(iso3=iso3,replicate=replicate)]
 
 ## ## for past 2 years
 mask <- rep(1,length(unique(rundatar$year)))
@@ -64,7 +66,7 @@ rundatar[,P:=1-exp(-H)]                  #ever
 rundatar[,P1:=-exp(-H)+exp(-dH)]                  #1st recent=prob ever - prob not<2
 
 ## CHANGE HERE SENSE!
-## Andrews: 0.79 .7-.86
+## Andrews: 0.79 .7-.86 #### Protection from re-infecton
 pm <- 0.79                              #0.5 #CHANGE HERE!
 pv <- (0.86-0.7)^2/3.92^2
 apb <- pm*(1-pm)/pv-1
@@ -73,6 +75,7 @@ pb <- (1-pm)*apb                        #20.70
 ## curve(dbeta(x,shape1 = pa,shape2=pb),from=0,to=1)
 ## abline(v=pm,col=2);abline(v=.86,col=2,lty=2);abline(v=.7,col=2,lty=2);
 ## swap
+### Random sample of level of protection - beta distribution
 alph <- rbeta(nrow(rundatar),shape1=pb,shape2=pa)
 
 rundatar[,P2:=alph*(H-dH) + (1-alph)*(exp(-dH)-exp(-H))]                  #anyrecent

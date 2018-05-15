@@ -56,7 +56,9 @@ rundr <- data.table(rundatar)
 ## rundatar
 rundatar[,year:=2014-year]               #now age
 rundatar[,lari:=exp(lari)]               #now real ari
-rundatar <- rundatar[order(replicate,iso3,year),list(ari=lari,H=cumsum(lari),year=year),by=list(iso3=iso3,replicate=replicate)]
+rundatar <- rundatar[order(replicate,iso3,year),
+                     list(ari=lari,H=cumsum(lari),year=year),
+                     by=list(iso3=iso3,replicate=replicate)]
 
 ## ## for past 2 years
 mask <- rep(1,length(unique(rundatar$year)))
