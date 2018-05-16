@@ -225,13 +225,17 @@ ggplot(All[w,], aes(x=year, y = ari, colour = factor(iso3))) + geom_point()
 
 
 ######*** MDR ***********************************************************************************************************************
+### Where MDR data from: 
+## r <- read.csv("datar/who_drtb_by_country.csv")
+## save(r,file='datar/mdr.Rdata')
+
 load('datar/mdr.Rdata')
 
 # Assume
 # (1) percentage new infections with MDR = proportion of ARI
 Allm <- All
-r2 <- r[,c("iso3","perc_new_mdr")]
-r2$year <- r$source_drs_year_new 
+r2 <- r[,c("iso3","perc_new_mdr","year")] # CHANGE ON DESKTOP
+## r2$year <- r$source_drs_year_new  # CHANGE ON DESKTOP
 r2$perc_new_mdr <- r2$perc_new_mdr / 100
 r2 <- r2[!is.na(r2$perc_new_mdr),]
 Allm <- merge(All,r2,by=c('iso3','year'),all=TRUE)
@@ -261,8 +265,9 @@ who_2017_new_mdr <- as.data.frame(rbind(c("AFR", 2.7),
 colnames(who_2017_new_mdr) <- c("g_whoregion", "approx_new_mdr")
 Allm_approx <- merge(Allm_approx,who_2017_new_mdr,by='g_whoregion',all.x=TRUE)
 Allm_approx$approx_new_mdr <- as.numeric(Allm_approx$approx_new_mdr)
+Allm_approx[which(Allm_approx$year<1970),"approx_new_mdr"] <- 0 # if before 1970, no MDR
+
 Allm_approx$r_ari <- Allm_approx$approx_new_mdr / 100 * Allm_approx$ari
 Allm_approx$lr_ari <- log(Allm_approx$r_ari)
 save(Allm_approx,file='datar/All_mdr_approx.Rdata')
-
 
