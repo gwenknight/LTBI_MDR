@@ -62,7 +62,7 @@ ggplot(r_esto, aes(x = source_drs_year_new, y = perc_new_mdr, ymin = perc_new_md
 
 ## Countries with more than 5 data points
 tt <- table(r$country)
-cc <- names(which(tt > 5))
+cc <- names(which(tt >= 4))
 length(cc)
 r5 <- r[match(r$country, cc, 0L)>0L, ]
 
