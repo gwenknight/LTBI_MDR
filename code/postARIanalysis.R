@@ -45,6 +45,7 @@ for(i in 1:length(cnz)){ # for all the countries
 
 bdzdf <- do.call('rbind',BDZ)
 rundata <- do.call('rbind',RUNZ)
+save(rundata, file = "data/rundata_ari.Rdata")
 
 
 ## ------------- analyse data -------------
