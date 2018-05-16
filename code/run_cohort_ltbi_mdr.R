@@ -1,6 +1,11 @@
 ### Run cohort_ltbi_mdr
 library(ggplot2)
+theme_set(theme_bw())
 library(plyr)
+library(dplyr)
+library(cowplot)
+library(data.table)
+
 setwd("~/Documents/LTBI_MDR/")
 
 # ARI DS
@@ -20,28 +25,261 @@ colnames(ari) <- c("ds","mdr")
 ari$ds <- 0.01
 
 ## India 2016.perc_new_mdr = ~2%
-#ari$mdr <- c(rep(0,1970-1934),seq(0,0.02,length=(2014-1969))) * ari$ds
-ari$mdr <- 0
+ari$mdr <- c(rep(0,1970-1934),seq(0,0.02,length=(2014-1969))) * ari$ds
+#ari$mdr <- 0
 colnames(ari) <- c("ds","mdr")
 
-# Population model
+#plot(seq(1934,2014,1),ari$ds,ylim=c(0,0.02),type="l")
+#lines(seq(1934,2014,1),ari$mdr,col="red")
+
+# Population examples
 load('data/POP2014.Rdata')  
-w<-which(POP2014$area == "India")
-pop_ind <- POP2014[w,]
+pop1 <- POP2014[which(POP2014$area == "India"),"value"]
+pop2 <- POP2014[which(POP2014$area == "China"),"value"]
+pop3 <- POP2014[which(POP2014$area == "Japan"),"value"]
+pop4 <- POP2014[which(POP2014$area == "Ukraine"),"value"]
+
+cn <- c("India","China","Japan","Ukraine")
+popp <- as.data.frame(rbind(cbind(pop1,1),cbind(pop2,2),cbind(pop3,3),cbind(pop4,4)))
+colnames(popp) <- c("psize","cn")
+popp$cn <- cn[popp$cn]
+popp$age <- seq(0,80,5)
+pp <-ggplot(popp, aes(y = psize, x = age, colour = factor(cn))) + geom_line() + scale_color_discrete("Country") + scale_y_continuous("Population size") + scale_x_continuous("Age")
+ggsave("popsize_2014.pdf",height = 4, width = 8)
 
 ### Run 
-cc <- cohort_ltbi(ari, pop_ind$value)
+cc <- cohort_ltbi(ari, pop1) # India
 
 combs <- cc$combs
 ltbi_dr <- sum(combs$perc_dr)
 ltbi_ds <- sum(combs$perc_ds)
 ltbi_dr
 ltbi_ds
+cc$c_2014
+
+##****** Run for different ARI plots **********############################################################################################################################
+nari = 10
+
+ari_store <- as.data.frame(matrix(0,nari*81,2))
+colnames(ari_store) <- c("ds","mdr")
+
+## 1. no MDR, ds constant
+ari_store[1:81,"ds"] <- 0.01
+ari_store[1:81,"mdr"] <- 0
+
+## 2. MDR linear increase to 2%, ds constant
+ari_store[82:162,"ds"] <- 0.01
+ari_store[82:162,"mdr"] <-c(rep(0,1970-1934),seq(0,0.02,length=(2014-1969))) * ari$ds
+
+## 3-10. MDR sigmoid increase to 2%, ds decreasing after 1970
+sigm <- function(x,delta){ 0.01/(1+exp(-(x-delta)))} # max = 2% of 0.01
+#plot(seq(1934,2014,1),sigm(seq(0,80,1),41))
+# when increase after 1934? 1975, 1980, 1985, 1990, 1995, 2000
+jump_point <- c(41,46,51,56,61,66,71,76)
+for(i in 3:10){
+  dd <- jump_point[i-2]
+  ari_store[((i-1)*81 + 1):(i*81),"ds"] <-c(rep(0.01,1970-1934),seq(0.01,0.005,length=(2014-1969))) 
+  ari_store[((i-1)*81 + 1):(i*81),"mdr"] <-sigm(seq(0,80,1),dd)
+}
+ari_store$rep <- rep(1:nari,each = 81)
+ari_store$time <- seq(1934,2014,1)
+a1<- ggplot(ari_store,aes(x=time,y=ds, group=rep, colour = factor(rep))) + geom_line() + geom_line(aes(x=time,y=mdr,group=rep,colour=factor(rep),linetype = "dashed")) +
+  scale_color_discrete("ARI pattern") + guides(linetype = FALSE)
 
 
-plot(perc_ds_ind)
-points(perc_dr_ind,col="red")
-sigm <- function(x,delta){1970 + 1/(1+exp(-(x-delta)))}
-plot(seq(1970,2030,1),sigm(seq(0,60,1),20))
+s_level <- c()
+
+for(i in 1:nari){
+  
+  ari <- ari_store[((i-1)*81 + 1):(i*81),c("ds","mdr")]
+  for(j in 1:4){
+    if(j==1){cc <- cohort_ltbi(ari, pop1)}
+    if(j==2){cc <- cohort_ltbi(ari, pop2)}
+    if(j==3){cc <- cohort_ltbi(ari, pop3)}
+    if(j==4){cc <- cohort_ltbi(ari, pop4)}
+    
+    combs <- cc$combs
+    ltbi_dr <- sum(combs$perc_dr)
+    ltbi_ds <- sum(combs$perc_ds)
+    
+    s_level <- rbind(s_level,c(i,ltbi_dr,ltbi_ds,j))
+  }
+  
+}
+
+s_level <- as.data.frame(s_level)
+colnames(s_level) <- c("rep","ltbir","ltbis","popf")
+
+a2<-ggplot(s_level, aes(x=rep, y = ltbir, col=factor(rep) )) + geom_point(aes(shape=factor(popf))) + guides(colour=FALSE) + scale_shape_discrete("Population", labels = c("India","China","Japan","Ukraine"))
+
+#ss <- merge(s_level,ari_store, by = 'rep')
+
+plot_grid(a1, a2, labels = c("A", "B"), align = "h")
+
+
+
+##****** MDR ARI variation with constant DS ARI ****########################################################################################################################
+nari = 18
+ari_store <- as.data.frame(matrix(0,nari*81,2))
+ari_rep_labels <- c("No MDR","Linear increase",
+                    "Sigmoid peak 1975","Sigmoid peak 1980","Sigmoid peak 1985","Sigmoid peak 1990","Sigmoid peak 1995","Sigmoid peak 2000","Sigmoid peak 2005","Sigmoid peak 2010", 
+                    "Gaus peak 1975","Gaus peak 1980","Gaus peak 1985","Gaus peak 1990","Gaus peak 1995","Gaus peak 2000","Gaus peak 2005","Gaus peak 2010")
+
+setwd("output")
+
+### ARI MDR
+## 1. no MDR
+ari_store[1:81,"ds"] <- 0.01
+ari_store[1:81,"mdr"] <- 0
+
+## 2. MDR linear increase to 2%, ds constant
+ari_store[82:162,"ds"] <- 0.01
+ari_store[82:162,"mdr"] <-c(rep(0,1970-1934),seq(0,0.02,length=(2014-1969))) * ari$ds
+
+## 3-10. MDR sigmoid increase to maximum DS ARI 
+
+# when increase after 1934? 1975, 1980, 1985, 1990, 1995, 2000
+jump_point <- c(41,46,51,56,61,66,71,76)
+# Sigma and plateau
+for(i in 3:10){
+  dd <- jump_point[i-2]
+  ari_store[((i-1)*81 + 1):(i*81),"ds"] <-0.01
+  ari_store[((i-1)*81 + 1):(i*81),"mdr"] <-sigm(seq(0,80,1),dd,mdr_perc_new[cci]) * ari_store[((i-1)*81 + 1):(i*81),"ds"] # multiple ari trend of DR by that of DS up to max percentage in data 
+}
+# Jump
+for(i in 11:18){
+  dd <- jump_point[i-10]
+  ari_store[((i-1)*81 + 1):(i*81),"ds"] <-0.01
+  ari_store[((i-1)*81 + 1):(i*81),"mdr"] <-gaum(seq(0,80,1),dd,mdr_perc_new[cci]) * ari_store[((i-1)*81 + 1):(i*81),"ds"] # multiple ari trend of DR by that of DS up to max percentage in data 
+}
+
+ari_store$rep <- rep(1:nari,each = 81)
+ari_store$time <- seq(1934,2014,1)
+arim <- melt(ari_store[,c("time","ds","mdr","rep")], id.vars = c("time","rep"))
+w <- intersect(which(arim$rep > 10),which(arim$variable == "mdr"))
+
+levels(arim$variable) <- c(levels(arim$variable),"mdr_gaus")
+arim[w,"variable"] = "mdr_gaus"
+
+a1 <- ggplot(arim,aes(x=time,y=value, group=rep, colour = factor(rep))) + geom_line() + scale_y_continuous("ARI") + 
+  facet_wrap(~variable, scales = "free") + scale_colour_discrete("ARI pattern",breaks = seq(1,18,1),labels = ari_rep_labels) + guides(colour=guide_legend(ncol=2))
+save_plot("mdr_ari_with_constant_dsari.png", a1, base_aspect_ratio = 2.5 )
+
+
+##****** Run for different countries  **********############################################################################################################################
+cn <- c("India","China","Japan","Ukraine")
+cni <- c("IND","CHN","JPN","UKR")
+
+# ARI trend data
+load("../data/rundata_ari.Rdata")
+rundata$ari <- exp(rundata$lari)
+s_level <- c()
+
+# MDR data
+# India, China, Japan, Ukraine, latest = max
+mdr_perc_new <- c(0.02, 0.057, 0.007, 0.22)
+
+# Functions for shape of MDR ARI
+sigm <- function(x,delta,max){ max/(1+exp(-(x-delta)))} 
+#plot(seq(1934,2014,1),sigm(seq(0,80,1),41))
+gaum <- function(x,delta,max){ max*exp(-0.5*((x-delta)/5)^2)}
+#plot(seq(1934,2014,1),gaum(seq(0,80,1),41, 1))
+
+# Number of scenarios
+nari = 18
+ari_store <- as.data.frame(matrix(0,nari*81,2))
+ari_rep_labels <- c("No MDR","Linear increase",
+                             "Sigmoid peak 1975","Sigmoid peak 1980","Sigmoid peak 1985","Sigmoid peak 1990","Sigmoid peak 1995","Sigmoid peak 2000","Sigmoid peak 2005","Sigmoid peak 2010", 
+                             "Gaus peak 1975","Gaus peak 1980","Gaus peak 1985","Gaus peak 1990","Gaus peak 1995","Gaus peak 2000","Gaus peak 2005","Gaus peak 2010")
+
+setwd("~/Documents/LTBI_MDR/output")
+
+
+for(cci in 1:length(cn)){
+  
+  ### ARI DS
+  rdata <- as.data.table(rundata[which(rundata$iso3 == cni[cci]),])
+
+  # Need average over all replicates
+  rr <- ddply(rdata, .(year), summarize,  Av=mean(ari)) #rdata %>% group_by( year ) %>%  summarise( Av = mean( x = ari , na.rm = TRUE ) )
+  p1 <- ggplot(rr, aes(x=year,y=Av)) + geom_point() + ggtitle(cn[cci]) + scale_y_continuous("ARI DS-TB")
+  
+  ### ARI MDR
+  ## 1. no MDR
+  ari_store[1:81,"ds"] <- rr$Av
+  ari_store[1:81,"mdr"] <- 0
+  
+  ## 2. MDR linear increase to 2%, ds constant
+  ari_store[82:162,"ds"] <- rr$Av
+  ari_store[82:162,"mdr"] <-c(rep(0,1970-1934),seq(0,0.02,length=(2014-1969))) * ari$ds
+  
+  ## 3-10. MDR sigmoid increase to maximum DS ARI 
+  
+  # when increase after 1934? 1975, 1980, 1985, 1990, 1995, 2000
+  jump_point <- c(41,46,51,56,61,66,71,76)
+  # Sigma and plateau
+  for(i in 3:10){
+    dd <- jump_point[i-2]
+    ari_store[((i-1)*81 + 1):(i*81),"ds"] <-rr$Av
+    ari_store[((i-1)*81 + 1):(i*81),"mdr"] <-sigm(seq(0,80,1),dd,mdr_perc_new[cci]) * ari_store[((i-1)*81 + 1):(i*81),"ds"] # multiple ari trend of DR by that of DS up to max percentage in data 
+  }
+  # Jump
+  for(i in 11:18){
+    dd <- jump_point[i-10]
+    ari_store[((i-1)*81 + 1):(i*81),"ds"] <-rr$Av
+    ari_store[((i-1)*81 + 1):(i*81),"mdr"] <-gaum(seq(0,80,1),dd,mdr_perc_new[cci]) * ari_store[((i-1)*81 + 1):(i*81),"ds"] # multiple ari trend of DR by that of DS up to max percentage in data 
+  }
+  
+  ari_store$rep <- rep(1:nari,each = 81)
+  ari_store$time <- seq(1934,2014,1)
+  arim <- melt(ari_store[,c("time","ds","mdr","rep")], id.vars = c("time","rep"))
+  
+  levels(arim$variable) <- c(levels(arim$variable),"mdr_gaus")
+  arim[w,"variable"] = "mdr_gaus"
+  
+  a1 <- ggplot(arim,aes(x=time,y=value, group=rep, colour = factor(rep))) + geom_line() + scale_y_continuous("ARI") + 
+    facet_wrap(~variable, scales = "free") + scale_colour_discrete("ARI pattern",breaks = seq(1,18,1),labels = ari_rep_labels) + guides(colour=guide_legend(ncol=2))
+  save_plot(paste0(cn[cci],".png"), a1, base_aspect_ratio = 2 )
+  
+  for(i in 1:nari){
+    
+    ari <- ari_store[((i-1)*81 + 1):(i*81),c("ds","mdr")]
+  
+    if(cci==1){cc <- cohort_ltbi(ari, pop1)}
+    if(cci==2){cc <- cohort_ltbi(ari, pop2)}
+    if(cci==3){cc <- cohort_ltbi(ari, pop3)}
+    if(cci==4){cc <- cohort_ltbi(ari, pop4)}
+    
+    combs <- cc$combs
+    ltbi_dr <- sum(combs$perc_dr)
+    ltbi_ds <- sum(combs$perc_ds)
+    
+    s_level <- rbind(s_level,c(i,ltbi_dr,ltbi_ds,cci))
+    
+  }
+  
+  s_level <- as.data.frame(s_level)
+  colnames(s_level) <- c("rep","ltbir","ltbis","popf")
+  
+  #ss <- merge(s_level,ari_store, by = 'rep')
+  
+  #p.cn <- plot_grid(p1, a1, labels = c("A", "B"), align = "h",ncol = 2,rel_widths = c(1, 1.8))
+  print(paste0(cn[cci]))
+}
+
+s_level$popf <- cn[s_level$popf]
+a2<-ggplot(s_level, aes(x=rep, y = ltbir, col=factor(rep) )) + geom_point() + guides(colour=FALSE) + 
+  scale_x_continuous("MDR-ARI trend") + scale_y_continuous("LTBI-MDR") +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1)) + facet_wrap(~popf, scales = "free")
+
+save_plot("ltbi_all_countries.png", a2, base_aspect_ratio = 1.5 )
+
+
+
+###******* AGE *****################################################################################################################
+ssc <- cc$store_c
+ssc$age <- seq(1,100,1)
+ggplot(ssc[3700:4400,],aes(x=year, y = pr_dr)) + geom_line() + facet_wrap(~age,scales = "free")
+
 
 
