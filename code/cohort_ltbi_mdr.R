@@ -20,12 +20,11 @@ cohort_ltbi <- function(ari,pop){
   dim(alph) <-  c(81, 100)
   
   # Matrix framework
-  c_last <- as.data.frame(matrix(0,100,7))
-  colnames(c_last) <- c("age","pr_ds","pr_dr","new_ds","new_dr","rei_sr","rei_rs")
-  c_now <- as.data.frame(matrix(0,100,7))
-  colnames(c_now) <- c("age","pr_ds","pr_dr","new_ds","new_dr","rei_sr","rei_rs")
-  c_now$age = c_last$age <- seq(0,99,1)
-  store_c <- as.data.frame(matrix(0,100*81,7))
+  c_last <- as.data.frame(matrix(0,100,6))
+  colnames(c_last) <- c("pr_ds","pr_dr","new_ds","new_dr","rei_sr","rei_rs")
+  c_now <- as.data.frame(matrix(0,100,6))
+  colnames(c_now) <- c("pr_ds","pr_dr","new_ds","new_dr","rei_sr","rei_rs")
+  store_c <- as.data.frame(matrix(0,100*81,6))
   colnames(store_c) <- colnames(c_last)
   
   # Number of years (1934:2014)
@@ -51,7 +50,7 @@ cohort_ltbi <- function(ari,pop){
     ari_r <- as.numeric(ari[i,"mdr"])
     # Calculations
     c_now$new_ds <- ari_s * (1 - c_now$pr_ds - c_now$pr_dr) # currently none, new infection DS
-    c_now$new_dr <- ari_r * (1 - c_now$pr_ds - c_now$pr_dr) # currently none, new infection DR
+    c_now$new_dr <- ari_r * (1 - c_now$pr_ds - c_now$pr_dr - c_now$new_ds) # currently none, new infection DR
     c_now$rei_sr <- c_now$pr_ds * ari_r * alph[i,] 
     c_now$rei_rs <- c_now$pr_dr * ari_s * alph[i,]
     
