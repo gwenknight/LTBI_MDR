@@ -183,7 +183,7 @@ for(jj in 1:length(uu)){
   
   save(erw,file=paste0('data/',cn,'.Rdata'))
   
-  runs <- mvrnorm(n=2e2,mu=as.numeric(tot$mg),Sigma=as.matrix(symmpart(tot$cg)))
+  runs <- mvrnorm(n=sample_size,mu=as.numeric(tot$mg),Sigma=as.matrix(symmpart(tot$cg))) # Change sampling here - original 2e2
   runsdf <- data.frame(year=tez+fyear,iso3=as.character(unique(All$iso3)),
                        lari=c(t(runs)),replicate=rep(1:nrow(runs),each=ncol(runs)))
   
