@@ -6,12 +6,13 @@ nruns = 20
 MID_all <- as.data.frame(matrix(0,nruns*7,7))
 
 for(ik in 1:2){
+  setwd("~/Documents/LTBI_MDR/")
   sample_size = s_size[ik]
   
   for(iij in 1:nruns){
     print(iij)
-    source("code/GPreg.R")
-    source("code/postARIanalysis.R")
+    source("~/Documents/LTBI_MDR/code/GPreg.R")
+    source("~/Documents/LTBI_MDR/code/postARIanalysis.R")
     MID$run <- iij
     MID_all[((iij-1)*7 + 1):(iij*7),] <- MID
   }
@@ -49,7 +50,7 @@ m1000$repl <- 1000
 r_all <- rbind(m200,m1000)
 summr <- r_all %>% group_by(repl,g_whoregion,paper) %>% summarise(ml = mean(x = LTBI), sd = sd(LTBI))
 
-ggplot(summr, aes(x=repl, y = ml )) + geom_errorbar(aes(ymin = ml - sd, ymax = ml + sd)) + facet_wrap(~g_whoregion) + 
+ggplot(summr, aes(x=repl, y = ml )) + geom_errorbar(aes(ymin = ml - sd, ymax = ml + sd)) + facet_wrap(~g_whoregion, scales="free") + 
   geom_line(aes(y=paper),col="red") + scale_y_continuous("LTBI") + scale_x_continuous("Number of replicates")
 ggsave("sample_size_mean.pdf")
 
