@@ -115,7 +115,7 @@ rundata[,length(unique(iso3))]          #168
 DSN$INH <- DSN$INH + DSN$MDR         #include MDR with the INH-MR
 DSN <- DSN[,c('iso3','iter','INH')]
 DSN <- DSN[DSN$iso3 %in% as.character(unique(rundata$iso3)),]
-smp <- sample(1e3,200)
+smp <- sample(1e3,sample_size) ### CHANGE sample here too original 200 
 DSN <- DSN[DSN$iter %in% smp,]            #sample 200
 DSN$replicate <- as.numeric(factor(DSN$iter))
 
