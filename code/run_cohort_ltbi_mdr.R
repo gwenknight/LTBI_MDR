@@ -1,4 +1,6 @@
-### Run cohort_ltbi_mdr
+#### Run cohort_ltbi_mdr
+
+### Libraries and ggplot theme
 library(ggplot2)
 theme_set(theme_bw())
 library(plyr)
@@ -6,22 +8,18 @@ library(dplyr)
 library(cowplot)
 library(data.table)
 
+### Home
 setwd("~/Documents/LTBI_MDR/")
-
-# ARI DS
-# Got for India from similar to this: 
-#source("code/postARIanalysis.R")
-#w<-which(rundata$iso3 == "IND")
-#rundata_ind <-rundata[w,]
-#rundata_ind$ari <- exp(rundata_ind$lari)
-#save(rundata_ind,file="data/rundata_ind.Rdata")
+source("code/cohort_ltbi_mdr.R") # loads function
+ 
+### ARI DS - saved from postARIanalysis.R
 load("data/rundata_ind.Rdata")
-#ggplot(rundata_ind, aes(x=year,y=ari,col=replicate)) + geom_point()
+#ggplot(rundata_ind, aes(x=year,y=ari,col=replicate)) + geom_point() ## look at
 
+## ARI input
 ari <- as.data.frame(matrix(0,81,2))
 colnames(ari) <- c("ds","mdr")
-#ari$ds <- seq(10^(-4),10^(-5),length=81)
-#ari$ds <- rundata_ind[,mean(ari),by = "year"][,2]
+## Constant DS ARI
 ari$ds <- 0.01
 
 ## India 2016.perc_new_mdr = ~2%
@@ -32,27 +30,32 @@ colnames(ari) <- c("ds","mdr")
 #plot(seq(1934,2014,1),ari$ds,ylim=c(0,0.02),type="l")
 #lines(seq(1934,2014,1),ari$mdr,col="red")
 
-# Population examples
+### Countries to explore
+cn <- c("India","China","Japan","Ukraine")
+
+## Population examples
 load('data/POP2014.Rdata')  
 pop1 <- POP2014[which(POP2014$area == "India"),"value"]
 pop2 <- POP2014[which(POP2014$area == "China"),"value"]
 pop3 <- POP2014[which(POP2014$area == "Japan"),"value"]
 pop4 <- POP2014[which(POP2014$area == "Ukraine"),"value"]
 
-cn <- c("India","China","Japan","Ukraine")
+## group and plot populations
 popp <- as.data.frame(rbind(cbind(pop1,1),cbind(pop2,2),cbind(pop3,3),cbind(pop4,4)))
 colnames(popp) <- c("psize","cn")
 popp$cn <- cn[popp$cn]
 popp$age <- seq(0,80,5)
 pp <-ggplot(popp, aes(y = psize, x = age, colour = factor(cn))) + geom_line() + scale_color_discrete("Country") + scale_y_continuous("Population size") + scale_x_continuous("Age")
+setwd("output")
 ggsave("popsize_2014.pdf",height = 4, width = 8)
 
-### Run 
+### Run model for example generate above
 cc <- cohort_ltbi(ari, pop1) # India
 
+## output 
 combs <- cc$combs
-ltbi_dr <- sum(combs$perc_dr)
-ltbi_ds <- sum(combs$perc_ds)
+ltbi_dr <- sum(combs$perc_dr) # percentage with dr infection
+ltbi_ds <- sum(combs$perc_ds) # percentage with ds infection
 ltbi_dr
 ltbi_ds
 cc$c_2014
@@ -125,6 +128,12 @@ ari_rep_labels <- c("No MDR","Linear increase",
                     "Sigmoid peak 1975","Sigmoid peak 1980","Sigmoid peak 1985","Sigmoid peak 1990","Sigmoid peak 1995","Sigmoid peak 2000","Sigmoid peak 2005","Sigmoid peak 2010", 
                     "Gaus peak 1975","Gaus peak 1980","Gaus peak 1985","Gaus peak 1990","Gaus peak 1995","Gaus peak 2000","Gaus peak 2005","Gaus peak 2010")
 
+# Functions for shape of MDR ARI
+sigm <- function(x,delta,max){ max/(1+exp(-(x-delta)))} 
+#plot(seq(1934,2014,1),sigm(seq(0,80,1),41))
+gaum <- function(x,delta,max){ max*exp(-0.5*((x-delta)/5)^2)}
+#plot(seq(1934,2014,1),gaum(seq(0,80,1),41, 1))
+
 setwd("output")
 
 ### ARI MDR
@@ -179,12 +188,6 @@ s_level <- c()
 # MDR data
 # India, China, Japan, Ukraine, latest = max
 mdr_perc_new <- c(0.02, 0.057, 0.007, 0.22)
-
-# Functions for shape of MDR ARI
-sigm <- function(x,delta,max){ max/(1+exp(-(x-delta)))} 
-#plot(seq(1934,2014,1),sigm(seq(0,80,1),41))
-gaum <- function(x,delta,max){ max*exp(-0.5*((x-delta)/5)^2)}
-#plot(seq(1934,2014,1),gaum(seq(0,80,1),41, 1))
 
 # Number of scenarios
 nari = 18
