@@ -56,7 +56,9 @@ rund <- data.table(rundata)
 ## rundata
 rundata[,year:=2014-year]               #now age
 rundata[,lari:=exp(lari)]               #now real ari
-rundata <- rundata[order(replicate,iso3,year),list(ari=lari,H=cumsum(lari),year=year),by=list(iso3=iso3,replicate=replicate)]
+rundata <- rundata[order(replicate,iso3,year),list(ari=lari,
+                                                   H=cumsum(lari), # NB lari = ari now! see above 58
+                                                   year=year),by=list(iso3=iso3,replicate=replicate)]
 
 ## ## for past 2 years
 mask <- rep(1,length(unique(rundata$year)))
