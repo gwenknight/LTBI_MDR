@@ -9,9 +9,11 @@ library(cowplot)
 library(data.table)
 
 ### Home
-setwd("~/Documents/LTBI_MDR/")
+home <- "~/Documents/LTBI_MDR/"
+setwd(home)
+output <- "~/Documents/LTBI_MDR/output"
 source("code/cohort_ltbi_mdr.R") # loads function
- 
+
 ### ARI DS - saved from postARIanalysis.R
 load("data/rundata_ind.Rdata")
 #ggplot(rundata_ind, aes(x=year,y=ari,col=replicate)) + geom_point() ## look at
@@ -31,7 +33,7 @@ colnames(ari) <- c("ds","mdr")
 #lines(seq(1934,2014,1),ari$mdr,col="red")
 
 ### Countries to explore
-cn <- c("India","China","Japan","Ukraine")
+cn_list <- c("India","China","Japan","Ukraine")
 
 ## Population examples
 load('data/POP2014.Rdata')  
@@ -43,10 +45,10 @@ pop4 <- POP2014[which(POP2014$area == "Ukraine"),"value"]
 ## group and plot populations
 popp <- as.data.frame(rbind(cbind(pop1,1),cbind(pop2,2),cbind(pop3,3),cbind(pop4,4)))
 colnames(popp) <- c("psize","cn")
-popp$cn <- cn[popp$cn]
+popp$cn <- cn_list[popp$cn]
 popp$age <- seq(0,80,5)
 pp <-ggplot(popp, aes(y = psize, x = age, colour = factor(cn))) + geom_line() + scale_color_discrete("Country") + scale_y_continuous("Population size") + scale_x_continuous("Age")
-setwd("output")
+setwd(output)
 ggsave("popsize_2014.pdf",height = 4, width = 8)
 
 ### Run model for example generate above
@@ -183,7 +185,9 @@ cni <- c("IND","CHN","JPN","UKR")
 # ARI trend data
 load("../data/rundata_ari.Rdata")
 rundata$ari <- exp(rundata$lari)
-s_level <- c()
+br_level <- c(); #breakdown proportions infected by age
+s_level <- c(); #sum proportions infected 
+
 
 # MDR data
 # India, China, Japan, Ukraine, latest = max
@@ -193,8 +197,8 @@ mdr_perc_new <- c(0.02, 0.057, 0.007, 0.22)
 nari = 18
 ari_store <- as.data.frame(matrix(0,nari*81,2))
 ari_rep_labels <- c("No MDR","Linear increase",
-                             "Sigmoid peak 1975","Sigmoid peak 1980","Sigmoid peak 1985","Sigmoid peak 1990","Sigmoid peak 1995","Sigmoid peak 2000","Sigmoid peak 2005","Sigmoid peak 2010", 
-                             "Gaus peak 1975","Gaus peak 1980","Gaus peak 1985","Gaus peak 1990","Gaus peak 1995","Gaus peak 2000","Gaus peak 2005","Gaus peak 2010")
+                    "Sigmoid peak 1975","Sigmoid peak 1980","Sigmoid peak 1985","Sigmoid peak 1990","Sigmoid peak 1995","Sigmoid peak 2000","Sigmoid peak 2005","Sigmoid peak 2010", 
+                    "Gaus peak 1975","Gaus peak 1980","Gaus peak 1985","Gaus peak 1990","Gaus peak 1995","Gaus peak 2000","Gaus peak 2005","Gaus peak 2010")
 
 setwd("~/Documents/LTBI_MDR/output")
 
@@ -206,10 +210,10 @@ for(cci in 1:length(cn)){
   sa <- c() # store for this country
   ### ARI DS
   rdata <- as.data.table(rundata[which(rundata$iso3 == cni[cci]),])
-
+  
   # Need average over all replicates
   rr <- ddply(rdata, .(year), summarize,  Av=mean(ari)) #rdata %>% group_by( year ) %>%  summarise( Av = mean( x = ari , na.rm = TRUE ) )
-  p1 <- ggplot(rr, aes(x=year,y=Av)) + geom_point() + ggtitle(cn[cci]) + scale_y_continuous("ARI DS-TB")
+  p1 <- ggplot(rr, aes(x=year,y=Av)) + geom_point() + ggtitle(cn_list[cci]) + scale_y_continuous("ARI DS-TB")
   
   ### ARI MDR
   ## 1. no MDR
@@ -248,18 +252,26 @@ for(cci in 1:length(cn)){
   
   a1 <- ggplot(arim,aes(x=time,y=value, group=rep, colour = factor(rep))) + geom_line() + scale_y_continuous("ARI") + 
     facet_wrap(~variable, scales = "free") + scale_colour_discrete("ARI pattern",breaks = seq(1,18,1),labels = ari_rep_labels) + guides(colour=guide_legend(ncol=2))
-  save_plot(paste0(cn[cci],".pdf"), a1, base_aspect_ratio = 2 )
+  save_plot(paste0(cn_list[cci],".pdf"), a1, base_aspect_ratio = 2 )
   
   for(i in 1:nari){
-    
+    print(c(i,"ari rep"))
     ari <- ari_store[((i-1)*81 + 1):(i*81),c("ds","mdr")]
-  
+    
     if(cci==1){cc <- cohort_ltbi(ari, pop1)}
     if(cci==2){cc <- cohort_ltbi(ari, pop2)}
     if(cci==3){cc <- cohort_ltbi(ari, pop3)}
     if(cci==4){cc <- cohort_ltbi(ari, pop4)}
     
     combs <- cc$combs
+    
+    # by age 
+    combs$mdr_rep <- i
+    combs$age_group <- seq(1:17)
+    combs$popf <- cci
+    br_level <- rbind(br_level,combs)
+    
+    # total percentage infected sums
     ltbi_dr <- sum(combs$perc_dr) # percentage infected
     ltbi_ds <- sum(combs$perc_ds)
     pltbi_dr <- sum(combs$prop_dr) # number of people infected
@@ -278,36 +290,36 @@ for(cci in 1:length(cn)){
   sa$age <- seq(1,100,1)
   sa_rec <- sa[which(sa$year > 1965),] # recent
   
-  #### Plot by age
-  g1<-ggplot(sa_rec, aes(x=year, y = pr_dr, group = age, col = age)) + geom_line() + 
-    facet_wrap(~mdr_rep, ncol = 5) + scale_colour_gradientn(limits = c(0,100),colours=c("navyblue", "darkorange1","darkgreen"))
-  ggsave(paste0("all_age_",cn[cci],"_r.pdf"), height = 10, width = 10)
-  
-  g2<-ggplot(sa_rec, aes(x=year, y = pr_ds, group = age, col = age)) + geom_line() + 
-    facet_wrap(~mdr_rep, ncol = 5) + scale_colour_gradientn(limits = c(0,100),colours=c("navyblue", "darkmagenta", "darkgreen"))
-  ggsave(paste0("all_age_",cn[cci],"_s.pdf"), height = 10, width = 10)
-  
-  g3<-ggplot(sa_rec, aes(year, age)) + geom_tile(aes(fill = pr_ds),colour = "white") + scale_fill_gradient(low = "white",high = "steelblue","DS-TB") + 
-    labs(x = "Year",y = "Age") + scale_y_continuous(lim = c(0,100)) + facet_wrap(~mdr_rep)
-  ggsave(paste0("all_age_",cn[cci],"_map_s.pdf"), height = 10, width = 10)
-  
-  g4<-ggplot(sa_rec, aes(year, age)) + geom_tile(aes(fill = pr_dr),colour = "white") + scale_fill_gradient(low = "white",high = "red4","MDR-TB") +
-    labs(x = "Year",y = "Age") + scale_y_continuous(lim = c(0,100)) + facet_wrap(~mdr_rep)
-  ggsave(paste0("all_age_",cn[cci],"_map_r.pdf"), height = 10, width = 10)
-  
+  # #### Plot by age
+  # g1<-ggplot(sa_rec, aes(x=year, y = pr_dr, group = age, col = age)) + geom_line() + 
+  #   facet_wrap(~mdr_rep, ncol = 5) + scale_colour_gradientn(limits = c(0,100),colours=c("navyblue", "darkorange1","darkgreen"))
+  # ggsave(paste0("all_age_",cn_list[cci],"_r.pdf"), height = 10, width = 10)
+  # 
+  # g2<-ggplot(sa_rec, aes(x=year, y = pr_ds, group = age, col = age)) + geom_line() + 
+  #   facet_wrap(~mdr_rep, ncol = 5) + scale_colour_gradientn(limits = c(0,100),colours=c("navyblue", "darkmagenta", "darkgreen"))
+  # ggsave(paste0("all_age_",cn_list[cci],"_s.pdf"), height = 10, width = 10)
+  # 
+  # g3<-ggplot(sa_rec, aes(year, age)) + geom_tile(aes(fill = pr_ds),colour = "white") + scale_fill_gradient(low = "white",high = "steelblue","DS-TB") + 
+  #   labs(x = "Year",y = "Age") + scale_y_continuous(lim = c(0,100)) + facet_wrap(~mdr_rep)
+  # ggsave(paste0("all_age_",cn_list[cci],"_map_s.pdf"), height = 10, width = 10)
+  # 
+  # g4<-ggplot(sa_rec, aes(year, age)) + geom_tile(aes(fill = pr_dr),colour = "white") + scale_fill_gradient(low = "white",high = "red4","MDR-TB") +
+  #   labs(x = "Year",y = "Age") + scale_y_continuous(lim = c(0,100)) + facet_wrap(~mdr_rep)
+  # ggsave(paste0("all_age_",cn_list[cci],"_map_r.pdf"), height = 10, width = 10)
+  # 
   s_level <- as.data.frame(s_level)
   colnames(s_level) <- c("rep","ltbir","ltbis","popf","pltbir", "pltbis")
   
   #ss <- merge(s_level,ari_store, by = 'rep')
-  bottom_row <- plot_grid(g3,g4, labels = c('B', 'C'), align = 'h', rel_widths = c(1, 1))
-  a<-plot_grid(a1, bottom_row, labels = c('A', ''), ncol = 1, rel_heights = c(1, 1.2))
-  save_plot(paste0("combined_",cn[cci],".pdf"), a, base_aspect_ratio = 2)
-  
-  p.cn <- plot_grid(a1, a1, labels = c("A", "B"), align = "h",ncol = 2,rel_widths = c(1, 1.8))
-  print(paste0(cn[cci]))
+  # bottom_row <- plot_grid(g3,g4, labels = c('B', 'C'), align = 'h', rel_widths = c(1, 1))
+  # a<-plot_grid(a1, bottom_row, labels = c('A', ''), ncol = 1, rel_heights = c(1, 1.2))
+  # save_plot(paste0("combined_",cn_list[cci],".pdf"), a, base_aspect_ratio = 2)
+  # 
+  # p.cn <- plot_grid(a1, a1, labels = c("A", "B"), align = "h",ncol = 2,rel_widths = c(1, 1.8))
+  print(paste0(cn_list[cci]))
 }
 
-s_level$popf <- cn[s_level$popf]
+s_level$popf <- cn_list[s_level$popf]
 a2r<-ggplot(s_level, aes(x=rep, y = ltbir, col=factor(rep) )) + geom_point() + guides(colour=FALSE) + 
   scale_x_continuous("MDR-ARI trend") + scale_y_continuous("LTBI-MDR (% population infected)") +
   theme(axis.text.x = element_text(angle = 90, hjust = 1)) + facet_wrap(~popf, scales = "free")
@@ -347,23 +359,20 @@ for(iii in 1:length(cn)){
   
   ggplot(store_all_c, aes(x=year, y = pr_dr, group = age, col = age)) + geom_line() + 
     facet_wrap(~mdr_rep, ncol = 5) + scale_colour_gradientn(limits = c(0,100),colours=c("navyblue", "darkorange1","darkgreen"))
-  ggsave(paste0("all_age_",cn[iii],"_r.pdf"), height = 10, width = 10)
+  ggsave(paste0("all_age_",cn_list[iii],"_r.pdf"), height = 10, width = 10)
   
   ggplot(store_all_c, aes(x=year, y = pr_ds, group = age, col = age)) + geom_line() + 
     facet_wrap(~mdr_rep, ncol = 5) + scale_colour_gradientn(limits = c(0,100),colours=c("navyblue", "darkmagenta", "darkgreen"))
-  ggsave(paste0("all_age_",cn[iii],"_s.pdf"), height = 10, width = 10)
-
+  ggsave(paste0("all_age_",cn_list[iii],"_s.pdf"), height = 10, width = 10)
+  
   ggplot(store_all_c, aes(year, age)) + geom_tile(aes(fill = pr_ds),colour = "white") + scale_fill_gradient(low = "white",high = "steelblue","DS-TB") + 
     labs(x = "Year",y = "Age") + scale_y_continuous(lim = c(0,100)) + facet_wrap(~mdr_rep)
-  ggsave(paste0("all_age_",cn[iii],"_map_s.pdf"), height = 10, width = 10)
+  ggsave(paste0("all_age_",cn_list[iii],"_map_s.pdf"), height = 10, width = 10)
   
   ggplot(store_all_c, aes(year, age)) + geom_tile(aes(fill = pr_dr),colour = "white") + scale_fill_gradient(low = "white",high = "red4","MDR-TB") +
     labs(x = "Year",y = "Age") + scale_y_continuous(lim = c(0,100)) + facet_wrap(~mdr_rep)
-  ggsave(paste0("all_age_",cn[iii],"_map_r.pdf"), height = 10, width = 10)
+  ggsave(paste0("all_age_",cn_list[iii],"_map_r.pdf"), height = 10, width = 10)
 }
-
-
-
 
 
 store_all_india <- store_all_rec[which(store_all_rec$cn==1),]
@@ -372,58 +381,102 @@ store_all_japan <- store_all_rec[which(store_all_rec$cn==3),]
 store_all_ukraine <- store_all_rec[which(store_all_rec$cn==4),]
 
 
+#### When contributes most to latent burden? 
+## Store_all has 4 countries by age and time
+## 100 ages. 81 years. mdr_reps = 18. 
+dim(store_all) # 4*18*100*81 = 583200
+colnames(store_all)
+## s_level has ltbir and ltbis levels by country (4) and mdr rep (18) (dim = 72)
+dim(s_level)
+colnames(s_level)
+age_groups <- cbind(seq(1,85,5),seq(5,85,5))
+age_groups[17,2] <- 100
+
+for(i in 1:unique(store_all$cn)){
+  
+  # subset
+  s <-subset(store_all, cn == i) 
+  bl <-subset(br_level, popf == i) 
+  
+  s_alloc_store<- c()
+  
+  s_age <- c()
+  for(j in 1:17){# all age groups
+    print(c("age groups",j))
+    for(k in 1:3){# each mdr_rep
+      print(c("mdr_rep",k))
+      # subset the yearly data 
+      s_k <- subset(s, mdr_rep == k)
+      # subset the proportion infection
+      bl_k <- subset(bl, mdr_rep == k & age_group == j)
+      # and group select the data for the person of a certain age in 2014
+      l_age<- age_groups[j,1]
+      h_age<- age_groups[j,2]
+      
+      s_alloc <- as.data.frame(matrix(0,81,6))
+      cols <- c("pr_ds","pr_dr","new_ds","new_dr","rei_sr","rei_rs")
+      colnames(s_alloc)<-cols
+      s_alloc$year <- seq(2014,1934,-1)
+      s_alloc$age_min <- 100
+      s_alloc$age_max <- 0
+      s_alloc$mdr_rep <- k
+      s_alloc$age_group <- j
+      
+      for(ll in l_age:h_age){
+        s_alloc[,"age_min"] <- min(s_alloc$age_min,l_age)
+        s_alloc[,"age_max"] <- max(s_alloc$age_max,h_age)
+        agen = ll
+        index = 0
+        for(yr in 2014:(2014-ll+1)){
+          if(yr > 1933){ # don't do younger yrs e.g. age 80 
+            index = index + 1
+            #print(yr)
+            s_temp <- subset(s_k, year == yr & age == agen)
+            agen = agen - 1
+            s_alloc[index, cols] <- s_alloc[index, cols] + s_temp[,cols]
+          }
+        }
+      }
+      
+      # what proportion at what year
+      bl_k...
+      
+      
+      s_alloc_store <- rbind(s_alloc_store, s_alloc)
+      
+    }
+  }
+}
+
+### checks
+plot(s_alloc$year,s_alloc$new_ds)
+plot(s_alloc$year,s_alloc$new_dr)
+plot(s_alloc$year,s_alloc$rei_rs)
+plot(s_alloc$year,s_alloc$new_ds)
 
 
+s_temp[,c("pr_ds","pr_dr","new_ds","new_dr","rei_sr","rei_rs")]<- 
+  s_temp[,c("pr_ds","pr_dr","new_ds","new_dr","rei_sr","rei_rs")] + 
+  s_k[seq(8100, ll + seq(0,(8100 - ll),101),c("pr_ds","pr_dr","new_ds","new_dr","rei_sr","rei_rs")]
+}
+s_k[ll + seq(0,(8100 - ll),101),c("pr_ds","pr_dr","new_ds","new_dr","rei_sr","rei_rs")]
+}
 
-ggplot(store_all_india, aes(x=year, y = pr_dr, group = age, col = age)) + geom_line() + 
-  facet_wrap(~mdr_rep, ncol = 5) + scale_colour_gradientn(limits = c(0,100),colours=c("navyblue", "darkorange1","darkgreen"))
-ggsave("all_age_india_r.pdf", height = 10, width = 10)
-
-ggplot(store_all_china, aes(x=year, y = pr_dr, group = age, col = age)) + geom_line() + 
-  facet_wrap(~mdr_rep, ncol = 5) + scale_colour_gradientn(limits = c(0,100),colours=c("navyblue", "darkmagenta", "darkgreen"))
-ggsave("all_age_china_r.pdf", height = 10, width = 10)
-
-ggplot(store_all_japan, aes(x=year, y = pr_dr, group = age, col = age)) + geom_line() + 
-  facet_wrap(~mdr_rep, ncol = 5) + scale_colour_gradientn(limits = c(0,100),colours=c("navyblue", "darkmagenta", "darkgreen"))
-ggsave("all_age_japan_r.pdf", height = 10, width = 10)
-
-ggplot(store_all_ukraine, aes(x=year, y = pr_dr, group = age, col = age)) + geom_line() + 
-  facet_wrap(~mdr_rep, ncol = 5) + scale_colour_gradientn(limits = c(0,100),colours=c("navyblue", "darkmagenta", "darkgreen"))
-ggsave("all_age_ukraine_r.pdf", height = 10, width = 10)
-
-ggplot(store_all_india, aes(x=year, y = pr_ds, group = age, col = age)) + geom_line() + 
-  facet_wrap(~mdr_rep, ncol = 5) + scale_colour_gradientn(limits = c(0,100),colours=c("navyblue", "darkorange1","darkgreen"))
-ggsave("all_age_india_s.pdf", height = 10, width = 10)
-
-ggplot(store_all_china, aes(x=year, y = pr_ds, group = age, col = age)) + geom_line() + 
-  facet_wrap(~mdr_rep, ncol = 5) + scale_colour_gradientn(limits = c(0,100),colours=c("navyblue", "darkmagenta", "darkgreen"))
-ggsave("all_age_china_s.pdf", height = 10, width = 10)
-
-ggplot(store_all_japan, aes(x=year, y = pr_ds, group = age, col = age)) + geom_line() + 
-  facet_wrap(~mdr_rep, ncol = 5) + scale_colour_gradientn(limits = c(0,100),colours=c("navyblue", "darkmagenta", "darkgreen"))
-ggsave("all_age_japan_s.pdf", height = 10, width = 10)
-
-ggplot(store_all_ukraine, aes(x=year, y = pr_ds, group = age, col = age)) + geom_line() + 
-  facet_wrap(~mdr_rep, ncol = 5) + scale_colour_gradientn(limits = c(0,100),colours=c("navyblue", "darkmagenta", "darkgreen"))
-ggsave("all_age_ukraine_s.pdf", height = 10, width = 10)
+# proportion infected at that age
 
 
-w<-which(store_all$mdr_rep == 2)
-store_all_lin <- store_all[w,]
-store_all_lin$cn <- cn[store_all_lin$cn]
-ggplot(store_all_lin, aes(x=year, y = pr_dr, group = age, col = age)) + geom_line() + 
-  facet_wrap(~cn) + scale_colour_gradientn(limits = c(0,100),colours=c("navyblue", "darkmagenta", "darkgreen"))
-ggplot(store_all_lin, aes(x=year, y = pr_ds, group = age, col = age)) + geom_line() + 
-  facet_wrap(~cn) + scale_colour_gradientn(limits = c(0,100),colours=c("navyblue", "darkmagenta", "darkgreen"))
+}
 
 
+}
 
-ggplot(store_all_china, aes(year, age)) + geom_tile(aes(fill = pr_ds),colour = "white") + scale_fill_gradient(low = "white",high = "steelblue","DS-TB") + 
-  labs(x = "Year",y = "Age") + scale_y_continuous(lim = c(0,100)) + facet_wrap(~mdr_rep)
-ggsave("all_age_china_map_s.pdf", height = 10, width = 10)
+## plot: cumulative bar chart
+## x axis = age [0-100]
+## y axis = proportion ltbir from each time point [0-1]
+## facet by mdr rep  
+ggplot() + geom_bar(aes(y = percentage, x = year, fill = product), data = charts.data,
+                    stat="identity")
+}
 
-ggplot(store_all_china, aes(year, age)) + geom_tile(aes(fill = pr_dr),colour = "white") + scale_fill_gradient(low = "white",high = "red4","MDR-TB") +
-  labs(x = "Year",y = "Age") + scale_y_continuous(lim = c(0,100)) + facet_wrap(~mdr_rep)
-ggsave("all_age_china_map_r.pdf", height = 10, width = 10)
 
 
