@@ -39,6 +39,12 @@ cohort_ltbi <- function(ari,pop){
     c_now[1,] <- 0
     c_now[2:100,] <- c_last[1:99,] # New time, 100+yos not included
     
+    # Add together existing with new proportions ds / dr
+    c_now$pr_ds <- c_now$pr_ds + c_now$new_ds + c_now$rei_rs 
+    c_now$pr_dr <- c_now$pr_dr + c_now$new_dr + c_now$rei_sr
+    # Set new to zero
+    c_now[,c("new_ds","rei_rs","new_dr","rei_sr")] <- 0
+    
     # New calculations
     # ARI for this year
     ari_s <- as.numeric(ari[i,"ds"])
@@ -50,11 +56,6 @@ cohort_ltbi <- function(ari,pop){
     c_now$rei_rs <- c_now$pr_dr * ari_s * alph[i,]
     
     ### Store and update
-    # Add together existing with new proportions ds / dr
-    c_now$pr_ds <- c_now$pr_ds + c_now$new_ds + c_now$rei_rs 
-    c_now$pr_dr <- c_now$pr_dr + c_now$new_dr + c_now$rei_sr
-    # Set new to zero
-    c_now[,c("new_ds","rei_rs","new_dr","rei_sr")] <- 0
     c_last <- c_now  
     store_c[((i-1)*100 + 1):(i*100),] <- c_now
   }
@@ -86,3 +87,4 @@ cohort_ltbi <- function(ari,pop){
   return(list(store_c = store_c, c_2014 = c_2014,combs = combs ))
   
 }
+
