@@ -414,7 +414,7 @@ for(i in 1:unique(store_all$cn)){
       h_age<- age_groups[j,2]
       
       s_alloc <- as.data.frame(matrix(0,81,6))
-      cols <- c("pr_ds","pr_dr","new_ds","new_dr","rei_sr","rei_rs")
+      cols <- c("new_ds","new_dr","rei_sr","rei_rs")
       colnames(s_alloc)<-cols
       s_alloc$year <- seq(2014,1934,-1)
       s_alloc$age_min <- 100
@@ -442,6 +442,7 @@ for(i in 1:unique(store_all$cn)){
       ## values in s_temp are PERCENTAGES
       ## values in br are also PERCENTAGES
       # should be able to combine s_alloc to give bl_k values? 
+      # proportions can't sum: need to add new and remove reinfecteds
       bl_k...
       
       
