@@ -438,7 +438,10 @@ for(i in 1:unique(store_all$cn)){
         }
       }
       
-      # what proportion at what year
+      #### what proportion at what year
+      ## values in s_temp are PERCENTAGES
+      ## values in br are also PERCENTAGES
+      # should be able to combine s_alloc to give bl_k values? 
       bl_k...
       
       
