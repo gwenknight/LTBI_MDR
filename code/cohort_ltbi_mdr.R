@@ -66,8 +66,8 @@ cohort_ltbi <- function(ari,pop){
   
   ## Capture last one
   c_2014 <- c_last
-  c_2014$pr_ds <- c_2014$pr_ds + c_2014$new_ds + c_2014$rei_rs 
-  c_2014$pr_dr <- c_2014$pr_dr + c_2014$new_dr + c_2014$rei_sr
+  c_2014$pr_ds <- c_2014$pr_ds + c_2014$new_ds + c_2014$rei_rs - c_2014$rei_sr
+  c_2014$pr_dr <- c_2014$pr_dr + c_2014$new_dr + c_2014$rei_sr - c_2014$rei_rs 
   
   #Number in each
   # group by 5 yr to 80+ 
