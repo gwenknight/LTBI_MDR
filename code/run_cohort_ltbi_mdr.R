@@ -269,7 +269,8 @@ for(cci in 1:length(cn)){
     combs$mdr_rep <- i
     combs$age_group <- seq(1:17)
     combs$popf <- cci
-    br_level <- rbind(br_level,combs)
+    #br_level <- rbind(br_level,combs)
+    br_level <- rbind(br_level,cbind(cc$c_2014,combs[1,c("mdr_rep","popf")]))
     
     # total percentage infected sums
     ltbi_dr <- sum(combs$perc_dr) # percentage infected
@@ -391,65 +392,111 @@ dim(s_level)
 colnames(s_level)
 age_groups <- cbind(seq(1,85,5),seq(5,85,5))
 age_groups[17,2] <- 100
-
-for(i in 1:unique(store_all$cn)){
+uu <- unique(store_all$cn)
+for(i in 1:max(uu)){ # for each country
   
   # subset
-  s <-subset(store_all, cn == i) 
-  bl <-subset(br_level, popf == i) 
+  s <-subset(store_all, cn == i) # all the new and rei for each age and time
+  bl <-subset(br_level, popf == i) # the proportions at 2014 in each age
   
+  # where store?
   s_alloc_store<- c()
   
-  s_age <- c()
-  for(j in 1:17){# all age groups
-    print(c("age groups",j))
-    for(k in 1:3){# each mdr_rep
-      print(c("mdr_rep",k))
-      # subset the yearly data 
-      s_k <- subset(s, mdr_rep == k)
-      # subset the proportion infection
-      bl_k <- subset(bl, mdr_rep == k & age_group == j)
-      # and group select the data for the person of a certain age in 2014
-      l_age<- age_groups[j,1]
-      h_age<- age_groups[j,2]
-      
-      s_alloc <- as.data.frame(matrix(0,81,6))
-      cols <- c("new_ds","new_dr","rei_sr","rei_rs")
-      colnames(s_alloc)<-cols
-      s_alloc$year <- seq(2014,1934,-1)
-      s_alloc$age_min <- 100
-      s_alloc$age_max <- 0
-      s_alloc$mdr_rep <- k
-      s_alloc$age_group <- j
-      
-      for(ll in l_age:h_age){
-        s_alloc[,"age_min"] <- min(s_alloc$age_min,l_age)
-        s_alloc[,"age_max"] <- max(s_alloc$age_max,h_age)
-        agen = ll
-        index = 0
-        for(yr in 2014:(2014-ll+1)){
-          if(yr > 1933){ # don't do younger yrs e.g. age 80 
-            index = index + 1
-            #print(yr)
-            s_temp <- subset(s_k, year == yr & age == agen)
-            agen = agen - 1
-            s_alloc[index, cols] <- s_alloc[index, cols] + s_temp[,cols]
-          }
+  #for(j in 1:17){# all age groups
+  #print(c("age groups",age_groups[j,1],"to",age_groups[j,2]))
+  # and group select the data for the person of a certain age in 2014
+  #l_age<- age_groups[j,1]
+  #h_age<- age_groups[j,2]
+  #for(ll in l_age:h_age){
+  #s_alloc[,"age_min"] <- min(s_alloc$age_min,l_age)
+  #s_alloc[,"age_max"] <- max(s_alloc$age_max,h_age)
+  #agen = ll - (2014-yr)
+  s_new <- c()
+  for(k in 1:3){# for each mdr_rep
+    print(c("mdr_rep",k))
+    # subset the yearly data 
+    s_k <- subset(s, mdr_rep == k)
+    # subset the proportion infection
+    # bl_k <- subset(bl, mdr_rep == k & age_group == j)
+    bl_k <- subset(bl, mdr_rep == k)[j,]
+    
+    # s_alloc <- as.data.frame(matrix(0,81,4))
+    # cols <- c("new_ds","new_dr","rei_sr","rei_rs")
+    # colnames(s_alloc)<-cols
+    # s_alloc$year <- seq(2014,1934,-1)
+    # s_alloc$age <- 1:100
+    # s_alloc$mdr_rep <- k
+    # #s_alloc$age_group <- j
+    # # s_alloc$age_min <- 100
+    # # s_alloc$age_max <- 0
+    #  
+    # s_prop <- as.data.frame(matrix(0,81,2))
+    # colnames(s_prop) <- c("r","s")
+    # s_prop$year <- seq(2014,1934,-1)
+    
+    for(j in 1:100){# all ages
+      print(c("age",j))
+      s_temp <- c()
+      # for each year get the data for those that are that age in 2014
+      for(yr in 2014:1934){
+        
+        agen = j - (2014-yr) # age in that year
+        
+        if(agen > 0){ # need age > 0!
+          s_temp <- rbind(s_temp,subset(s_k, year == yr)[agen,]) # remeber this is age in 2014  
         }
       }
       
-      #### what proportion at what year
-      ## values in s_temp are PERCENTAGES
-      ## values in br are also PERCENTAGES
-      # should be able to combine s_alloc to give bl_k values? 
-      # proportions can't sum: need to add new and remove reinfecteds
-      bl_k...
+      s_temp$cumr_py <- s_temp$new_dr - s_temp$rei_rs + s_temp$rei_sr
+      s_temp$cums_py <- s_temp$new_ds - s_temp$rei_sr + s_temp$rei_rs
+      
+      ### Gives the right proportion as in bl
+      #colwise(sum)(s_temp)[,"new_dr"] - colwise(sum)(s_temp)[,"rei_rs"] + colwise(sum)(s_temp)[,"rei_sr"] 
+      #tail(s_temp,1)[,"pr_ds"] + colwise(sum)(s_temp)[,"new_ds"] - colwise(sum)(s_temp)[,"rei_sr"] + colwise(sum)(s_temp)[,"rei_rs"] 
+      #sum(s_temp$cumr_py)
+      #sum(s_temp$cums_py)
+      #bl_k
+      
+      if(bl_k$pr_dr > 0){s_propr <- s_temp$cumr_py /bl_k$pr_dr}else{s_propr <- matrix(0,81,1)}
+      s_props <- s_temp$cums_py / (bl_k$pr_ds - tail(s_temp,1)[,"pr_ds"])
+      
+      s_npropr <- matrix(0,81,1);
+      s_nprops <- matrix(0,81,1);
+      for(kk in 1:length(s_propr)){
+        s_npropr[kk] <-  s_propr[kk]
+        s_nprops[kk] <-  s_props[kk]
+      }
+      
+      s_new <- rbind(s_new,(cbind(s_npropr, s_nprops, seq(2014,1934,-1),j,k)))
+      ## should be 1
+      #sum(s_props)
+      #sum(s_propr)
       
       
-      s_alloc_store <- rbind(s_alloc_store, s_alloc)
       
+      ## if there are any data for this age 
+      #if(!is.null(s_temp)){
+      # s_alloc[which(s_alloc$year == yr),cols] <- colwise(mean)(s_temp[, cols])
+      #}
     }
+    
   }
+  
+}
+  
+  
+  #### what proportion at what year
+  ## values in s_temp are PERCENTAGES
+  ## values in br are also PERCENTAGES
+  # should be able to combine s_alloc to give bl_k values? 
+  # proportions can't sum: need to add new and remove reinfecteds
+  bl_k...
+  
+  
+  s_alloc_store <- rbind(s_alloc_store, s_alloc)
+  
+}
+}
 }
 
 ### checks
