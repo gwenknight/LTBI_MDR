@@ -185,7 +185,7 @@ cni <- c("IND","CHN","JPN","UKR")
 # ARI trend data
 load("../data/rundata_ari.Rdata")
 rundata$ari <- exp(rundata$lari)
-br_level <- c(); #breakdown proportions infected by age
+level2014 <- c(); #breakdown proportions infected by age
 s_level <- c(); #sum proportions infected 
 
 
@@ -269,8 +269,8 @@ for(cci in 1:length(cn)){
     combs$mdr_rep <- i
     combs$age_group <- seq(1:17)
     combs$popf <- cci
-    #br_level <- rbind(br_level,combs)
-    br_level <- rbind(br_level,cbind(cc$c_2014,combs[1,c("mdr_rep","popf")]))
+    #level2014 <- rbind(level2014,combs)
+    level2014 <- rbind(level2014,cbind(cc$c_2014,combs[1,c("mdr_rep","popf")]))
     
     # total percentage infected sums
     ltbi_dr <- sum(combs$perc_dr) # percentage infected
@@ -396,24 +396,26 @@ uu <- unique(store_all$cn)
 s_all<-c()
 for(i in 1:max(uu)){ # for each country
   
-  # subset
+  # subset: store_all has the proportion and the new / rei for each age / time
   s <-subset(store_all, cn == i) # all the new and rei for each age and time
-  bl <-subset(br_level, popf == i) # the proportions at 2014 in each age
+  l14 <-subset(level2014, popf == i) # the proportions at 2014 in each age
   
   # where store?
   s_alloc_store<- c()
   
   s_new <- c()
-  for(k in 1:3){# for each mdr_rep
+  
+  for(k in 1:18){# for each mdr_rep
     print(c("mdr_rep",k))
     # subset the yearly data 
     s_k <- subset(s, mdr_rep == k)
-    # subset the proportion infection
-    # bl_k <- subset(bl, mdr_rep == k & age_group == j)
-    bl_k <- subset(bl, mdr_rep == k)[j,]
     
     for(j in 1:100){# all ages
       print(c("age",j))
+      
+      # subset the proportion infected by mdr_rep and age group
+      l14_k_j <- subset(l14, mdr_rep == k)[j,]
+      
       s_temp <- c()
       # for each year get the data for those that are that age in 2014
       for(yr in 2014:1934){
@@ -425,18 +427,19 @@ for(i in 1:max(uu)){ # for each country
         }
       }
       
+      # OK for this to go negative... as suggests proportion is decreasing.
       s_temp$cumr_py <- s_temp$new_dr - s_temp$rei_rs + s_temp$rei_sr
       s_temp$cums_py <- s_temp$new_ds - s_temp$rei_sr + s_temp$rei_rs
       
-      ### Gives the right proportion as in bl
-      #colwise(sum)(s_temp)[,"new_dr"] - colwise(sum)(s_temp)[,"rei_rs"] + colwise(sum)(s_temp)[,"rei_sr"] 
-      #tail(s_temp,1)[,"pr_ds"] + colwise(sum)(s_temp)[,"new_ds"] - colwise(sum)(s_temp)[,"rei_sr"] + colwise(sum)(s_temp)[,"rei_rs"] 
+      ### Gives the right proportion as in l14_k_j
+      #colwise(sum)(s_temp)[,"new_dr"] - colwise(sum)(s_temp)[,"rei_rs"] + colwise(sum)(s_temp)[,"rei_sr"]
+      #tail(s_temp,1)[,"pr_ds"] + colwise(sum)(s_temp)[,"new_ds"] - colwise(sum)(s_temp)[,"rei_sr"] + colwise(sum)(s_temp)[,"rei_rs"]
       #sum(s_temp$cumr_py)
       #sum(s_temp$cums_py)
-      #bl_k
+      #l14_k_j
       
-      if(bl_k$pr_dr > 0){s_propr <- s_temp$cumr_py /bl_k$pr_dr}else{s_propr <- matrix(0,81,1)}
-      s_props <- s_temp$cums_py / (bl_k$pr_ds - tail(s_temp,1)[,"pr_ds"])
+      if(l14_k_j$pr_dr > 0){s_propr <- s_temp$cumr_py /l14_k_j$pr_dr}else{s_propr <- matrix(0,81,1)}
+      s_props <- s_temp$cums_py / (l14_k_j$pr_ds - tail(s_temp,1)[,"pr_ds"])
       
       s_npropr <- matrix(0,81,1);
       s_nprops <- matrix(0,81,1);
@@ -455,23 +458,76 @@ for(i in 1:max(uu)){ # for each country
   }
   s_all <- rbind(s_all, cbind(s_new,i))
 }
-  
-s_new <- as.data.frame(s_new)
-colnames(s_new)<-c("pr_r","pr_s","year","age","mdr_rep")
+
+### Exploring plots
+## cumr can go negative - re-infections v important. Proportion infected with R can decrease! 
+plot(s_temp[,"year"],s_temp[,"cumr_py"])
+lines(s_temp[,"year"],s_temp[,"new_dr"])
+lines(s_temp[,"year"],s_temp[,"rei_sr"],col="blue")
+lines(s_temp[,"year"],s_temp[,"rei_rs"],col="red")
+
+
+
+s_all_orig <- as.data.frame(s_all)
+colnames(s_all)<-c("pr_r","pr_s","year","age","mdr_rep","cn")
 ## plot: cumulative bar chart
 ## x axis = age [0-100]
 ## y axis = proportion ltbir from each time point [0-1]
 ## facet by mdr rep  
-ggplot(s_new, aes(age, pr_s, fill = factor(year))) +
-  geom_bar(position = "fill", stat = "identity") +
-  scale_y_continuous() + facet_wrap(~mdr_rep) + ggtitle("DS-TB")
 
-ggplot(s_new, aes(age, pr_r, fill = factor(year))) +
-  geom_bar(position = "fill", stat = "identity") + 
-  scale_y_continuous() + facet_wrap(~mdr_rep) + ggtitle("MDR-TB")
+## Want: of all LTBI, when was it gained? So need not just by age... but by total population. 
+s_all$pr_ltbir <- 0
+s_all$pr_ltbis <- 0
+s_all$yearcat<-cut(ss_here$year, seq(1929,2018,5))
 
-#### TO DO: Scale fill colours to be pre 1970 etc. 
-## Scale by numbers with MDR: at the moment don't take population size into account. 
-## Something like below to get into 5 year age group proportions
-#c_ds_age <- colwise(mean)(as.data.frame(matrix(c_2014$pr_ds, 5)))
-#ds_age <- as.numeric(c(c_ds_age[1:16], mean(as.numeric(c_ds_age[17:20]))))
+for(cci in 1:4){
+  
+  ## For each country get population distribution
+  if(cci==1){pop <- pop1}
+  if(cci==2){pop <- pop2}
+  if(cci==3){pop <- pop3}
+  if(cci==4){pop <- pop4}
+  
+  ## For the population in 2014. Calculate the proportion of the total population in each yearly age group. 
+  pr_2014_age = pop / sum(pop) / 5 ## Divided by 5 to make per subunit (think works as equivalent to averaging proportions and multiplying by total)
+  
+  ss_here <- subset(s_all, cn == cci) 
+  
+  for(i in 1:100){
+    w <- which(ss_here$age == i)
+    m <- intersect(which(age_groups[,1] <= i), which(age_groups[,2] >= i))
+    ss_here[w,"pr_ltbir"] = ss_here[w,"pr_r"] * as.numeric(pr_2014_age[m])
+    ss_here[w,"pr_ltbis"] = ss_here[w,"pr_s"] * as.numeric(pr_2014_age[m])
+  }
+
+  ## This says: by age, when were they infected. The proportion of their % infected that can be allocated to past times.
+  ggplot(ss_here, aes(age, pr_s, fill = factor(year))) +
+    geom_bar(position = "fill", stat = "identity") +
+    scale_y_continuous() + facet_wrap(~mdr_rep) + ggtitle(paste0("DS-TB, ",cn_list[cci])) +
+    scale_fill_hue("clarity")
+  
+  ggplot(ss_here, aes(age, pr_r, fill = factor(year))) +
+    geom_bar(position = "fill", stat = "identity") + 
+    scale_y_continuous() + facet_wrap(~mdr_rep) + ggtitle(paste0("MDR-TB, ",cn_list[cci])) + 
+    scale_fill_hue("clarity")
+  
+  
+  ## This says: by age, when were they infected. The proportion of their % infected that can be allocated to past times.
+  ggplot(ss_here, aes(mdr_rep, pr_ltbis, fill = factor(yearcat))) +
+    geom_bar(position = "fill", stat = "identity") +
+    scale_y_continuous() + ggtitle("DS-TB") +
+    scale_fill_hue("clarity")
+  
+  ggplot(ss_here, aes(mdr_rep, pr_ltbir, fill = factor(yearcat))) +
+    geom_bar(position = "fill", stat = "identity") + 
+    scale_y_continuous() + ggtitle("MDR-TB") + 
+    scale_fill_hue("clarity")
+  
+}
+  
+  #### TO DO: Scale fill colours to be pre 1970 etc. 
+  ## Scale by numbers with MDR: at the moment don't take population size into account. 
+  ## Something like below to get into 5 year age group proportions
+  #c_ds_age <- colwise(mean)(as.data.frame(matrix(c_2014$pr_ds, 5)))
+  #ds_age <- as.numeric(c(c_ds_age[1:16], mean(as.numeric(c_ds_age[17:20]))))
+  
