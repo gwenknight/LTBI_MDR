@@ -393,6 +393,7 @@ colnames(s_level)
 age_groups <- cbind(seq(1,85,5),seq(5,85,5))
 age_groups[17,2] <- 100
 uu <- unique(store_all$cn)
+s_all<-c()
 for(i in 1:max(uu)){ # for each country
   
   # subset
@@ -402,15 +403,6 @@ for(i in 1:max(uu)){ # for each country
   # where store?
   s_alloc_store<- c()
   
-  #for(j in 1:17){# all age groups
-  #print(c("age groups",age_groups[j,1],"to",age_groups[j,2]))
-  # and group select the data for the person of a certain age in 2014
-  #l_age<- age_groups[j,1]
-  #h_age<- age_groups[j,2]
-  #for(ll in l_age:h_age){
-  #s_alloc[,"age_min"] <- min(s_alloc$age_min,l_age)
-  #s_alloc[,"age_max"] <- max(s_alloc$age_max,h_age)
-  #agen = ll - (2014-yr)
   s_new <- c()
   for(k in 1:3){# for each mdr_rep
     print(c("mdr_rep",k))
@@ -419,20 +411,6 @@ for(i in 1:max(uu)){ # for each country
     # subset the proportion infection
     # bl_k <- subset(bl, mdr_rep == k & age_group == j)
     bl_k <- subset(bl, mdr_rep == k)[j,]
-    
-    # s_alloc <- as.data.frame(matrix(0,81,4))
-    # cols <- c("new_ds","new_dr","rei_sr","rei_rs")
-    # colnames(s_alloc)<-cols
-    # s_alloc$year <- seq(2014,1934,-1)
-    # s_alloc$age <- 1:100
-    # s_alloc$mdr_rep <- k
-    # #s_alloc$age_group <- j
-    # # s_alloc$age_min <- 100
-    # # s_alloc$age_max <- 0
-    #  
-    # s_prop <- as.data.frame(matrix(0,81,2))
-    # colnames(s_prop) <- c("r","s")
-    # s_prop$year <- seq(2014,1934,-1)
     
     for(j in 1:100){# all ages
       print(c("age",j))
@@ -462,7 +440,7 @@ for(i in 1:max(uu)){ # for each country
       
       s_npropr <- matrix(0,81,1);
       s_nprops <- matrix(0,81,1);
-      for(kk in 1:length(s_propr)){
+      for(kk in 1:length(s_props)){
         s_npropr[kk] <-  s_propr[kk]
         s_nprops[kk] <-  s_props[kk]
       }
@@ -471,63 +449,29 @@ for(i in 1:max(uu)){ # for each country
       ## should be 1
       #sum(s_props)
       #sum(s_propr)
-      
-      
-      
-      ## if there are any data for this age 
-      #if(!is.null(s_temp)){
-      # s_alloc[which(s_alloc$year == yr),cols] <- colwise(mean)(s_temp[, cols])
-      #}
     }
     
+    
   }
-  
+  s_all <- rbind(s_all, cbind(s_new,i))
 }
   
-  
-  #### what proportion at what year
-  ## values in s_temp are PERCENTAGES
-  ## values in br are also PERCENTAGES
-  # should be able to combine s_alloc to give bl_k values? 
-  # proportions can't sum: need to add new and remove reinfecteds
-  bl_k...
-  
-  
-  s_alloc_store <- rbind(s_alloc_store, s_alloc)
-  
-}
-}
-}
-
-### checks
-plot(s_alloc$year,s_alloc$new_ds)
-plot(s_alloc$year,s_alloc$new_dr)
-plot(s_alloc$year,s_alloc$rei_rs)
-plot(s_alloc$year,s_alloc$new_ds)
-
-
-s_temp[,c("pr_ds","pr_dr","new_ds","new_dr","rei_sr","rei_rs")]<- 
-  s_temp[,c("pr_ds","pr_dr","new_ds","new_dr","rei_sr","rei_rs")] + 
-  s_k[seq(8100, ll + seq(0,(8100 - ll),101),c("pr_ds","pr_dr","new_ds","new_dr","rei_sr","rei_rs")]
-}
-s_k[ll + seq(0,(8100 - ll),101),c("pr_ds","pr_dr","new_ds","new_dr","rei_sr","rei_rs")]
-}
-
-# proportion infected at that age
-
-
-}
-
-
-}
-
+s_new <- as.data.frame(s_new)
+colnames(s_new)<-c("pr_r","pr_s","year","age","mdr_rep")
 ## plot: cumulative bar chart
 ## x axis = age [0-100]
 ## y axis = proportion ltbir from each time point [0-1]
 ## facet by mdr rep  
-ggplot() + geom_bar(aes(y = percentage, x = year, fill = product), data = charts.data,
-                    stat="identity")
-}
+ggplot(s_new, aes(age, pr_s, fill = factor(year))) +
+  geom_bar(position = "fill", stat = "identity") +
+  scale_y_continuous() + facet_wrap(~mdr_rep) + ggtitle("DS-TB")
 
+ggplot(s_new, aes(age, pr_r, fill = factor(year))) +
+  geom_bar(position = "fill", stat = "identity") + 
+  scale_y_continuous() + facet_wrap(~mdr_rep) + ggtitle("MDR-TB")
 
-
+#### TO DO: Scale fill colours to be pre 1970 etc. 
+## Scale by numbers with MDR: at the moment don't take population size into account. 
+## Something like below to get into 5 year age group proportions
+#c_ds_age <- colwise(mean)(as.data.frame(matrix(c_2014$pr_ds, 5)))
+#ds_age <- as.numeric(c(c_ds_age[1:16], mean(as.numeric(c_ds_age[17:20]))))
