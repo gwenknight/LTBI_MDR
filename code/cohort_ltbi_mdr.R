@@ -76,14 +76,16 @@ cohort_ltbi <- function(ari,pop){
   c_dr_age <- colwise(mean)(as.data.frame(matrix(c_2014$pr_dr, 5)))
   dr_age <- as.numeric(c(c_dr_age[1:16], mean(as.numeric(c_dr_age[17:20]))))
   
-  prop_ds <- pop * ds_age
-  prop_dr <- pop * dr_age
+  # size of the population infected
+  size_ds <- pop * ds_age
+  size_dr <- pop * dr_age
   
-  perc_ds <- 100*prop_ds / sum(pop)
-  perc_dr <- 100*prop_dr / sum(pop)
+  # percentage of the population
+  perc_ds <- 100*size_ds / sum(pop)
+  perc_dr <- 100*size_dr / sum(pop)
   
   combs <- as.data.frame(cbind(prop_ds,prop_dr,perc_ds,perc_dr))
-  colnames(combs)<- c("prop_ds","prop_dr","perc_ds","perc_dr")
+  colnames(combs)<- c("size_ds","size_dr","perc_ds","perc_dr")
   
   return(list(store_c = store_c, c_2014 = c_2014,combs = combs ))
   
