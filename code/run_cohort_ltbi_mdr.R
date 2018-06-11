@@ -131,8 +131,10 @@ ari_rep_labels <- c("No MDR","Linear increase",
                     "Gaus peak 1975","Gaus peak 1980","Gaus peak 1985","Gaus peak 1990","Gaus peak 1995","Gaus peak 2000","Gaus peak 2005","Gaus peak 2010")
 
 # Functions for shape of MDR ARI
-sigm <- function(x,delta,max){ max/(1+exp(-(x-delta)))} 
-#plot(seq(1934,2014,1),sigm(seq(0,80,1),41))
+sigm <- function(x,delta,max,B=1){ max/(1+exp(-B*(x-delta)))} 
+plot(seq(1934,2014,1),sigm(seq(0,80,1),41,0.02),type="l")
+points(seq(1934,2014,1),sigm(seq(0,80,1),41,0.02,0.4),type="l")
+abline(v = 1970,lty="dashed")
 gaum <- function(x,delta,max){ max*exp(-0.5*((x-delta)/5)^2)}
 #plot(seq(1934,2014,1),gaum(seq(0,80,1),41, 1))
 
@@ -382,7 +384,7 @@ store_all_japan <- store_all_rec[which(store_all_rec$cn==3),]
 store_all_ukraine <- store_all_rec[which(store_all_rec$cn==4),]
 
 
-#### When contributes most to latent burden? 
+####*********** When contributes most to latent burden? *********######################################################################################################################################################
 ## Store_all has 4 countries by age and time
 ## 100 ages. 81 years. mdr_reps = 18. 
 dim(store_all) # 4*18*100*81 = 583200
@@ -411,7 +413,7 @@ for(i in 1:max(uu)){ # for each country
     s_k <- subset(s, mdr_rep == k)
     
     for(j in 1:100){# all ages
-      print(c("age",j))
+     # print(c("age",j))
       
       # subset the proportion infected by mdr_rep and age group
       l14_k_j <- subset(l14, mdr_rep == k)[j,]
@@ -427,17 +429,19 @@ for(i in 1:max(uu)){ # for each country
         }
       }
       
-      # OK for this to go negative... as suggests proportion is decreasing.
+      ## Cumulative change in proportion with DR or DS 
+      ## OK for this to go negative... as suggests proportion is decreasing.
       s_temp$cumr_py <- s_temp$new_dr - s_temp$rei_rs + s_temp$rei_sr
       s_temp$cums_py <- s_temp$new_ds - s_temp$rei_sr + s_temp$rei_rs
       
       ### Gives the right proportion as in l14_k_j
-      #colwise(sum)(s_temp)[,"new_dr"] - colwise(sum)(s_temp)[,"rei_rs"] + colwise(sum)(s_temp)[,"rei_sr"]
-      #tail(s_temp,1)[,"pr_ds"] + colwise(sum)(s_temp)[,"new_ds"] - colwise(sum)(s_temp)[,"rei_sr"] + colwise(sum)(s_temp)[,"rei_rs"]
-      #sum(s_temp$cumr_py)
-      #sum(s_temp$cums_py)
-      #l14_k_j
+      # colwise(sum)(s_temp)[,"new_dr"] - colwise(sum)(s_temp)[,"rei_rs"] + colwise(sum)(s_temp)[,"rei_sr"]
+      # tail(s_temp,1)[,"pr_ds"] + colwise(sum)(s_temp)[,"new_ds"] - colwise(sum)(s_temp)[,"rei_sr"] + colwise(sum)(s_temp)[,"rei_rs"]
+      # sum(s_temp$cumr_py)
+      # sum(s_temp$cums_py)
+      # l14_k_j
       
+      ## proportion of amount in 2014 that is from this cumulative change 
       if(l14_k_j$pr_dr > 0){s_propr <- s_temp$cumr_py /l14_k_j$pr_dr}else{s_propr <- matrix(0,81,1)}
       s_props <- s_temp$cums_py / (l14_k_j$pr_ds - tail(s_temp,1)[,"pr_ds"])
       
@@ -448,10 +452,34 @@ for(i in 1:max(uu)){ # for each country
         s_nprops[kk] <-  s_props[kk]
       }
       
-      s_new <- rbind(s_new,(cbind(s_npropr, s_nprops, seq(2014,1934,-1),j,k)))
+      #s_new <- rbind(s_new,(cbind(s_npropr, s_nprops, seq(2014,1934,-1),j,k)))
       ## should be 1
       #sum(s_props)
       #sum(s_propr)
+      
+      ## Absolute cumulative change - could use if think often have decline pr_dr... 
+      ## here artefact of using odd Gaussian curves? 
+      s_temp$abs_cumr_py <- abs(s_temp$cumr_py)
+      s_temp$abs_cums_py <- abs(s_temp$cums_py)
+      ## new total = sum of all changes in LTBI
+      abs_total_r <- sum(s_temp$abs_cumr_py)
+      abs_total_s <- sum(s_temp$abs_cums_py)
+      
+      
+      if(abs_total_r > 0){abs_s_propr <- s_temp$abs_cumr_py /abs_total_r}else{abs_s_propr <- matrix(0,81,1)}
+      abs_s_props <- s_temp$abs_cums_py / (abs_total_s - tail(s_temp,1)[,"pr_ds"])
+      
+      abs_s_npropr <- matrix(0,81,1);
+      abs_s_nprops <- matrix(0,81,1);
+      for(kk in 1:length(s_props)){
+        abs_s_npropr[kk] <-  abs_s_propr[kk]
+        abs_s_nprops[kk] <-  abs_s_props[kk]
+      }
+      
+      s_new <- rbind(s_new,(cbind(s_npropr, s_nprops, seq(2014,1934,-1),j,k,abs_s_npropr, abs_s_nprops)))
+      ## should be 1
+      
+      
     }
     
     
@@ -459,17 +487,21 @@ for(i in 1:max(uu)){ # for each country
   s_all <- rbind(s_all, cbind(s_new,i))
 }
 
+## All data
+dim(s_all) # 4*18*100*81 = 583200
+
+
 ### Exploring plots
 ## cumr can go negative - re-infections v important. Proportion infected with R can decrease! 
-plot(s_temp[,"year"],s_temp[,"cumr_py"])
-lines(s_temp[,"year"],s_temp[,"new_dr"])
-lines(s_temp[,"year"],s_temp[,"rei_sr"],col="blue")
-lines(s_temp[,"year"],s_temp[,"rei_rs"],col="red")
-
-
+# plot(s_temp[,"year"],s_temp[,"cumr_py"]) # total new each yar
+# lines(s_temp[,"year"],s_temp[,"new_dr"]) # new infections 
+# lines(s_temp[,"year"],s_temp[,"rei_sr"],col="blue") # additional reinfections
+# lines(s_temp[,"year"],s_temp[,"rei_rs"],col="red") # removed reinfections with S
+# abline(h = 0, lty = "dashed")
 
 s_all_orig <- as.data.frame(s_all)
-colnames(s_all)<-c("pr_r","pr_s","year","age","mdr_rep","cn")
+s_all <- as.data.frame(s_all)
+colnames(s_all)<-c("pr_r","pr_s","year","age","mdr_rep","abs_pr_r","abs_pr_s","cn")
 ## plot: cumulative bar chart
 ## x axis = age [0-100]
 ## y axis = proportion ltbir from each time point [0-1]
@@ -478,9 +510,12 @@ colnames(s_all)<-c("pr_r","pr_s","year","age","mdr_rep","cn")
 ## Want: of all LTBI, when was it gained? So need not just by age... but by total population. 
 s_all$pr_ltbir <- 0
 s_all$pr_ltbis <- 0
-s_all$yearcat<-cut(ss_here$year, seq(1929,2018,5))
+s_all$yearcat<-cut(s_all$year, seq(1929,2018,5))
+s_all$abs_pr_ltbir <- 0
+s_all$abs_pr_ltbis <- 0
 
 for(cci in 1:4){
+  print(c("country",cci))
   
   ## For each country get population distribution
   if(cci==1){pop <- pop1}
@@ -498,36 +533,52 @@ for(cci in 1:4){
     m <- intersect(which(age_groups[,1] <= i), which(age_groups[,2] >= i))
     ss_here[w,"pr_ltbir"] = ss_here[w,"pr_r"] * as.numeric(pr_2014_age[m])
     ss_here[w,"pr_ltbis"] = ss_here[w,"pr_s"] * as.numeric(pr_2014_age[m])
+    ss_here[w,"abs_pr_ltbir"] = ss_here[w,"abs_pr_r"] * as.numeric(pr_2014_age[m])
+    ss_here[w,"abs_pr_ltbis"] = ss_here[w,"abs_pr_s"] * as.numeric(pr_2014_age[m])
   }
-
+  
+  setwd(output)
   ## This says: by age, when were they infected. The proportion of their % infected that can be allocated to past times.
   ggplot(ss_here, aes(age, pr_s, fill = factor(year))) +
     geom_bar(position = "fill", stat = "identity") +
     scale_y_continuous() + facet_wrap(~mdr_rep) + ggtitle(paste0("DS-TB, ",cn_list[cci])) +
     scale_fill_hue("clarity")
+  ggsave(paste0("DS_age_",cn_list[cci],"_ltbis_when.pdf"), height = 10, width = 10)
   
   ggplot(ss_here, aes(age, pr_r, fill = factor(year))) +
     geom_bar(position = "fill", stat = "identity") + 
     scale_y_continuous() + facet_wrap(~mdr_rep) + ggtitle(paste0("MDR-TB, ",cn_list[cci])) + 
     scale_fill_hue("clarity")
+  ggsave(paste0("DR_age_",cn_list[cci],"_ltbir_when.pdf"), height = 10, width = 10)
   
   
-  ## This says: by age, when were they infected. The proportion of their % infected that can be allocated to past times.
+  ## This says: by mdr_rep, when is the time window that contributes most
+  ## Tried to highlight 1980 period... but not working
+  #w <- which(ss_here$yearcat == "(1989,1994]")
+  #ss_here$extra_label_fill <- 0
+  #ss_here[w,"extra_label_fill"] <- 1
+  #scale_colour_manual( values = c( "1"="black","0" = "white"), guide = FALSE ) 
+  
   ggplot(ss_here, aes(mdr_rep, pr_ltbis, fill = factor(yearcat))) +
     geom_bar(position = "fill", stat = "identity") +
     scale_y_continuous() + ggtitle("DS-TB") +
-    scale_fill_hue("clarity")
+    scale_fill_hue("Year")
+  ggsave(paste0("DS_",cn_list[cci],"_ltbis_when.pdf"), height = 10, width = 10)
   
-  ggplot(ss_here, aes(mdr_rep, pr_ltbir, fill = factor(yearcat))) +
-    geom_bar(position = "fill", stat = "identity") + 
-    scale_y_continuous() + ggtitle("MDR-TB") + 
-    scale_fill_hue("clarity")
+  ggplot(ss_here) +
+    geom_bar(aes(mdr_rep, pr_ltbir, fill = factor(yearcat)),
+             position = "fill", stat = "identity") + 
+    scale_y_continuous() + ggtitle("MDR-TB") +
+    scale_fill_hue("Year")
+  ggsave(paste0("DR_",cn_list[cci],"_ltbir_when.pdf"), height = 10, width = 10)
+  
+  ## Absolute contributions
+  ggplot(ss_here) +
+    geom_bar(aes(mdr_rep, abs_pr_ltbir, fill = factor(yearcat)),
+             position = "fill", stat = "identity") + 
+    scale_y_continuous() + ggtitle("MDR-TB") +
+    scale_fill_hue("Year")
+  ggsave(paste0("DR_",cn_list[cci],"_abs_ltbir_when.pdf"), height = 10, width = 10)
   
 }
-  
-  #### TO DO: Scale fill colours to be pre 1970 etc. 
-  ## Scale by numbers with MDR: at the moment don't take population size into account. 
-  ## Something like below to get into 5 year age group proportions
-  #c_ds_age <- colwise(mean)(as.data.frame(matrix(c_2014$pr_ds, 5)))
-  #ds_age <- as.numeric(c(c_ds_age[1:16], mean(as.numeric(c_ds_age[17:20]))))
-  
+

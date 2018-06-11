@@ -84,7 +84,7 @@ cohort_ltbi <- function(ari,pop){
   perc_ds <- 100*size_ds / sum(pop)
   perc_dr <- 100*size_dr / sum(pop)
   
-  combs <- as.data.frame(cbind(prop_ds,prop_dr,perc_ds,perc_dr))
+  combs <- as.data.frame(cbind(size_ds,size_dr,perc_ds,perc_dr))
   colnames(combs)<- c("size_ds","size_dr","perc_ds","perc_dr")
   
   return(list(store_c = store_c, c_2014 = c_2014,combs = combs ))
