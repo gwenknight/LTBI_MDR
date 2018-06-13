@@ -1,6 +1,6 @@
 #### Sigmoid curves to use
 
-library(ggplot2)
+library(ggplot2); library(mc2d)
 
 home <- "~/Documents/LTBI_MDR/"
 output <- "~/Documents/LTBI_MDR/output/"
@@ -61,9 +61,9 @@ save_qjps <- c()
 index = 1
 for(i in 1:length(quad_start)){
   plot(seq(1934,2014,1),quad(seq(0,quad_start[i],1),0.02))
-      save_qjps <- rbind(save_qjps,
-                        cbind(index, i,seq(1934,2014,1),quad(seq(0,quad_start[i],1),0.02)))
-      index = index + 1
+  save_qjps <- rbind(save_qjps,
+                     cbind(index, i,seq(1934,2014,1),quad(seq(0,quad_start[i],1),0.02)))
+  index = index + 1
 }
 save_qjps <- as.data.frame(save_qjps)
 colnames(save_qjps) <-c("index","start","year","out")
@@ -107,3 +107,75 @@ ggsave("lin_curves_include.pdf")
 
 
 ##### ALSO ADD IN TRIANGULAR CDF: https://en.wikipedia.org/wiki/Triangular_distribution
+#### Triangular curves to use
+tri <- function(x,mini,modi,maxi){ 
+  ll <-length(x)
+  if(ll < 81){
+    ff  <- suppressWarnings(ptriang(x, min=mini, mode=modi, max=maxi))
+    ff2 <- c(matrix(0,81-ll,1),ff)
+    if(any(is.na(ff))){ff2 <- NaN}
+  }else{ff2 <- suppressWarnings(ptriang(x, min=mini, mode=modi, max=maxi))}
+  return(ff2)
+} 
+
+mmax <- 0.02
+plot( seq(1934,2014,1),mmax*tri(seq(0,45,1),1,12,30))
+lines( seq(1934,2014,1),mmax*tri(seq(0,45,1),1,5,30))
+
+# when increase after 1970? 1975, 1980, 1985, 1990, 1995, 2000
+tri_start <- seq(44,5,-5)
+min_start <- seq(0,50,5)
+mod_start <- seq(0,50,5)
+max_start <- seq(0,50,5)
+
+save_tjps <- c()
+index = 1
+for(i in 1:length(tri_start)){
+  for(ij in 1:length(min_start)){
+    for(ik in 1:length(mod_start)){
+      for(il in 1:length(max_start)){
+        
+        tt <- tri(seq(0,lin_start[i],1),min_start[ij],mod_start[ik],max_start[il])
+        
+        if(!is.na(tt) && sum(tt) > 0){
+          
+          #  plot(seq(1934,2014,1),0.02*tri(seq(0,lin_start[i],1),min_start[ij],mod_start[ik],max_start[il]))
+          
+          if(sum(tt[1:40]) > 0 && !any(tt[1:72]>0.98)){ # remove those greater than 0 before 1970 and greater than 0.98 before 2005
+            
+            save_tjps <- rbind(save_tjps,
+                               cbind(index, i,ij,ik,il,seq(1934,2014,1),tt))
+          }
+        }
+        
+        index = index + 1
+        print(index)
+      }
+    }
+  }
+}
+
+save_tjps <- as.data.frame(save_tjps)
+colnames(save_tjps) <-c("index","start","mini","modi","maxi","year","out")
+
+ggplot(save_tjps, aes(x=year,y=out,group=index,colour = factor(start))) + 
+  geom_line() +  geom_vline(xintercept = 1970)
+
+ggplot(save_tjps, aes(x=year,y=out,group=index,colour = factor(maxi))) + 
+  geom_line() +  geom_vline(xintercept = 1970) + facet_wrap(start ~ mini)
+ggsave("lin_curves_include.pdf")
+
+w<-intersect(which(save_tjps$start == 1),which(save_tjps$mini == 2))
+ggplot(save_tjps[w,], aes(x=year,y=out,group=index,colour = factor(start))) + 
+  geom_line() +  geom_vline(xintercept = 1970) + facet_wrap(start ~ mini)
+
+### Remove those that are > 0 before 1970
+w<-which(save_tjps$year < 1972)
+w1<-which(save_tjps[w,"out"] > 0)
+nsave_tjps <- save_tjps[-w1,]
+ggplot(nsave_tjps, aes(x=year,y=out,group=index,colour = factor(start))) + 
+  geom_line() +  geom_vline(xintercept = 1970)
+### Remove those that are 0.02 too soon
+w<-which(nsave_tjps$year < 2000)
+w1<-which(nsave_tjps[w,"out"] > 0.98)
+nsave_tjps <- nsave_tjps[-w1,]
