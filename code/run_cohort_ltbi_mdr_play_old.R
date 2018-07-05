@@ -1,4 +1,4 @@
-#### Run cohort_ltbi_mdr 
+#### Run cohort_ltbi_mdr ## PLAY
 
 ### Libraries and ggplot theme
 library(ggplot2)
@@ -19,21 +19,40 @@ source("code/poss_mdr_curves.R") # loads function for gen MDR curves
 load("data/rundata_ind.Rdata")
 #ggplot(rundata_ind, aes(x=year,y=ari,col=replicate)) + geom_point() ## look at
 
+## ARI input
+ari <- as.data.frame(matrix(0,81,2))
+colnames(ari) <- c("ds","mdr")
+## Constant DS ARI
+ari$ds <- 0.01
+
+## India 2016.perc_new_mdr = ~2%
+ari$mdr <- c(rep(0,1970-1934),seq(0,0.02,length=(2014-1969))) * ari$ds
+#ari$mdr <- 0
+colnames(ari) <- c("ds","mdr")
+
+#plot(seq(1934,2014,1),ari$ds,ylim=c(0,0.02),type="l")
+#lines(seq(1934,2014,1),ari$mdr,col="red")
+
 ### Countries to explore
 cn_list <- c("India","China","Japan","Ukraine")
 
 ## Population examples
 load('data/POP2014.Rdata')  
-
-### Run model for example 
 pop1 <- POP2014[which(POP2014$area == "India"),"value"]
-## ARI input
-ari <- as.data.frame(matrix(0,81,2)); colnames(ari) <- c("ds","mdr")
-## Constant DS ARI
-ari$ds <- 0.01
-## India 2016.perc_new_mdr = ~2%
-ari$mdr <- c(rep(0,1970-1934),seq(0,0.02,length=(2014-1969))) * ari$ds
+pop2 <- POP2014[which(POP2014$area == "China"),"value"]
+pop3 <- POP2014[which(POP2014$area == "Japan"),"value"]
+pop4 <- POP2014[which(POP2014$area == "Ukraine"),"value"]
 
+## group and plot populations
+popp <- as.data.frame(rbind(cbind(pop1,1),cbind(pop2,2),cbind(pop3,3),cbind(pop4,4)))
+colnames(popp) <- c("psize","cn")
+popp$cn <- cn_list[popp$cn]
+popp$age <- seq(0,80,5)
+pp <-ggplot(popp, aes(y = psize, x = age, colour = factor(cn))) + geom_line() + scale_color_discrete("Country") + scale_y_continuous("Population size") + scale_x_continuous("Age")
+setwd(output)
+ggsave("popsize_2014.pdf",height = 4, width = 8)
+
+### Run model for example generate above
 cc <- cohort_ltbi(ari, pop1) # India
 
 ## output 
@@ -44,19 +63,141 @@ ltbi_dr
 ltbi_ds
 cc$c_2014
 
-##****** Run for different countries  **********############################################################################################################################
-#cn <- c("India","China","Japan","Ukraine")
-cni <- c("IND","CHN","JPN","UKR"); # levels for these:mdr_perc_new <- c(0.02, 0.057, 0.007, 0.22)
-#cni <- unique(POP2014$iso3)
+##****** Run for different ARI plots **********############################################################################################################################
+nari = 10
+
+ari_store <- as.data.frame(matrix(0,nari*81,2))
+colnames(ari_store) <- c("ds","mdr")
+
+## 1. no MDR, ds constant
+ari_store[1:81,"ds"] <- 0.01
+ari_store[1:81,"mdr"] <- 0
+
+## 2. MDR linear increase to 2%, ds constant
+ari_store[82:162,"ds"] <- 0.01
+ari_store[82:162,"mdr"] <-c(rep(0,1970-1934),seq(0,0.02,length=(2014-1969))) * ari$ds
+
+## 3-10. MDR sigmoid increase to 2%, ds decreasing after 1970
+sigm <- function(x,delta){ 0.01/(1+exp(-(x-delta)))} # max = 2% of 0.01
+#plot(seq(1934,2014,1),sigm(seq(0,80,1),41))
+# when increase after 1934? 1975, 1980, 1985, 1990, 1995, 2000
+jump_point <- c(41,46,51,56,61,66,71,76)
+for(i in 3:10){
+  dd <- jump_point[i-2]
+  ari_store[((i-1)*81 + 1):(i*81),"ds"] <-c(rep(0.01,1970-1934),seq(0.01,0.005,length=(2014-1969))) 
+  ari_store[((i-1)*81 + 1):(i*81),"mdr"] <-sigm(seq(0,80,1),dd)
+}
+ari_store$rep <- rep(1:nari,each = 81)
+ari_store$time <- seq(1934,2014,1)
+a1<- ggplot(ari_store,aes(x=time,y=ds, group=rep, colour = factor(rep))) + geom_line() + geom_line(aes(x=time,y=mdr,group=rep,colour=factor(rep),linetype = "dashed")) +
+  scale_color_discrete("ARI pattern") + guides(linetype = FALSE)
+
+
+s_level <- c()
+
+for(i in 1:nari){
+  
+  ari <- ari_store[((i-1)*81 + 1):(i*81),c("ds","mdr")]
+  for(j in 1:4){
+    if(j==1){cc <- cohort_ltbi(ari, pop1)}
+    if(j==2){cc <- cohort_ltbi(ari, pop2)}
+    if(j==3){cc <- cohort_ltbi(ari, pop3)}
+    if(j==4){cc <- cohort_ltbi(ari, pop4)}
+    
+    combs <- cc$combs
+    ltbi_dr <- sum(combs$perc_dr)
+    ltbi_ds <- sum(combs$perc_ds)
+    
+    s_level <- rbind(s_level,c(i,ltbi_dr,ltbi_ds,j))
+  }
+  
+}
+
+s_level <- as.data.frame(s_level)
+colnames(s_level) <- c("rep","ltbir","ltbis","popf")
+
+a2<-ggplot(s_level, aes(x=rep, y = ltbir, col=factor(rep) )) + geom_point(aes(shape=factor(popf))) + guides(colour=FALSE) + scale_shape_discrete("Population", labels = c("India","China","Japan","Ukraine"))
+
+#ss <- merge(s_level,ari_store, by = 'rep')
+
+plot_grid(a1, a2, labels = c("A", "B"), align = "h")
+
+
+
+##****** MDR ARI variation with constant DS ARI ****########################################################################################################################
+nari = 18
+ari_store <- as.data.frame(matrix(0,nari*81,2))
+ari_rep_labels <- c("No MDR","Linear increase",
+                    "Sigmoid peak 1975","Sigmoid peak 1980","Sigmoid peak 1985","Sigmoid peak 1990","Sigmoid peak 1995","Sigmoid peak 2000","Sigmoid peak 2005","Sigmoid peak 2010", 
+                    "Gaus peak 1975","Gaus peak 1980","Gaus peak 1985","Gaus peak 1990","Gaus peak 1995","Gaus peak 2000","Gaus peak 2005","Gaus peak 2010")
+
+# Functions for shape of MDR ARI
+sigm <- function(x,delta,max,B=1){ max/(1+exp(-B*(x-delta)))} 
+plot(seq(1934,2014,1),sigm(seq(0,80,1),41,0.02),type="l")
+points(seq(1934,2014,1),sigm(seq(0,80,1),41,0.02,0.4),type="l")
+abline(v = 1970,lty="dashed")
+gaum <- function(x,delta,max){ max*exp(-0.5*((x-delta)/5)^2)}
+#plot(seq(1934,2014,1),gaum(seq(0,80,1),41, 1))
+
 setwd("output")
 
-## ARI trend data for DS TB
+### ARI MDR
+## 1. no MDR
+ari_store[1:81,"ds"] <- 0.01
+ari_store[1:81,"mdr"] <- 0
+
+## 2. MDR linear increase to 2%, ds constant
+ari_store[82:162,"ds"] <- 0.01
+ari_store[82:162,"mdr"] <-c(rep(0,1970-1934),seq(0,0.02,length=(2014-1969))) * 0.01
+
+## 3-10. MDR sigmoid increase to maximum DS ARI 
+
+# when increase after 1934? 1975, 1980, 1985, 1990, 1995, 2000
+jump_point <- c(41,46,51,56,61,66,71,76)
+# Sigma and plateau
+for(i in 3:10){
+  dd <- jump_point[i-2]
+  ari_store[((i-1)*81 + 1):(i*81),"ds"] <-0.01
+  ari_store[((i-1)*81 + 1):(i*81),"mdr"] <-sigm(seq(0,80,1),dd,0.02) * ari_store[((i-1)*81 + 1):(i*81),"ds"] # multiple ari trend of DR by that of DS up to max percentage in data 
+}
+# Jump
+for(i in 11:18){
+  dd <- jump_point[i-10]
+  ari_store[((i-1)*81 + 1):(i*81),"ds"] <-0.01
+  ari_store[((i-1)*81 + 1):(i*81),"mdr"] <-gaum(seq(0,80,1),dd,0.02) * ari_store[((i-1)*81 + 1):(i*81),"ds"] # multiple ari trend of DR by that of DS up to max percentage in data 
+}
+
+ari_store$rep <- rep(1:nari,each = 81)
+ari_store$time <- seq(1934,2014,1)
+ari_store$ds <- ari_store$ds - ari_store$mdr ## MDR is not an additional ARI but part of the original DS ARI
+arim <- melt(ari_store[,c("time","ds","mdr","rep")], id.vars = c("time","rep"))
+w <- intersect(which(arim$rep > 10),which(arim$variable == "mdr"))
+
+levels(arim$variable) <- c(levels(arim$variable),"mdr_gaus")
+arim[w,"variable"] = "mdr_gaus"
+
+a1 <- ggplot(arim,aes(x=time,y=value, group=rep, colour = factor(rep))) + geom_line() + scale_y_continuous("ARI") + 
+  facet_wrap(~variable, scales = "free") + scale_colour_discrete("ARI pattern",breaks = seq(1,18,1),labels = ari_rep_labels) + guides(colour=guide_legend(ncol=2))
+save_plot("mdr_ari_with_constant_dsari.pdf", a1, base_aspect_ratio = 2.5 )
+
+
+##****** Run for different countries  **********############################################################################################################################
+cn <- c("India","China","Japan","Ukraine")
+cni <- c("IND","CHN","JPN","UKR")
+setwd("output")
+
+# ARI trend data
 load("../data/rundata_ari.Rdata")
 rundata$ari <- exp(rundata$lari)
 level2014 <- c(); #breakdown proportions infected by age
 s_level <- c(); #sum proportions infected 
 
-## Number of scenarios for MDR curves
+
+# MDR data
+# India, China, Japan, Ukraine, latest = max
+mdr_perc_new <- c(0.02, 0.057, 0.007, 0.22)
+
+# Number of scenarios
 nari = 130
 
 setwd("~/Documents/LTBI_MDR/output")
@@ -65,15 +206,14 @@ setwd("~/Documents/LTBI_MDR/output")
 store_all <- as.data.frame(matrix(0,4*nari*81*100,9))
 runn <- 1
 
-# Run for all countries
-for(cci in 1:length(cni)){
+for(cci in 1:length(cn)){
   sa <- c() # store for this country
   ### ARI DS
   rdata <- as.data.table(rundata[which(rundata$iso3 == cni[cci]),])
   
   # Need average over all replicates
   rr <- ddply(rdata, .(year), summarize,  Av=mean(ari)) #rdata %>% group_by( year ) %>%  summarise( Av = mean( x = ari , na.rm = TRUE ) )
-  #p1 <- ggplot(rr, aes(x=year,y=Av)) + geom_point() + ggtitle(cn_list[cci]) + scale_y_continuous("ARI DS-TB")
+  p1 <- ggplot(rr, aes(x=year,y=Av)) + geom_point() + ggtitle(cn_list[cci]) + scale_y_continuous("ARI DS-TB")
   
   ## ARI MDR curves (x 130)
   ari_s <- ari_mdr(cni[cci],rr)
@@ -115,12 +255,7 @@ for(cci in 1:length(cni)){
     s_level <- rbind(s_level,c(i,ltbi_dr,ltbi_ds,cci,pltbi_dr, pltbi_ds))
     
     ssc <- cc$store_c
-    lowi <- ((runn-1)*(dim(ssc)[1])+1)
-    uppi <- ((runn)*(dim(ssc)[1]))
-    store_all[lowi:uppi,1] <- i;
-    store_all[lowi:uppi,2] <- cci;
-    store_all[lowi:uppi,3:9] <- ssc
-    
+    store_all[((runn-1)*(dim(ssc)[1])+1):(runn*(dim(ssc)[1])),] <- cbind(i,cci, ssc)
     runn <- runn + 1
     sa <- rbind(sa,cbind(i,cci, ssc)) # just for this country
   }
@@ -160,7 +295,7 @@ for(cci in 1:length(cni)){
 }
 s_level0 <- s_level
 
-s_level$popf <- cn_list[s_level0$popf]
+s_level$popf <- cn_list[s_level$popf]
 a2r<-ggplot(s_level, aes(x=rep, y = ltbir, col=factor(rep) )) + geom_point() + guides(colour=FALSE) + 
   scale_x_continuous("MDR-ARI trend") + scale_y_continuous("LTBI-MDR (% population infected)") +
   theme(axis.text.x = element_text(angle = 90, hjust = 1)) + facet_wrap(~popf, scales = "free")
@@ -194,7 +329,6 @@ colnames(store_all) <- c(c("mdr_rep","cn"),colnames(cc$store_c))
 store_all$age <- seq(1,100,1)
 store_all_rec <- store_all[which(store_all$year > 1965),] # recent
 
-dim(store_all) # 4 countries *130 mdr_reps *100 ages * 81 years
 
 for(iii in 1:length(cn)){
   store_all_c <- store_all_rec[which(store_all_rec$cn==iii),]
@@ -225,8 +359,8 @@ store_all_ukraine <- store_all_rec[which(store_all_rec$cn==4),]
 
 ####*********** When contributes most to latent burden? *********######################################################################################################################################################
 ## Store_all has 4 countries by age and time
-## 100 ages. 81 years. mdr_reps = 130. 
-dim(store_all) # 4*130*100*81 = 4212000
+## 100 ages. 81 years. mdr_reps = 18. 
+dim(store_all) # 4*18*100*81 = 583200
 colnames(store_all)
 ## s_level has ltbir and ltbis levels by country (4) and mdr rep (18) (dim = 72)
 dim(s_level)
@@ -246,7 +380,7 @@ for(i in 1:max(uu)){ # for each country
   
   s_new <- c()
   
-  for(k in 1:130){# for each mdr_rep
+  for(k in 1:18){# for each mdr_rep
     print(c("mdr_rep",k))
     # subset the yearly data 
     s_k <- subset(s, mdr_rep == k)
@@ -254,13 +388,13 @@ for(i in 1:max(uu)){ # for each country
     for(j in 1:100){# all ages
      # print(c("age",j))
       
-      # subset the proportion infected by mdr_rep and age group in 2014
+      # subset the proportion infected by mdr_rep and age group
       l14_k_j <- subset(l14, mdr_rep == k)[j,]
       
       s_temp <- c()
       # for each year get the data for those that are that age in 2014
       for(yr in 2014:1934){
-      
+        
         agen = j - (2014-yr) # age in that year
         
         if(agen > 0){ # need age > 0!
@@ -327,7 +461,7 @@ for(i in 1:max(uu)){ # for each country
 }
 
 ## All data
-dim(s_all) # 4*130*100*81 = 
+dim(s_all) # 4*18*100*81 = 583200
 
 
 ### Exploring plots
