@@ -131,31 +131,31 @@ for(cci in 1:length(cni)){
   sa_rec <- sa[which(sa$year > 1965),] # recent
   
   # #### Plot by age
-  # g1<-ggplot(sa_rec, aes(x=year, y = pr_dr, group = age, col = age)) + geom_line() + 
-  #   facet_wrap(~mdr_rep, ncol = 5) + scale_colour_gradientn(limits = c(0,100),colours=c("navyblue", "darkorange1","darkgreen"))
-  # ggsave(paste0("all_age_",cn_list[cci],"_r.pdf"), height = 10, width = 10)
-  # 
-  # g2<-ggplot(sa_rec, aes(x=year, y = pr_ds, group = age, col = age)) + geom_line() + 
-  #   facet_wrap(~mdr_rep, ncol = 5) + scale_colour_gradientn(limits = c(0,100),colours=c("navyblue", "darkmagenta", "darkgreen"))
-  # ggsave(paste0("all_age_",cn_list[cci],"_s.pdf"), height = 10, width = 10)
-  # 
-  # g3<-ggplot(sa_rec, aes(year, age)) + geom_tile(aes(fill = pr_ds),colour = "white") + scale_fill_gradient(low = "white",high = "steelblue","DS-TB") + 
-  #   labs(x = "Year",y = "Age") + scale_y_continuous(lim = c(0,100)) + facet_wrap(~mdr_rep)
-  # ggsave(paste0("all_age_",cn_list[cci],"_map_s.pdf"), height = 10, width = 10)
-  # 
-  # g4<-ggplot(sa_rec, aes(year, age)) + geom_tile(aes(fill = pr_dr),colour = "white") + scale_fill_gradient(low = "white",high = "red4","MDR-TB") +
-  #   labs(x = "Year",y = "Age") + scale_y_continuous(lim = c(0,100)) + facet_wrap(~mdr_rep)
-  # ggsave(paste0("all_age_",cn_list[cci],"_map_r.pdf"), height = 10, width = 10)
-  # 
+  g1<-ggplot(sa_rec, aes(x=year, y = pr_dr, group = age, col = age)) + geom_line() +
+    facet_wrap(~mdr_rep, ncol = 5) + scale_colour_gradientn(limits = c(0,100),colours=c("navyblue", "darkorange1","darkgreen"))
+  ggsave(paste0("all_age_",cn_list[cci],"_r.pdf"), height = 10, width = 10)
+
+  g2<-ggplot(sa_rec, aes(x=year, y = pr_ds, group = age, col = age)) + geom_line() +
+    facet_wrap(~mdr_rep, ncol = 5) + scale_colour_gradientn(limits = c(0,100),colours=c("navyblue", "darkmagenta", "darkgreen"))
+  ggsave(paste0("all_age_",cn_list[cci],"_s.pdf"), height = 10, width = 10)
+
+  g3<-ggplot(sa_rec, aes(year, age)) + geom_tile(aes(fill = pr_ds),colour = "white") + scale_fill_gradient(low = "white",high = "steelblue","DS-TB") +
+    labs(x = "Year",y = "Age") + scale_y_continuous(lim = c(0,100)) + facet_wrap(~mdr_rep)
+  ggsave(paste0("all_age_",cn_list[cci],"_map_s.pdf"), height = 10, width = 10)
+
+  g4<-ggplot(sa_rec, aes(year, age)) + geom_tile(aes(fill = pr_dr),colour = "white") + scale_fill_gradient(low = "white",high = "red4","MDR-TB") +
+    labs(x = "Year",y = "Age") + scale_y_continuous(lim = c(0,100)) + facet_wrap(~mdr_rep)
+  ggsave(paste0("all_age_",cn_list[cci],"_map_r.pdf"), height = 10, width = 10)
+
   s_level <- as.data.frame(s_level)
   colnames(s_level) <- c("rep","ltbir","ltbis","popf","pltbir", "pltbis")
-  
-  #ss <- merge(s_level,ari_store, by = 'rep')
-  # bottom_row <- plot_grid(g3,g4, labels = c('B', 'C'), align = 'h', rel_widths = c(1, 1))
-  # a<-plot_grid(a1, bottom_row, labels = c('A', ''), ncol = 1, rel_heights = c(1, 1.2))
-  # save_plot(paste0("combined_",cn_list[cci],".pdf"), a, base_aspect_ratio = 2)
-  # 
-  # p.cn <- plot_grid(a1, a1, labels = c("A", "B"), align = "h",ncol = 2,rel_widths = c(1, 1.8))
+
+  ss <- merge(s_level,ari_store, by = 'rep')
+  bottom_row <- plot_grid(g3,g4, labels = c('B', 'C'), align = 'h', rel_widths = c(1, 1))
+  a<-plot_grid(a1, bottom_row, labels = c('A', ''), ncol = 1, rel_heights = c(1, 1.2))
+  save_plot(paste0("combined_",cn_list[cci],".pdf"), a, base_aspect_ratio = 2)
+
+  p.cn <- plot_grid(a1, a1, labels = c("A", "B"), align = "h",ncol = 2,rel_widths = c(1, 1.8))
   print(paste0(cn_list[cci]))
 }
 s_level0 <- s_level
@@ -254,8 +254,8 @@ for(i in 1:max(uu)){ # for each country
     for(j in 1:100){# all ages
      # print(c("age",j))
       
-      # subset the proportion infected by mdr_rep and age group in 2014
-      l14_k_j <- subset(l14, mdr_rep == k)[j,]
+      # subset the proportion infected by mdr_rep and age group
+      l14_k_j <- subset(l14, mdr_rep == k)[j,] # proportion with dr in 2014 for mdr_rep = k and age = j 
       
       s_temp <- c()
       # for each year get the data for those that are that age in 2014
@@ -327,7 +327,9 @@ for(i in 1:max(uu)){ # for each country
 }
 
 ## All data
-dim(s_all) # 4*130*100*81 = 
+## countries * mdr_rep * age in 2014 * year
+dim(s_all) # 4*18*100*81 = 583200
+## each row has the age in 2014 the year from which some contribution may come and the size of the contribution
 
 
 ### Exploring plots
@@ -338,8 +340,13 @@ dim(s_all) # 4*130*100*81 =
 # lines(s_temp[,"year"],s_temp[,"rei_rs"],col="red") # removed reinfections with S
 # abline(h = 0, lty = "dashed")
 
+### s_all => has the proportion from each year at each age for each mdr_rep
+w<-intersect(intersect(which(s_all$cn == 1),which(ss_all$age == 32)),which(ss_all$mdr_rep == 15))
+sum(s_all[w,"pr_r"]) # = 1 
+sum(s_all[w,"pr_s"]) # = 1
+
 s_all_orig <- as.data.frame(s_all)
-s_all <- as.data.frame(s_all)
+s_all <- as.data.frame(s_all_orig)
 colnames(s_all)<-c("pr_r","pr_s","year","age","mdr_rep","abs_pr_r","abs_pr_s","cn")
 ## plot: cumulative bar chart
 ## x axis = age [0-100]
@@ -353,6 +360,9 @@ s_all$yearcat<-cut(s_all$year, seq(1929,2018,5))
 s_all$abs_pr_ltbir <- 0
 s_all$abs_pr_ltbis <- 0
 
+#ss_all <- matrix(0,dim(s_all)[1],dim(s_all)[2])
+ss_all<-c()
+
 for(cci in 1:4){
   print(c("country",cci))
   
@@ -364,6 +374,7 @@ for(cci in 1:4){
   
   ## For the population in 2014. Calculate the proportion of the total population in each yearly age group. 
   pr_2014_age = pop / sum(pop) / 5 ## Divided by 5 to make per subunit (think works as equivalent to averaging proportions and multiplying by total)
+  pr_2014_age[17] = pop[17] / sum(pop) / 20 ## Apart from last which is 20 yrs long
   
   ss_here <- subset(s_all, cn == cci) 
   
@@ -375,6 +386,11 @@ for(cci in 1:4){
     ss_here[w,"abs_pr_ltbir"] = ss_here[w,"abs_pr_r"] * as.numeric(pr_2014_age[m])
     ss_here[w,"abs_pr_ltbis"] = ss_here[w,"abs_pr_s"] * as.numeric(pr_2014_age[m])
   }
+  
+  ## Grouped by mdr_rep
+  #w<-which(ss_here$mdr_rep == 5)
+  #sum(ss_here[w,"pr_ltbis"]) # = 1
+  #sum(ss_here[w,"pr_ltbir"]) # = 1
   
   setwd(output)
   ## This says: by age, when were they infected. The proportion of their % infected that can be allocated to past times.
@@ -419,5 +435,23 @@ for(cci in 1:4){
     scale_fill_hue("Year")
   ggsave(paste0("DR_",cn_list[cci],"_abs_ltbir_when.pdf"), height = 10, width = 10)
   
+  ## Store
+  ss_here$cn <- cn_list[cci]
+  #dim(ss_here)
+  ss_all <- rbind(ss_all, ss_here)
+  #ss_all[((cci-1)*dim(ss_here)[1] + 1):(cci*dim(ss_here)[1]),] <- ss_here
+  
 }
+
+ss_all <- as.data.table(ss_all)
+sum_ss_all <- ss_all%>%
+  group_by(mdr_rep,yearcat,cn) %>%
+  summarise(sum_prltbi = sum(pr_ltbir))
+
+## Checks
+#w<-intersect(which(sum_ss_all$cn == "India"), which(sum_ss_all$mdr_rep == 15))
+#sum(sum_ss_all[w,"sum_prltbi"])
+
+setwd(output)
+write.csv(sum_ss_all, "props_ltbi_when.csv")
 
