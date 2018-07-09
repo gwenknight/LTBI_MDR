@@ -1,4 +1,8 @@
 ### Generate the trends in MDR to use
+# stores as csv to be read in for others
+# Linear
+# Sigmoid
+# Quadratic
 
 library(ggplot2)
 
@@ -118,7 +122,9 @@ setwd("~/Dropbox/MRC SD Fellowship/Research/MDR/Latent MDR/Data/")
 write.csv(save_curves,"lin_sig_quad_curves.csv")
 
 
-
+ggplot(save_curves, aes(x=year, y = out, group = index)) + geom_line(aes(col=factor(type))) + 
+  facet_wrap(~type) + geom_vline(xintercept = 1970)
+ggsave("mdr_curves_lin_sig_quad.pdf")
 
 
 
