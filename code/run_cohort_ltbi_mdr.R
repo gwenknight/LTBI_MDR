@@ -3,7 +3,6 @@
 ### Libraries and ggplot theme
 library(ggplot2)
 theme_set(theme_bw())
-library(plyr)
 library(dplyr)
 library(cowplot)
 library(data.table)
@@ -450,9 +449,7 @@ for(cci in 1:4){
 }
 
 ss_all <- as.data.table(ss_all)
-sum_ss_all <- ss_all%>%
-  group_by(mdr_rep,yearcat,cn) %>%
-  summarise(sum_prltbi = sum(pr_ltbir))
+sum_ss_all <- ss_all%>%group_by(mdr_rep,yearcat,cn) %>%summarise(sum_prltbi = sum(pr_ltbir)) # if get single number = because plyr loaded after dplyr (has it's own summarise which gives single number)
 
 ## Checks
 #w<-intersect(which(sum_ss_all$cn == "India"), which(sum_ss_all$mdr_rep == 15))

@@ -64,7 +64,7 @@ colnames(store_metric) <- c("mdr_rep","sum_metric","cnn")
 ggplot(store_metric, aes(x=mdr_rep, y = sum_metric)) + geom_point() + 
   facet_wrap(~cnn) + scale_y_continuous("Proportion of LTBI identifiable") + 
   scale_x_continuous("MDR-ARI trend")
-ggsave("MDR-ARI")
+ggsave("MDR_metric_data_against_need.pdf")
 
 
 
