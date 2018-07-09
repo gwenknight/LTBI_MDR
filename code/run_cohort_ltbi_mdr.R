@@ -150,7 +150,7 @@ for(cci in 1:length(cni)){
   s_level <- as.data.frame(s_level)
   colnames(s_level) <- c("rep","ltbir","ltbis","popf","pltbir", "pltbis")
 
-  ss <- merge(s_level,ari_store, by = 'rep')
+  ss <- merge(s_level,ari_s, by = 'rep')
   bottom_row <- plot_grid(g3,g4, labels = c('B', 'C'), align = 'h', rel_widths = c(1, 1))
   a<-plot_grid(a1, bottom_row, labels = c('A', ''), ncol = 1, rel_heights = c(1, 1.2))
   save_plot(paste0("combined_",cn_list[cci],".pdf"), a, base_aspect_ratio = 2)
@@ -331,6 +331,12 @@ for(i in 1:max(uu)){ # for each country
 dim(s_all) # 4*18*100*81 = 583200
 ## each row has the age in 2014 the year from which some contribution may come and the size of the contribution
 
+## Population size
+load('data/POP2014.Rdata')  
+pop1 <- POP2014[which(POP2014$area == "India"),"value"]
+pop2 <- POP2014[which(POP2014$area == "China"),"value"]
+pop3 <- POP2014[which(POP2014$area == "Japan"),"value"]
+pop4 <- POP2014[which(POP2014$area == "Ukraine"),"value"]
 
 ### Exploring plots
 ## cumr can go negative - re-infections v important. Proportion infected with R can decrease! 
