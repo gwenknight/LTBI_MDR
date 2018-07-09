@@ -1,7 +1,7 @@
 ### Plot when need data against when have data
 
 ## Libraries / home
-library(ggplot2); library(gdata);library(RColorBrewer)
+library(ggplot2); library(gdata);library(RColorBrewer); library(data.table); library(magrittr); library(dplyr)
 
 home <- "~/Documents/LTBI_MDR/"
 output <- "~/Documents/LTBI_MDR/output/"
@@ -52,6 +52,7 @@ for(i in 1:4){
   ## sum over 5 yrs % LTBI from that 5 yr x data there (y/n) = M. High = good low = ba
   ## table of those with data in that year group (0 if none, 1 if some) * proportion of ltbi in there 
   p$metric <-   rep(ifelse(table(d$cut_year_new)>0,1,0),length(unique(p$mdr_rep))) * as.numeric(p$sum_prltbi) 
+  p <- as.data.table(p)
   ## Sum Metric = proportion of LTBI that could be gotten at using this data
   pp <- p %>% group_by(mdr_rep) %>% summarise(sum_metric = sum(metric))
   store_metric <- rbind(store_metric,cbind(pp,cnn))
