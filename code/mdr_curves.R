@@ -191,10 +191,6 @@ save_jps_plat$type = 3
 
 save_curves <- rbind(save_lin, save_jps, save_quads, save_jps_plat)
 
-ggplot(save_curves, aes(x=year,y=out,group=index,colour = factor(tilt))) + facet_wrap(~type)
-  geom_line() +  geom_vline(xintercept = 1970) + 
-  geom_line(data = save_quads,aes(x=year,y=out,group=index, colour=factor(index)))
-
 setwd("~/Dropbox/MRC SD Fellowship/Research/MDR/Latent MDR/Data/")
 write.csv(save_curves,"lin_sig_quad_sigd_curves.csv")
 
