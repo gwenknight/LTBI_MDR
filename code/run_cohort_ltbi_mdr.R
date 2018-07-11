@@ -3,9 +3,12 @@
 ### Libraries and ggplot theme
 library(ggplot2)
 theme_set(theme_bw())
+library(plyr)
 library(dplyr)
 library(cowplot)
 library(data.table)
+library(reshape2)
+
 
 ### Home
 home <- "~/Documents/LTBI_MDR/"
@@ -45,8 +48,10 @@ cc$c_2014
 
 ##****** Run for different countries  **********############################################################################################################################
 #cn <- c("India","China","Japan","Ukraine")
-cni <- c("IND","CHN","JPN","UKR"); # levels for these:mdr_perc_new <- c(0.02, 0.057, 0.007, 0.22)
+#cni <- c("IND","CHN","JPN","UKR"); # levels for these:mdr_perc_new <- c(0.02, 0.057, 0.007, 0.22)
+#cn <- unique(POP2014$iso3)
 #cni <- unique(POP2014$iso3)
+
 setwd("output")
 
 ## ARI trend data for DS TB
@@ -56,12 +61,17 @@ level2014 <- c(); #breakdown proportions infected by age
 s_level <- c(); #sum proportions infected 
 
 ## Number of scenarios for MDR curves
-nari = 130
+#nari = 130
+## Read in MDR curves
+save_curves0 <- read.csv("~/Dropbox/MRC SD Fellowship/Research/MDR/Latent MDR/Data/lin_sig_quad_sigd_curves.csv",stringsAsFactors = FALSE)[-1]
+mdr_cn_best <- read.csv("/Users/eideghkmi/Documents/LTBI_MDR/output/store_cn_best.csv", stringsAsFactors = FALSE)[-1]
+
+cni <- unique(mdr_cn_best$country)
 
 setwd("~/Documents/LTBI_MDR/output")
 
 # Store all? 
-store_all <- as.data.frame(matrix(0,4*nari*81*100,9))
+store_all <- as.data.frame(matrix(0,length(cn)*4*81*100,9))
 runn <- 1
 
 # Run for all countries
@@ -74,14 +84,10 @@ for(cci in 1:length(cni)){
   rr <- ddply(rdata, .(year), summarize,  Av=mean(ari)) #rdata %>% group_by( year ) %>%  summarise( Av = mean( x = ari , na.rm = TRUE ) )
   #p1 <- ggplot(rr, aes(x=year,y=Av)) + geom_point() + ggtitle(cn_list[cci]) + scale_y_continuous("ARI DS-TB")
   
-  ## ARI MDR curves (x 130)
-  ari_s <- ari_mdr(cni[cci],rr)
+  ## ARI MDR curves (x 4)
+  ari_s <- ari_mdr(cni[cci],rr,mdr_cn_best, save_curves0)
   
-  arim <- melt(ari_s, id.vars = c("time","rep"))
-  
-  # delete below? 
-  #levels(arim$variable) <- c(levels(arim$variable),"mdr_gaus")
-  #arim[w,"variable"] = "mdr_gaus"
+  arim <- melt(ari_s, id.vars = c("year","rep"))
   
   a1 <- ggplot(ari_s, aes(x=time, y = mdr, group = factor(rep))) + 
     geom_line(aes(col=factor(rep))) + facet_wrap(~type) + scale_y_continuous("ARI") + guides(color = FALSE)
