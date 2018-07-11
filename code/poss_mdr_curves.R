@@ -1,6 +1,41 @@
 ### Function for curve generation
 
-ari_mdr <- function(coun, rr){
+## When just using best 4
+ari_mdr <- function(coun, rr, mdrv_v, curves){
+  ### cn = country
+  ### rr = ARI for DS, average over those from Dodd&Houben
+  ### mdrv_v = best values for each country
+  ### curves all data
+  
+  ### Which curves best for this country? 
+  mdr_best <- mdrv_v[which(mdrv_v$country == coun),]
+  
+  get_best <- c()
+  
+  for(i in 1:4){
+    w1<-intersect(which(curves$index == mdr_best$Index[i]), which(curves$type == mdr_best$Type[i]))
+    cc <- curves[w1,]
+    cc$mdr <- mdr_best[i,"f_l"] * cc$out/0.02
+    get_best <- rbind(get_best,cc)
+  }
+  
+  # Add in DS
+  get_best$ds <- rr
+  
+  return(get_best)
+}
+
+## Check
+#ari_s <- ari_mdr("IND",rr)
+
+#ggplot(ari_s, aes(x=time, y = mdr, group = rep)) + geom_line(aes(col=factor(type)))
+
+
+
+
+
+## When still using 130
+ari_mdr_old <- function(coun, rr){
   ### cn = country
   ### rr = ARI for DS, average over those from Dodd&Houben
   
