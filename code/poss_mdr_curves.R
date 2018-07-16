@@ -12,15 +12,32 @@ ari_mdr <- function(coun, rr, mdrv_v, curves){
   
   get_best <- c()
   
-  for(i in 1:4){
-    w1<-intersect(which(curves$index == mdr_best$Index[i]), which(curves$type == mdr_best$Type[i]))
+  # which best?
+  w <- which(round(mdr_best$dist,5) == min(round(mdr_best$dist,5))) # round to 5 DP and use any close ones
+  
+  for(rep in 0:3){
+    # grab curves data
+    w1<-intersect(which(curves$index == mdr_best$Index[(rep+1)]), which(curves$type == mdr_best$Type[(rep+1)]))
     cc <- curves[w1,]
-    cc$mdr <- mdr_best[i,"f_l"] * cc$out/0.02
-    get_best <- rbind(get_best,cc)
+    # change final level 
+    cc$mdr <- mdr_best[(rep+1),"f_l"] * cc$out/0.02
+    # store
+    get_best <- rbind(get_best,cbind(cc,rep))
   }
   
   # Add in DS
-  get_best$ds <- rr
+  get_best$ds <- 0
+  get_best$ds <- rr$Av
+  
+  # MDR is a multiple of mdr_best and the DS
+  get_best$mdr_c <- get_best$mdr 
+  get_best$mdr <- get_best$mdr * get_best$ds
+  
+  # label best one
+  get_best$best <- 0
+  ww<-c()
+  for(i in 1:length(w)){ww <- c(ww,which(get_best$rep == (w[i]-1)))}
+  get_best[ww,"best"] <- 1 # -1 as type from 0 - 2
   
   return(get_best)
 }
