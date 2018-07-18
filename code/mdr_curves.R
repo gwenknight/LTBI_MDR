@@ -196,7 +196,7 @@ write.csv(save_curves,"lin_sig_quad_sigd_curves.csv")
 
 
 ggplot(save_curves, aes(x=year, y = out, group = index)) + geom_line(aes(col=factor(type))) + 
-  facet_wrap(~type) + geom_vline(xintercept = 1970)
+  facet_wrap(~type, scales = "free") + geom_vline(xintercept = 1970)
 ggsave("mdr_curves_lin_sig_quad_sigd.pdf")
 
 
