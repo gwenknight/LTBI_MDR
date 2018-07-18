@@ -20,7 +20,7 @@ ari_mdr <- function(coun, rr, mdrv_v, curves){
   }
   
   # Add in DS
-  get_best$ds <- rr
+  get_best$ds <- rep(rr$Av, 3, each = 1)
   
   return(get_best)
 }
