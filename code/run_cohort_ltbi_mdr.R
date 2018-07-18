@@ -63,12 +63,11 @@ s_level <- c(); #sum proportions infected
 ## Number of scenarios for MDR curves
 #nari = 130
 ## Read in MDR curves
-save_curves0 <- read.csv("~/Dropbox/MRC SD Fellowship/Research/MDR/Latent MDR/Data/lin_sig_quad_sigd_curves.csv",stringsAsFactors = FALSE)[-1]
-mdr_cn_best <- read.csv("/Users/eideghkmi/Documents/LTBI_MDR/output/store_cn_best.csv", stringsAsFactors = FALSE)[-1]
+
+save_curves0 <- read.csv("~/Dropbox/MRC SD Fellowship/Research/MDR/Latent_MDR/Data/lin_sig_quad_sigd_curves.csv",stringsAsFactors = FALSE)[-1]
+mdr_cn_best <- read.csv("store_cn_best.csv", stringsAsFactors = FALSE)[-1]
 
 cni <- unique(mdr_cn_best$country)
-
-setwd("~/Documents/LTBI_MDR/output")
 
 # Store all? 
 store_all <- as.data.frame(matrix(0,length(cn)*4*81*100,9))
@@ -87,7 +86,7 @@ for(cci in 1:length(cni)){
   ## ARI MDR curves (x 4)
   ari_s <- ari_mdr(cni[cci],rr,mdr_cn_best, save_curves0)
   
-  arim <- melt(ari_s, id.vars = c("year","rep"))
+  arim <- melt(ari_s, id.vars = c("year","mdr"))
   
   a1 <- ggplot(ari_s, aes(x=time, y = mdr, group = factor(rep))) + 
     geom_line(aes(col=factor(rep))) + facet_wrap(~type) + scale_y_continuous("ARI") + guides(color = FALSE)
