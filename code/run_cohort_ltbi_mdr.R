@@ -101,7 +101,7 @@ for(cci in 1:length(cni)){
   rdata <- as.data.table(rundata[which(rundata$iso3 == cni[cci]),])
   
   # Need average over all replicates
-  rr <- ddply(rdata, .(year), summarize,  Av=mean(ari)) #rdata %>% group_by( year ) %>%  summarise( Av = mean( x = ari , na.rm = TRUE ) )
+  rr <- ddply(rdata, .(year), summarize,  Av=median(ari)) #rdata %>% group_by( year ) %>%  summarise( Av = mean( x = ari , na.rm = TRUE ) )
   #p1 <- ggplot(rr, aes(x=year,y=Av)) + geom_point() + ggtitle(cni[cci]) + scale_y_continuous("ARI DS-TB")
   
   ## ARI MDR curves (x 4)
@@ -121,13 +121,13 @@ for(cci in 1:length(cni)){
   save_plot(paste0(cni[cci],"_mdr_trends_best.pdf"), a2, base_aspect_ratio = 2 )
   
   a3 <- ggplot(ari_s, aes(x=year, y = mdr, group = factor(rep))) + 
-    geom_line(aes(col=factor(best)))  + scale_y_continuous("MDR ARI") + guides(color = FALSE) 
-  save_plot(paste0(cni[cci],"_mdr_ari_trends_4.pdf"), a2, base_aspect_ratio = 2 )+ scale_colour_manual(values = c("black","red"))
+    geom_line(aes(col=factor(rep), lty = factor(best)))  + scale_y_continuous("MDR ARI") 
+  save_plot(paste0(cni[cci],"_mdr_ari_trends_4.pdf"), a3, base_aspect_ratio = 2 )
   
   for(i in 1:nari){
     print(c(i,"ari rep"))
     ari <- ari_s[((i-1)*81 + 1):(i*81),c("ds","mdr")]
-    
+    best_v <- ari_s[((i-1)*81 + 1):(i*81),"best"][1]
     pop <-  POP2014[which(POP2014$iso3 == cni[cci]),"value"]
     
     cc <- cohort_ltbi(ari, pop1)
@@ -147,7 +147,8 @@ for(cci in 1:length(cni)){
     pltbi_dr <- sum(combs$size_dr) # number of people infected
     pltbi_ds <- sum(combs$size_ds)
     
-    s_level <- rbind(s_level,c(i,ltbi_dr,ltbi_ds,cci,pltbi_dr, pltbi_ds))
+    # Bind together. best_v is 1 if this type was the best fit
+    s_level <- rbind(s_level,c(i,ltbi_dr,ltbi_ds,cci,pltbi_dr, pltbi_ds, best_v))
     
     ssc <- cc$store_c
     lowi <- ((runn-1)*(dim(ssc)[1])+1)
@@ -183,7 +184,7 @@ for(cci in 1:length(cni)){
   ggsave(paste0("all_age_",cni[cci],"_map_r.pdf"), height = 10, width = 10)
   
   s_level <- as.data.frame(s_level)
-  colnames(s_level) <- c("rep","ltbir","ltbis","popf","pltbir", "pltbis")
+  colnames(s_level) <- c("rep","ltbir","ltbis","popf","pltbir", "pltbis","best")
   
   ss <- merge(s_level,ari_s, by = 'rep')
   bottom_row <- plot_grid(g3,g4, labels = c('B', 'C'), align = 'h', rel_widths = c(1, 1))
@@ -195,15 +196,17 @@ for(cci in 1:length(cni)){
 }
 s_level0 <- s_level
 s_level$pop_name <- cni[as.numeric(s_level0$popf)]
+s_level <- as.data.table(s_level)
+write.csv(s_level, "s_level_7.csv")
 
 # 
 a2r<-ggplot(s_level, aes(x=popf, y = ltbir, col=factor(rep) )) + geom_point() + guides(colour=FALSE) + 
-  scale_x_discrete("MDR-ARI trend") + scale_y_continuous("LTBI-MDR (% population infected)", lim = c(0,100)) +
+  scale_x_discrete("MDR-ARI trend") + scale_y_continuous("LTBI-MDR (% population infected)") +
   theme(axis.text.x = element_text(angle = 90, hjust = 1)) + facet_wrap(~rep, scales = "free")
 save_plot("ltbi_all_countries_r.pdf", a2r, base_aspect_ratio = 1.5 )
 
 a2s<-ggplot(s_level, aes(x=popf, y = ltbis, col=factor(rep) )) + geom_point() + guides(colour=FALSE) + 
-  scale_x_discrete("MDR-ARI trend") + scale_y_continuous("LTBI-DS (% population infected)",lim=c(0,100)) +
+  scale_x_discrete("MDR-ARI trend") + scale_y_continuous("LTBI-DS (% population infected)") +
   theme(axis.text.x = element_text(angle = 90, hjust = 1)) + facet_wrap(~rep, scales = "free")
 save_plot("ltbi_all_countries_s.pdf", a2s, base_aspect_ratio = 1.5 )
 
@@ -218,8 +221,20 @@ a2s<-ggplot(s_level, aes(x=rep, y = pltbis, col=factor(rep) )) + geom_point() + 
 save_plot("ltbi_pop_all_countries_s.pdf", a2s, base_aspect_ratio = 1.5 )
 
 ### To match to supplementary output by H&D
-group_by(s_level,popf) %>% summarise(mm = mean(pltbis))
+# Mean levels for each country
+s_mean <- subset(s_level, best == '1') %>% group_by(pop_name) %>% summarise_at(c("ltbir","ltbis","pltbir","pltbis"),funs(mean))
+ggplot(s_mean, aes(x=pop_name, y = ltbir, col=ltbir)) + geom_point() + scale_y_continuous("LTBI-MDR percentage infected") + theme(axis.text.x = element_text(angle = 90, hjust = 1))
+ggsave("ltbir_mean_all_countries.pdf")
 
+ggplot(s_level, aes(x=pop_name, y = ltbir, col=factor(rep))) + geom_point() + geom_line(aes(group = pop_name), col="black") + scale_y_continuous("LTBI-MDR percentage infected") + theme(axis.text.x = element_text(angle = 90, hjust = 1))
+ggsave("ltbir_all_countries_all_types.pdf")
+ggplot(subset(s_level, best == '1'), aes(x=pop_name, y = ltbir, col=factor(rep))) + geom_point() + geom_line(aes(group = pop_name), col="black") + scale_y_continuous("LTBI-MDR percentage infected") + theme(axis.text.x = element_text(angle = 90, hjust = 1))
+ggsave("ltbir_all_countries_best_types.pdf")
+
+
+s_types <- subset(s_level, best == '1') %>% count(rep) 
+ggplot(s_types, aes(x=rep, y=n)) + geom_histogram(stat = "identity") + scale_x_continuous(breaks = c(1,2,3,4),labels = c("linear","sigmoid","quadratic","double sigmoid"),"Type of MDR trend")  
+ggsave("types_mdr_trend_hist.pdf")
 
 ###******* AGE *****################################################################################################################
 #ssc <- cc$store_c
@@ -262,8 +277,8 @@ store_all_ukraine <- store_all_rec[which(store_all_rec$cn==4),]
 ####*********** When contributes most to latent burden? *********######################################################################################################################################################
 ## Store_all has 4 countries by age and time
 ## 100 ages. 81 years. mdr_reps = 130. 
-dim(store_all) # 4*130*100*81 = 4212000
-colnames(store_all)
+dim(store_all) # 160*4*100*81 = 5184000
+colnames(store_all) <- c("rep","cn", colnames(ssc),"age")
 ## s_level has ltbir and ltbis levels by country (4) and mdr rep (18) (dim = 72)
 dim(s_level)
 colnames(s_level)
@@ -282,10 +297,10 @@ for(i in 1:max(uu)){ # for each country
   
   s_new <- c()
   
-  for(k in 1:130){# for each mdr_rep
+  for(k in 1:4){# for each mdr_rep
     print(c("mdr_rep",k))
     # subset the yearly data 
-    s_k <- subset(s, mdr_rep == k)
+    s_k <- subset(s, rep == k)
     
     for(j in 1:100){# all ages
       # print(c("age",j))
@@ -364,32 +379,28 @@ for(i in 1:max(uu)){ # for each country
 
 ## All data
 ## countries * mdr_rep * age in 2014 * year
-dim(s_all) # 4*18*100*81 = 583200
-## each row has the age in 2014 the year from which some contribution may come and the size of the contribution
+dim(s_all) # 138*4*100*81 = 4471200
+s_all_orig <- as.data.frame(s_all)
+s_all <- as.data.frame(s_all_orig)
+colnames(s_all)<-c("pr_r","pr_s","year","age","mdr_rep","abs_pr_r","abs_pr_s","cn")
 
-## Population size
-load('data/POP2014.Rdata')  
-pop1 <- POP2014[which(POP2014$area == "India"),"value"]
-pop2 <- POP2014[which(POP2014$area == "China"),"value"]
-pop3 <- POP2014[which(POP2014$area == "Japan"),"value"]
-pop4 <- POP2014[which(POP2014$area == "Ukraine"),"value"]
+## each row has the age in 2014 the year from which some contribution may come and the size of the contribution
+write.csv(s_all,"s_all.csv")
 
 ### Exploring plots
 ## cumr can go negative - re-infections v important. Proportion infected with R can decrease! 
 # plot(s_temp[,"year"],s_temp[,"cumr_py"]) # total new each yar
-# lines(s_temp[,"year"],s_temp[,"new_dr"]) # new infections 
+# lines(s_temp[,"year"],s_temp[,"new_dr"]) # new infections
 # lines(s_temp[,"year"],s_temp[,"rei_sr"],col="blue") # additional reinfections
 # lines(s_temp[,"year"],s_temp[,"rei_rs"],col="red") # removed reinfections with S
 # abline(h = 0, lty = "dashed")
 
 ### s_all => has the proportion from each year at each age for each mdr_rep
-w<-intersect(intersect(which(s_all$cn == 1),which(ss_all$age == 32)),which(ss_all$mdr_rep == 15))
+w<-intersect(intersect(which(s_all$cn == 1),which(s_all$age == 32)),which(s_all$mdr_rep == 1))
 sum(s_all[w,"pr_r"]) # = 1 
 sum(s_all[w,"pr_s"]) # = 1
 
-s_all_orig <- as.data.frame(s_all)
-s_all <- as.data.frame(s_all_orig)
-colnames(s_all)<-c("pr_r","pr_s","year","age","mdr_rep","abs_pr_r","abs_pr_s","cn")
+
 ## plot: cumulative bar chart
 ## x axis = age [0-100]
 ## y axis = proportion ltbir from each time point [0-1]
@@ -405,14 +416,11 @@ s_all$abs_pr_ltbis <- 0
 #ss_all <- matrix(0,dim(s_all)[1],dim(s_all)[2])
 ss_all<-c()
 
-for(cci in 1:4){
+for(cci in 1:max(uu)){
   print(c("country",cci))
   
   ## For each country get population distribution
-  if(cci==1){pop <- pop1}
-  if(cci==2){pop <- pop2}
-  if(cci==3){pop <- pop3}
-  if(cci==4){pop <- pop4}
+  pop <-  POP2014[which(POP2014$iso3 == cni[cci]),"value"]
   
   ## For the population in 2014. Calculate the proportion of the total population in each yearly age group. 
   pr_2014_age = pop / sum(pop) / 5 ## Divided by 5 to make per subunit (think works as equivalent to averaging proportions and multiplying by total)
@@ -488,10 +496,10 @@ for(cci in 1:4){
 
 ss_all <- as.data.table(ss_all)
 sum_ss_all <- ss_all%>%group_by(mdr_rep,yearcat,cn) %>%summarise(sum_prltbi = sum(pr_ltbir)) # if get single number = because plyr loaded after dplyr (has it's own summarise which gives single number)
-
+dim(sum_ss_all) # 17*4*138 = 9384
 ## Checks
-#w<-intersect(which(sum_ss_all$cn == "India"), which(sum_ss_all$mdr_rep == 15))
-#sum(sum_ss_all[w,"sum_prltbi"])
+#w<-intersect(which(sum_ss_all$cn == "ALB"), which(sum_ss_all$mdr_rep == 1))
+#sum(sum_ss_all[w,"sum_prltbi"]) # 1
 
 setwd(output)
 write.csv(sum_ss_all, "props_ltbi_when.csv")
