@@ -92,4 +92,12 @@ ggplot(subset(totals, best == 1), aes(x=cnn, y = ltbir)) + geom_point(aes(col = 
   scale_x_discrete("Country") + theme(axis.text.x = element_text(angle = 90, hjust = 1))
 ggsave("LTBIR_total_best.pdf")
 
+####**** Map plot ******************************************************************************************************************************************************************************************************************************** #####
+s_levelb <-s_level[,] # slice by mdr_rep?
 
+
+n2016 <- joinCountryData2Map(r2016, joinCode="NAME", nameJoinColumn="country")
+mapCountryData(n2016, nameColumnToPlot="ltbir", 
+               mapTitle="MDR LTBI percentage of population, 2014",
+               colourPalette="terrain",catMethod=c(0,0.5,1,1.5,2,3,4,5,10,15,20,25,30,35,40))
+dev.copy2pdf(file="MDRLTBI_map_2014.pdf", width = 7, height = 5)
