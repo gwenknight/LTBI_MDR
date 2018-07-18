@@ -30,10 +30,10 @@ data$cut_year_new <- cut(data$year_new, seq(1969,2015,5)) # only for period when
 
 store_metric <- c()
 
-for(i in 1:4){
+for(i in 1:length(countries)){
   cnn <- as.character(countries[i])
   p <-subset(pltbir, country == cnn & lowery > 1968)
-  d <-subset(data, country == cnn )
+  d <-data[which(data$iso3 == cnn),]
   
   ggplot() + 
     geom_rect( data = p , 
@@ -66,10 +66,30 @@ ggplot(store_metric, aes(x=mdr_rep, y = sum_metric)) + geom_point() +
   scale_x_continuous("MDR-ARI trend")
 ggsave("MDR_metric_data_against_need.pdf")
 
+ggplot(store_metric, aes(x=cnn, y = sum_metric)) + geom_point(aes(col = sum_metric)) + 
+ scale_y_continuous("Proportion of LTBI identifiable") + 
+  scale_x_discrete("Country") + facet_wrap(~mdr_rep)
+ggsave("MDR_metric_data_against_need_bycn.pdf")
 
+ggplot(store_metric, aes(x=cnn, y = sum_metric)) + geom_point(aes(col = factor(mdr_rep))) + geom_line(aes(group = cnn)) + 
+  scale_y_continuous("Proportion of LTBI identifiable") + 
+  scale_x_discrete("Country") + theme(axis.text.x = element_text(angle = 90, hjust = 1))
+ggsave("MDR_metric_data_against_need_bytype.pdf")
 
+### Get ltbi levels
+s_level <- read.csv("s_level_7.csv")[,-1]
+s_level$cnn <- s_level$pop_name
+s_level$mdr_rep <- s_level$rep
+totals <- merge(store_metric, s_level, by = c("cnn", "mdr_rep"))
 
+ggplot(subset(totals, best == 1), aes(x=cnn, y = sum_metric)) + geom_point(aes(col = factor(mdr_rep))) + geom_line(aes(group = cnn)) + 
+  scale_y_continuous("Proportion of LTBI identifiable") + 
+  scale_x_discrete("Country") + theme(axis.text.x = element_text(angle = 90, hjust = 1))
+ggsave("MDR_metric_data_against_need_total_best.pdf")
 
-
+ggplot(subset(totals, best == 1), aes(x=cnn, y = ltbir)) + geom_point(aes(col = factor(mdr_rep))) + geom_line(aes(group = cnn)) + 
+  scale_y_continuous("Percentage with LTBI-MDR") + 
+  scale_x_discrete("Country") + theme(axis.text.x = element_text(angle = 90, hjust = 1))
+ggsave("LTBIR_total_best.pdf")
 
 
