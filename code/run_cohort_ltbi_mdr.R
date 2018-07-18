@@ -64,7 +64,8 @@ s_level <- c(); #sum proportions infected
 #nari = 130
 ## Read in MDR curves
 save_curves0 <- read.csv("~/Dropbox/MRC SD Fellowship/Research/MDR/Latent_MDR/Data/lin_sig_quad_sigd_curves.csv",stringsAsFactors = FALSE)[-1]
-mdr_cn_best <- read.csv("/Users/eideghkmi/Documents/LTBI_MDR/output/store_cn_best.csv", stringsAsFactors = FALSE)[-1]
+mdr_cn_best <- read.csv("~/Documents/LTBI_MDR/output/store_cn_best.csv", stringsAsFactors = FALSE)[-1]
+
 # f_l is a proportion -> maximum is 1
 
 ## WHO data
@@ -81,8 +82,6 @@ cni <- setdiff(cni, too_small_pop)
 cni <- setdiff(cni, tb_cnt_mismatch) # removes 20 not in the DS-ARI database = 140
 # In H&D but not in rundata_ari
 cni <- intersect(unique(rundata$iso3),cni) # removes 2
-
-cni <- unique(mdr_cn_best$country)
 
 # Store all? 
 store_all <- as.data.frame(matrix(0,length(cn)*4*81*100,9))
