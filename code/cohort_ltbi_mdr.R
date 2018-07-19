@@ -58,7 +58,7 @@ cohort_ltbi <- function(ari,pop){
     c_now$new_dr <- ari_r * (1 - c_now$pr_ds - c_now$pr_dr - c_now$new_ds) # currently none, new infection DR
     c_now$rei_sr <- c_now$pr_ds * ari_r * alph[i,] 
     c_now$rei_rs <- c_now$pr_dr * ari_s * alph[i,]
-    if(length(which(c_now < 0))>0){print(c(i,"s",c_now$pr_ds,"r",c_now$pr_dr))}
+    if(length(which(c_now < 0))>0){print(c(i,"negative c_now"))}
     
     ### Store and update
     c_last <- c_now  
