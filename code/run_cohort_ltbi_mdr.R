@@ -2,7 +2,7 @@
 
 ### Libraries and ggplot theme
 library(ggplot2)
-theme_set(theme_bw())
+theme_set(theme_bw(base_size = 24))
 library(plyr)
 library(dplyr)
 library(cowplot)
@@ -54,17 +54,18 @@ cc$c_2014
 
 setwd("output")
 
+## Number of scenarios for MDR curves
+#nari = 4
+## Read in MDR curves
+save_curves0 <- read.csv("~/Dropbox/MRC SD Fellowship/Research/MDR/Latent_MDR/Data/lin_sig_quad_sigd_curves.csv",stringsAsFactors = FALSE)[-1]
+mdr_cn_best <- read.csv("~/Documents/LTBI_MDR/output/store_cn_best.csv", stringsAsFactors = FALSE)[-1]
+
 ## ARI trend data for DS TB
 load("../data/rundata_ari.Rdata")
 rundata$ari <- exp(rundata$lari)
 level2014 <- c(); #breakdown proportions infected by age
 s_level <- c(); #sum proportions infected 
 
-## Number of scenarios for MDR curves
-#nari = 130
-## Read in MDR curves
-save_curves0 <- read.csv("~/Dropbox/MRC SD Fellowship/Research/MDR/Latent_MDR/Data/lin_sig_quad_sigd_curves.csv",stringsAsFactors = FALSE)[-1]
-mdr_cn_best <- read.csv("~/Documents/LTBI_MDR/output/store_cn_best.csv", stringsAsFactors = FALSE)[-1]
 
 # f_l is a proportion -> maximum is 1
 
@@ -83,6 +84,8 @@ cni <- setdiff(cni, tb_cnt_mismatch) # removes 20 not in the DS-ARI database = 1
 # In H&D but not in rundata_ari
 cni <- intersect(unique(rundata$iso3),cni) # removes 2
 
+cni_rem <- c() # blank to store what else to remove
+
 # Store all? 
 store_all <- as.data.frame(matrix(0,length(cn)*4*81*100,9))
 runn <- 1
@@ -95,6 +98,10 @@ for(cci in 1:length(cni)){
   
   ### WHO data
   d <-subset(w_data, iso3 == cni[cci] )
+  
+  # Remove if only one data point
+  if(dim(d)[1] < 2){print(c("not enough data",cni[cci])); cni_rem = c(cni_rem, cci);
+  } else {
   
   ### ARI DS
   rdata <- as.data.table(rundata[which(rundata$iso3 == cni[cci]),])
@@ -115,15 +122,23 @@ for(cci in 1:length(cni)){
   save_plot(paste0(cni[cci],"_mdr_trends_4.pdf"), a1, base_aspect_ratio = 2 )
   
   a2 <- ggplot(ari_s, aes(x=year, y = mdr_c, group = factor(rep))) + 
-    geom_line(aes(col=factor(best))) + scale_y_continuous("Proportion new TB that is MDR") + guides(color = FALSE) + 
-    geom_point( data = d , aes(x=year_new, y = mdr_new_pcnt/100, group = country))+ scale_colour_manual(values = c("black","red"))
+    geom_line(aes(col=factor(rep), lty = factor(best)))  + scale_y_continuous("Proportion new TB that is MDR")+
+    geom_point( data = d , aes(x=year_new, y = mdr_new_pcnt/100, group = country))+
+    theme(legend.key.size = unit(2, 'lines')) + scale_colour_discrete("MDR Trend", labels = c(1,2,3,4)) +
+    scale_linetype_manual("Best fit",values=c("dotted", "solid"), labels = c("Best fit\nfor trend only","Best fit\nacross trends"))
   save_plot(paste0(cni[cci],"_mdr_trends_best.pdf"), a2, base_aspect_ratio = 2 )
   
   a3 <- ggplot(ari_s, aes(x=year, y = mdr, group = factor(rep))) + 
-    geom_line(aes(col=factor(rep), lty = factor(best)))  + scale_y_continuous("MDR ARI") 
+    geom_line(aes(col=factor(rep), lty = factor(best)))  + scale_y_continuous("MDR ARI")+
+    theme(legend.key.size = unit(2, 'lines')) + scale_colour_discrete("MDR Trend", labels = c(1,2,3,4)) +
+    scale_linetype_manual("Best fit",values=c("dotted", "solid"), labels = c("Best fit\nfor trend only","Best fit\nacross trends"))
   save_plot(paste0(cni[cci],"_mdr_ari_trends_4.pdf"), a3, base_aspect_ratio = 2 )
   
-  for(i in 1:nari){
+  a4 <- ggplot(ari_s, aes(x=year, y = ds)) + geom_line()  + scale_y_continuous("Median DS ARI")
+  save_plot(paste0(cni[cci],"_ds_trends.pdf"), a4, base_aspect_ratio = 2 )
+  
+  
+   for(i in 1:nari){
     print(c(i,"ari rep"))
     ari <- ari_s[((i-1)*81 + 1):(i*81),c("ds","mdr")]
     best_v <- ari_s[((i-1)*81 + 1):(i*81),"best"][1]
@@ -153,11 +168,11 @@ for(cci in 1:length(cni)){
     lowi <- ((runn-1)*(dim(ssc)[1])+1)
     uppi <- ((runn)*(dim(ssc)[1]))
     store_all[lowi:uppi,1] <- i;
-    store_all[lowi:uppi,2] <- cci;
+    store_all[lowi:uppi,2] <- cni[cci];
     store_all[lowi:uppi,3:9] <- ssc
     
     runn <- runn + 1
-    sa <- rbind(sa,cbind(i,cci, ssc)) # just for this country
+    sa <- rbind(sa,cbind(i,cn[cci], ssc)) # just for this country
   }
   
   sa <- as.data.frame(sa)
@@ -191,13 +206,24 @@ for(cci in 1:length(cni)){
   save_plot(paste0("combined_",cni[cci],".pdf"), a, base_aspect_ratio = 2)
   
   #p.cn <- plot_grid(a1, a1, labels = c("A", "B"), align = "h",ncol = 2,rel_widths = c(1, 1.8))
-  
+  }
 }
+
+dim(level2014) #4*100*107
+level2014$cn <- cni[as.numeric(level2014$popf)]
+
 s_level0 <- s_level
 s_level$pop_name <- cni[as.numeric(s_level0$popf)]
 s_level <- as.data.table(s_level)
 write.csv(s_level, "s_level_7.csv")
 
+cni <- cni[-cni_rem] # remove those with < 1 data 
+write.csv(cni, "final_country_est_included.csv")
+
+
+
+# READ IN
+#s_level <- read.csv("s_level_7.csv")
 # 
 a2r<-ggplot(s_level, aes(x=popf, y = ltbir, col=factor(rep) )) + geom_point() + guides(colour=FALSE) + 
   scale_x_discrete("MDR-ARI trend") + scale_y_continuous("LTBI-MDR (% population infected)") +
@@ -219,6 +245,10 @@ a2s<-ggplot(s_level, aes(x=rep, y = pltbis, col=factor(rep) )) + geom_point() + 
   theme(axis.text.x = element_text(angle = 90, hjust = 1)) + facet_wrap(~popf)
 save_plot("ltbi_pop_all_countries_s.pdf", a2s, base_aspect_ratio = 1.5 )
 
+## BRAZIL CASE STUDY
+
+
+
 ### To match to supplementary output by H&D
 # Mean levels for each country
 s_mean <- subset(s_level, best == '1') %>% group_by(pop_name) %>% summarise_at(c("ltbir","ltbis","pltbir","pltbis"),funs(mean))
@@ -233,63 +263,70 @@ ggsave("ltbir_all_countries_best_types.pdf")
 
 s_types <- subset(s_level, best == '1') %>% count(rep) 
 ggplot(s_types, aes(x=rep, y=n)) + geom_histogram(stat = "identity") + scale_x_continuous(breaks = c(1,2,3,4),labels = c("linear","sigmoid","quadratic","double sigmoid"),"Type of MDR trend")  
-ggsave("types_mdr_trend_hist.pdf")
+ggsave("types_mdr_trend_hist.pdf", width = 12, height = 9)
 
 ###******* AGE *****################################################################################################################
 #ssc <- cc$store_c
 #ssc$age <- seq(1,100,1)
 #ggplot(ssc[3700:4400,],aes(x=year, y = pr_dr, group = age, col=age)) + geom_line() #+ facet_wrap(~age,scales = "free")
 
-colnames(store_all) <- c(c("mdr_rep","cn"),colnames(cc$store_c))
-store_all$age <- seq(1,100,1)
-store_all_rec <- store_all[which(store_all$year > 1965),] # recent
+ w<-which(store_all$V2 == 0)
+ store_all <- store_all[-w,]
+ colnames(store_all) <- c(c("mdr_rep","cn"),colnames(cc$store_c))
+ store_all$age <- seq(1,100,1)
+ store_all_rec <- store_all[which(store_all$year > 1965),] # recent
+ 
+ #Check
+ length(intersect(unique(level2014$cn), unique(store_all$cn))) # 107
+ 
+#
+# dim(store_all) # 4 countries *130 mdr_reps *100 ages * 81 years
+# 
+# for(iii in 1:length(cn)){
+#   store_all_c <- store_all_rec[which(store_all_rec$cn==cn[iii]),]
+#   
+#   ggplot(store_all_c, aes(x=year, y = pr_dr, group = age, col = age)) + geom_line() + 
+#     facet_wrap(~mdr_rep, ncol = 5) + scale_colour_gradientn(limits = c(0,100),colours=c("navyblue", "darkorange1","darkgreen"))
+#   ggsave(paste0("all_age_",cni[iii],"_r.pdf"), height = 10, width = 10)
+#   
+#   ggplot(store_all_c, aes(x=year, y = pr_ds, group = age, col = age)) + geom_line() + 
+#     facet_wrap(~mdr_rep, ncol = 5) + scale_colour_gradientn(limits = c(0,100),colours=c("navyblue", "darkmagenta", "darkgreen"))
+#   ggsave(paste0("all_age_",cni[iii],"_s.pdf"), height = 10, width = 10)
+#   
+#   ggplot(store_all_c, aes(year, age)) + geom_tile(aes(fill = pr_ds),colour = "white") + scale_fill_gradient(low = "white",high = "steelblue","DS-TB") + 
+#     labs(x = "Year",y = "Age") + scale_y_continuous(lim = c(0,100)) + facet_wrap(~mdr_rep)
+#   ggsave(paste0("all_age_",cni[iii],"_map_s.pdf"), height = 10, width = 10)
+#   
+#   ggplot(store_all_c, aes(year, age)) + geom_tile(aes(fill = pr_dr),colour = "white") + scale_fill_gradient(low = "white",high = "red4","MDR-TB") +
+#     labs(x = "Year",y = "Age") + scale_y_continuous(lim = c(0,100)) + facet_wrap(~mdr_rep)
+#   ggsave(paste0("all_age_",cni[iii],"_map_r.pdf"), height = 10, width = 10)
+# }
 
-dim(store_all) # 4 countries *130 mdr_reps *100 ages * 81 years
 
-for(iii in 1:length(cn)){
-  store_all_c <- store_all_rec[which(store_all_rec$cn==iii),]
-  
-  ggplot(store_all_c, aes(x=year, y = pr_dr, group = age, col = age)) + geom_line() + 
-    facet_wrap(~mdr_rep, ncol = 5) + scale_colour_gradientn(limits = c(0,100),colours=c("navyblue", "darkorange1","darkgreen"))
-  ggsave(paste0("all_age_",cni[iii],"_r.pdf"), height = 10, width = 10)
-  
-  ggplot(store_all_c, aes(x=year, y = pr_ds, group = age, col = age)) + geom_line() + 
-    facet_wrap(~mdr_rep, ncol = 5) + scale_colour_gradientn(limits = c(0,100),colours=c("navyblue", "darkmagenta", "darkgreen"))
-  ggsave(paste0("all_age_",cni[iii],"_s.pdf"), height = 10, width = 10)
-  
-  ggplot(store_all_c, aes(year, age)) + geom_tile(aes(fill = pr_ds),colour = "white") + scale_fill_gradient(low = "white",high = "steelblue","DS-TB") + 
-    labs(x = "Year",y = "Age") + scale_y_continuous(lim = c(0,100)) + facet_wrap(~mdr_rep)
-  ggsave(paste0("all_age_",cni[iii],"_map_s.pdf"), height = 10, width = 10)
-  
-  ggplot(store_all_c, aes(year, age)) + geom_tile(aes(fill = pr_dr),colour = "white") + scale_fill_gradient(low = "white",high = "red4","MDR-TB") +
-    labs(x = "Year",y = "Age") + scale_y_continuous(lim = c(0,100)) + facet_wrap(~mdr_rep)
-  ggsave(paste0("all_age_",cni[iii],"_map_r.pdf"), height = 10, width = 10)
-}
-
-
-store_all_india <- store_all_rec[which(store_all_rec$cn==1),]
-store_all_china <- store_all_rec[which(store_all_rec$cn==2),]
-store_all_japan <- store_all_rec[which(store_all_rec$cn==3),]
-store_all_ukraine <- store_all_rec[which(store_all_rec$cn==4),]
+# store_all_india <- store_all_rec[which(store_all_rec$cn==1),]
+# store_all_china <- store_all_rec[which(store_all_rec$cn==2),]
+# store_all_japan <- store_all_rec[which(store_all_rec$cn==3),]
+# store_all_ukraine <- store_all_rec[which(store_all_rec$cn==4),]
 
 
 ####*********** When contributes most to latent burden? *********######################################################################################################################################################
 ## Store_all has 4 countries by age and time
-## 100 ages. 81 years. mdr_reps = 130. 
-dim(store_all) # 160*4*100*81 = 5184000
+## 100 ages. 81 years. mdr_reps = 4.Countries = 107
+dim(store_all) # 107*4*100*81 = 3466800
+
 colnames(store_all) <- c("rep","cn", colnames(ssc),"age")
 ## s_level has ltbir and ltbis levels by country (4) and mdr rep (18) (dim = 72)
 dim(s_level)
 colnames(s_level)
 age_groups <- cbind(seq(1,85,5),seq(5,85,5))
 age_groups[17,2] <- 100
-uu <- unique(store_all$cn)
+
 s_all<-c()
-for(i in 1:max(uu)){ # for each country
+for(i in 1:length(cni)){ # for each country
   
   # subset: store_all has the proportion and the new / rei for each age / time
-  s <-subset(store_all, cn == i) # all the new and rei for each age and time
-  l14 <-subset(level2014, popf == i) # the proportions at 2014 in each age
+  s <-subset(store_all, cn == cni[i]) # all the new and rei for each age and time
+  l14 <-subset(level2014, cn == cni[i]) # the proportions at 2014 in each age
   
   # where store?
   s_alloc_store<- c()
@@ -385,6 +422,7 @@ colnames(s_all)<-c("pr_r","pr_s","year","age","mdr_rep","abs_pr_r","abs_pr_s","c
 
 ## each row has the age in 2014 the year from which some contribution may come and the size of the contribution
 write.csv(s_all,"s_all.csv")
+s_all <- read.csv("s_all.csv")
 
 ### Exploring plots
 ## cumr can go negative - re-infections v important. Proportion infected with R can decrease! 
@@ -415,8 +453,8 @@ s_all$abs_pr_ltbis <- 0
 #ss_all <- matrix(0,dim(s_all)[1],dim(s_all)[2])
 ss_all<-c()
 
-for(cci in 1:max(uu)){
-  print(c("country",cci))
+for(cci in 1:length(cni)){
+  print(c("country",cni[cci]))
   
   ## For each country get population distribution
   pop <-  POP2014[which(POP2014$iso3 == cni[cci]),"value"]
@@ -473,7 +511,7 @@ for(cci in 1:max(uu)){
   ggplot(ss_here) +
     geom_bar(aes(mdr_rep, pr_ltbir, fill = factor(yearcat)),
              position = "fill", stat = "identity") + 
-    scale_y_continuous() + ggtitle("MDR-TB") +
+    scale_y_continuous("Percentage of LTBI MDR from this 5 year time interval") + ggtitle("MDR-TB") + scale_x_continuous(breaks = c(1,2,3,4),labels = c("linear","sigmoid","quadratic","double sigmoid"),"Type of MDR trend") +
     scale_fill_hue("Year")
   ggsave(paste0("DR_",cni[cci],"_ltbir_when.pdf"), height = 10, width = 10)
   
