@@ -13,7 +13,8 @@ library(reshape2)
 ### Home
 home <- "~/Documents/LTBI_MDR/"
 setwd(home)
-output <- "~/Documents/LTBI_MDR/output"
+#output <- "~/Documents/LTBI_MDR/output"
+output <- "~/Dropbox/MDR/output" # TEMPORARY
 source("code/cohort_ltbi_mdr.R") # loads function for underyling cohort model
 source("code/poss_mdr_curves.R") # loads function for gen MDR curves
 
@@ -52,7 +53,7 @@ cc$c_2014
 #cn <- unique(POP2014$iso3)
 #cni <- unique(POP2014$iso3)
 
-setwd("output")
+setwd(output)
 
 ## Number of scenarios for MDR curves
 #nari = 4
@@ -102,110 +103,110 @@ for(cci in 1:length(cni)){
   # Remove if only one data point
   if(dim(d)[1] < 2){print(c("not enough data",cni[cci])); cni_rem = c(cni_rem, cci);
   } else {
-  
-  ### ARI DS
-  rdata <- as.data.table(rundata[which(rundata$iso3 == cni[cci]),])
-  
-  # Need average over all replicates
-  rr <- ddply(rdata, .(year), summarize,  Av=median(ari)) #rdata %>% group_by( year ) %>%  summarise( Av = mean( x = ari , na.rm = TRUE ) )
-  #p1 <- ggplot(rr, aes(x=year,y=Av)) + geom_point() + ggtitle(cni[cci]) + scale_y_continuous("ARI DS-TB")
-  
-  ## ARI MDR curves (x 4)
-  ari_s <- ari_mdr(cni[cci],rr,mdr_cn_best, save_curves0) # gives ari for ds and mdr (mdr = f_l curve * ds)
-  
-  arim <- melt(ari_s, id.vars = c("year","mdr"))
-  
-  a1 <- ggplot(ari_s, aes(x=year, y = mdr_c, group = factor(rep))) + 
-    geom_line(aes(col=factor(best))) + facet_wrap(~type) + scale_y_continuous("Proportion new TB that is MDR") + 
-    guides(color = FALSE) + geom_point( data = d , aes(x=year_new, y = mdr_new_pcnt/100, group = country)) + 
-    scale_colour_manual(values = c("black","red"))
-  save_plot(paste0(cni[cci],"_mdr_trends_4.pdf"), a1, base_aspect_ratio = 2 )
-  
-  a2 <- ggplot(ari_s, aes(x=year, y = mdr_c, group = factor(rep))) + 
-    geom_line(aes(col=factor(rep), lty = factor(best)))  + scale_y_continuous("Proportion new TB that is MDR")+
-    geom_point( data = d , aes(x=year_new, y = mdr_new_pcnt/100, group = country))+
-    theme(legend.key.size = unit(2, 'lines')) + scale_colour_discrete("MDR Trend", labels = c(1,2,3,4)) +
-    scale_linetype_manual("Best fit",values=c("dotted", "solid"), labels = c("Best fit\nfor trend only","Best fit\nacross trends"))
-  save_plot(paste0(cni[cci],"_mdr_trends_best.pdf"), a2, base_aspect_ratio = 2 )
-  
-  a3 <- ggplot(ari_s, aes(x=year, y = mdr, group = factor(rep))) + 
-    geom_line(aes(col=factor(rep), lty = factor(best)))  + scale_y_continuous("MDR ARI")+
-    theme(legend.key.size = unit(2, 'lines')) + scale_colour_discrete("MDR Trend", labels = c(1,2,3,4)) +
-    scale_linetype_manual("Best fit",values=c("dotted", "solid"), labels = c("Best fit\nfor trend only","Best fit\nacross trends"))
-  save_plot(paste0(cni[cci],"_mdr_ari_trends_4.pdf"), a3, base_aspect_ratio = 2 )
-  
-  a4 <- ggplot(ari_s, aes(x=year, y = ds)) + geom_line()  + scale_y_continuous("Median DS ARI")
-  save_plot(paste0(cni[cci],"_ds_trends.pdf"), a4, base_aspect_ratio = 2 )
-  
-  
-   for(i in 1:nari){
-    print(c(i,"ari rep"))
-    ari <- ari_s[((i-1)*81 + 1):(i*81),c("ds","mdr")]
-    best_v <- ari_s[((i-1)*81 + 1):(i*81),"best"][1]
-    pop <-  POP2014[which(POP2014$iso3 == cni[cci]),"value"]
     
-    cc <- cohort_ltbi(ari, pop1)
+    ### ARI DS
+    rdata <- as.data.table(rundata[which(rundata$iso3 == cni[cci]),])
     
-    combs <- cc$combs
+    # Need average over all replicates
+    rr <- ddply(rdata, .(year), summarize,  Av=median(ari)) #rdata %>% group_by( year ) %>%  summarise( Av = mean( x = ari , na.rm = TRUE ) )
+    #p1 <- ggplot(rr, aes(x=year,y=Av)) + geom_point() + ggtitle(cni[cci]) + scale_y_continuous("ARI DS-TB")
     
-    # by age 
-    combs$mdr_rep <- i
-    combs$age_group <- seq(1:17)
-    combs$popf <- cci
-    #level2014 <- rbind(level2014,combs)
-    level2014 <- rbind(level2014,cbind(cc$c_2014,combs[1,c("mdr_rep","popf")],row.names = NULL))
+    ## ARI MDR curves (x 4)
+    ari_s <- ari_mdr(cni[cci],rr,mdr_cn_best, save_curves0) # gives ari for ds and mdr (mdr = f_l curve * ds)
     
-    # total percentage infected sums
-    ltbi_dr <- sum(combs$perc_dr) # percentage infected
-    ltbi_ds <- sum(combs$perc_ds)
-    pltbi_dr <- sum(combs$size_dr) # number of people infected
-    pltbi_ds <- sum(combs$size_ds)
+    arim <- melt(ari_s, id.vars = c("year","mdr"))
     
-    # Bind together. best_v is 1 if this type was the best fit
-    s_level <- rbind(s_level,c(i,ltbi_dr,ltbi_ds,cci,pltbi_dr, pltbi_ds, best_v))
+    a1 <- ggplot(ari_s, aes(x=year, y = mdr_c, group = factor(rep))) + 
+      geom_line(aes(col=factor(best))) + facet_wrap(~type) + scale_y_continuous("Proportion new TB that is MDR") + 
+      guides(color = FALSE) + geom_point( data = d , aes(x=year_new, y = mdr_new_pcnt/100, group = country)) + 
+      scale_colour_manual(values = c("black","red"))
+    save_plot(paste0(cni[cci],"_mdr_trends_4.pdf"), a1, base_aspect_ratio = 2 )
     
-    ssc <- cc$store_c
-    lowi <- ((runn-1)*(dim(ssc)[1])+1)
-    uppi <- ((runn)*(dim(ssc)[1]))
-    store_all[lowi:uppi,1] <- i;
-    store_all[lowi:uppi,2] <- cni[cci];
-    store_all[lowi:uppi,3:9] <- ssc
+    a2 <- ggplot(ari_s, aes(x=year, y = mdr_c, group = factor(rep))) + 
+      geom_line(aes(col=factor(rep), lty = factor(best)))  + scale_y_continuous("Proportion new TB that is MDR")+
+      geom_point( data = d , aes(x=year_new, y = mdr_new_pcnt/100, group = country))+
+      theme(legend.key.size = unit(2, 'lines')) + scale_colour_discrete("MDR Trend", labels = c(1,2,3,4)) +
+      scale_linetype_manual("Best fit",values=c("dotted", "solid"), labels = c("Best fit\nfor trend only","Best fit\nacross trends"))
+    save_plot(paste0(cni[cci],"_mdr_trends_best.pdf"), a2, base_aspect_ratio = 2 )
     
-    runn <- runn + 1
-    sa <- rbind(sa,cbind(i,cn[cci], ssc)) # just for this country
-  }
-  
-  sa <- as.data.frame(sa)
-  colnames(sa) <- c(c("mdr_rep","cn"),colnames(cc$store_c))
-  sa$age <- seq(1,100,1)
-  sa_rec <- sa[which(sa$year > 1965),] # recent
-  
-  # #### Plot by age
-  #g1<-ggplot(sa_rec, aes(x=year, y = pr_dr, group = age, col = age)) + geom_line() +
-  #  facet_wrap(~mdr_rep, ncol = 5) + scale_colour_gradientn(limits = c(0,100),colours=c("navyblue", "darkorange1","darkgreen"))
-  #ggsave(paste0("all_age_",cni[cci],"_r.pdf"), height = 10, width = 10)
-  
-  #g2<-ggplot(sa_rec, aes(x=year, y = pr_ds, group = age, col = age)) + geom_line() +
-  #  facet_wrap(~mdr_rep, ncol = 5) + scale_colour_gradientn(limits = c(0,100),colours=c("navyblue", "darkmagenta", "darkgreen"))
-  #ggsave(paste0("all_age_",cni[cci],"_s.pdf"), height = 10, width = 10)
-  
-  g3<-ggplot(sa_rec, aes(year, age)) + geom_tile(aes(fill = pr_ds),colour = "white") + scale_fill_gradient(low = "white",high = "steelblue","DS-TB") +
-    labs(x = "Year",y = "Age") + scale_y_continuous(lim = c(0,100)) + facet_wrap(~mdr_rep)
-  ggsave(paste0("all_age_",cni[cci],"_map_s.pdf"), height = 10, width = 10)
-  
-  g4<-ggplot(sa_rec, aes(year, age)) + geom_tile(aes(fill = pr_dr),colour = "white") + scale_fill_gradient(low = "white",high = "red4","MDR-TB") +
-    labs(x = "Year",y = "Age") + scale_y_continuous(lim = c(0,100)) + facet_wrap(~mdr_rep)
-  ggsave(paste0("all_age_",cni[cci],"_map_r.pdf"), height = 10, width = 10)
-  
-  s_level <- as.data.frame(s_level)
-  colnames(s_level) <- c("rep","ltbir","ltbis","popf","pltbir", "pltbis","best")
-  
-  ss <- merge(s_level,ari_s, by = 'rep')
-  bottom_row <- plot_grid(g3,g4, labels = c('B', 'C'), align = 'h', rel_widths = c(1, 1))
-  a<-plot_grid(a1, bottom_row, labels = c('A', ''), ncol = 1, rel_heights = c(1, 1.2))
-  save_plot(paste0("combined_",cni[cci],".pdf"), a, base_aspect_ratio = 2)
-  
-  #p.cn <- plot_grid(a1, a1, labels = c("A", "B"), align = "h",ncol = 2,rel_widths = c(1, 1.8))
+    a3 <- ggplot(ari_s, aes(x=year, y = mdr, group = factor(rep))) + 
+      geom_line(aes(col=factor(rep), lty = factor(best)))  + scale_y_continuous("MDR ARI")+
+      theme(legend.key.size = unit(2, 'lines')) + scale_colour_discrete("MDR Trend", labels = c(1,2,3,4)) +
+      scale_linetype_manual("Best fit",values=c("dotted", "solid"), labels = c("Best fit\nfor trend only","Best fit\nacross trends"))
+    save_plot(paste0(cni[cci],"_mdr_ari_trends_4.pdf"), a3, base_aspect_ratio = 2 )
+    
+    a4 <- ggplot(ari_s, aes(x=year, y = ds)) + geom_line()  + scale_y_continuous("Median DS ARI")
+    save_plot(paste0(cni[cci],"_ds_trends.pdf"), a4, base_aspect_ratio = 2 )
+    
+    
+    for(i in 1:nari){
+      print(c(i,"ari rep"))
+      ari <- ari_s[((i-1)*81 + 1):(i*81),c("ds","mdr")]
+      best_v <- ari_s[((i-1)*81 + 1):(i*81),"best"][1]
+      pop <-  POP2014[which(POP2014$iso3 == cni[cci]),"value"]
+      
+      cc <- cohort_ltbi(ari, pop1)
+      
+      combs <- cc$combs
+      
+      # by age 
+      combs$mdr_rep <- i
+      combs$age_group <- seq(1:17)
+      combs$popf <- cci
+      #level2014 <- rbind(level2014,combs)
+      level2014 <- rbind(level2014,cbind(cc$c_2014,combs[1,c("mdr_rep","popf")],row.names = NULL))
+      
+      # total percentage infected sums
+      ltbi_dr <- sum(combs$perc_dr) # percentage infected
+      ltbi_ds <- sum(combs$perc_ds)
+      pltbi_dr <- sum(combs$size_dr) # number of people infected
+      pltbi_ds <- sum(combs$size_ds)
+      
+      # Bind together. best_v is 1 if this type was the best fit
+      s_level <- rbind(s_level,c(i,ltbi_dr,ltbi_ds,cci,pltbi_dr, pltbi_ds, best_v))
+      
+      ssc <- cc$store_c
+      lowi <- ((runn-1)*(dim(ssc)[1])+1)
+      uppi <- ((runn)*(dim(ssc)[1]))
+      store_all[lowi:uppi,1] <- i;
+      store_all[lowi:uppi,2] <- cni[cci];
+      store_all[lowi:uppi,3:9] <- ssc
+      
+      runn <- runn + 1
+      sa <- rbind(sa,cbind(i,cn[cci], ssc)) # just for this country
+    }
+    
+    sa <- as.data.frame(sa)
+    colnames(sa) <- c(c("mdr_rep","cn"),colnames(cc$store_c))
+    sa$age <- seq(1,100,1)
+    sa_rec <- sa[which(sa$year > 1965),] # recent
+    
+    # #### Plot by age
+    #g1<-ggplot(sa_rec, aes(x=year, y = pr_dr, group = age, col = age)) + geom_line() +
+    #  facet_wrap(~mdr_rep, ncol = 5) + scale_colour_gradientn(limits = c(0,100),colours=c("navyblue", "darkorange1","darkgreen"))
+    #ggsave(paste0("all_age_",cni[cci],"_r.pdf"), height = 10, width = 10)
+    
+    #g2<-ggplot(sa_rec, aes(x=year, y = pr_ds, group = age, col = age)) + geom_line() +
+    #  facet_wrap(~mdr_rep, ncol = 5) + scale_colour_gradientn(limits = c(0,100),colours=c("navyblue", "darkmagenta", "darkgreen"))
+    #ggsave(paste0("all_age_",cni[cci],"_s.pdf"), height = 10, width = 10)
+    
+    g3<-ggplot(sa_rec, aes(year, age)) + geom_tile(aes(fill = pr_ds),colour = "white") + scale_fill_gradient(low = "white",high = "steelblue","DS-TB") +
+      labs(x = "Year",y = "Age") + scale_y_continuous(lim = c(0,100)) + facet_wrap(~mdr_rep)
+    ggsave(paste0("all_age_",cni[cci],"_map_s.pdf"), height = 10, width = 10)
+    
+    g4<-ggplot(sa_rec, aes(year, age)) + geom_tile(aes(fill = pr_dr),colour = "white") + scale_fill_gradient(low = "white",high = "red4","MDR-TB") +
+      labs(x = "Year",y = "Age") + scale_y_continuous(lim = c(0,100)) + facet_wrap(~mdr_rep)
+    ggsave(paste0("all_age_",cni[cci],"_map_r.pdf"), height = 10, width = 10)
+    
+    s_level <- as.data.frame(s_level)
+    colnames(s_level) <- c("rep","ltbir","ltbis","popf","pltbir", "pltbis","best")
+    
+    ss <- merge(s_level,ari_s, by = 'rep')
+    bottom_row <- plot_grid(g3,g4, labels = c('B', 'C'), align = 'h', rel_widths = c(1, 1))
+    a<-plot_grid(a1, bottom_row, labels = c('A', ''), ncol = 1, rel_heights = c(1, 1.2))
+    save_plot(paste0("combined_",cni[cci],".pdf"), a, base_aspect_ratio = 2)
+    
+    #p.cn <- plot_grid(a1, a1, labels = c("A", "B"), align = "h",ncol = 2,rel_widths = c(1, 1.8))
   }
 }
 
@@ -270,15 +271,15 @@ ggsave("types_mdr_trend_hist.pdf", width = 12, height = 9)
 #ssc$age <- seq(1,100,1)
 #ggplot(ssc[3700:4400,],aes(x=year, y = pr_dr, group = age, col=age)) + geom_line() #+ facet_wrap(~age,scales = "free")
 
- w<-which(store_all$V2 == 0)
- store_all <- store_all[-w,]
- colnames(store_all) <- c(c("mdr_rep","cn"),colnames(cc$store_c))
- store_all$age <- seq(1,100,1)
- store_all_rec <- store_all[which(store_all$year > 1965),] # recent
- 
- #Check
- length(intersect(unique(level2014$cn), unique(store_all$cn))) # 107
- 
+w<-which(store_all$V2 == 0)
+store_all <- store_all[-w,]
+colnames(store_all) <- c(c("mdr_rep","cn"),colnames(cc$store_c))
+store_all$age <- seq(1,100,1)
+store_all_rec <- store_all[which(store_all$year > 1965),] # recent
+
+#Check
+length(intersect(unique(level2014$cn), unique(store_all$cn))) # 107
+
 #
 # dim(store_all) # 4 countries *130 mdr_reps *100 ages * 81 years
 # 
@@ -322,7 +323,7 @@ age_groups <- cbind(seq(1,85,5),seq(5,85,5))
 age_groups[17,2] <- 100
 
 s_all<-c()
-for(i in 1:length(cni)){ # for each country
+for(i in 45:length(cni)){ # for each country
   
   # subset: store_all has the proportion and the new / rei for each age / time
   s <-subset(store_all, cn == cni[i]) # all the new and rei for each age and time

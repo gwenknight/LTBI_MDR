@@ -6,6 +6,8 @@ library(ggplot2); library(gdata);library(RColorBrewer); library(data.table); lib
 home <- "~/Documents/LTBI_MDR/"
 output <- "~/Documents/LTBI_MDR/output/"
 
+output <- "~/Dropbox/MDR/output" # TEMPORARY
+
 ## Get WHO data
 setwd(home)
 data <- read.csv("datar/new_who_edited.csv")
@@ -112,7 +114,7 @@ cs2 <- "UKR"
 w<-which(totals$cnn == cs1)
 mm <- melt(totals[w,c("mdr_rep", "sum_metric","ltbir","ltbis","best")],id.vars=c("mdr_rep","best")) 
 ggplot(mm,aes(x = mdr_rep, y = value)) + geom_point(aes(pch = factor(best))) + 
-  ggtitle(cs1) + facet_wrap(~variable, scales = "free") + scale_shape_discrete("Best\nMDR\nType",labels = c("Best just type","Best all types"))
+  ggtitle(cs2) + facet_wrap(~variable, scales = "free") + scale_shape_discrete("Best\nMDR\nType",labels = c("Best just type","Best all types"))
 ggsave(paste0("CS",cs2,"_final.pdf"), width = 14, height = 6)
 
 
