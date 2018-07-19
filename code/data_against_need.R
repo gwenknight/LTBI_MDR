@@ -19,7 +19,7 @@ labs <- pltbir$yearcat
 pltbir$lowery = as.numeric( sub("\\((.+),.*", "\\1", labs) )
 pltbir$uppery = as.numeric( sub("[^,]*,([^]]*)\\]", "\\1", labs) )
 pltbir$sum_prltbi <- round(pltbir$sum_prltbi,2)
-pltbir$level_pr_ltbir <- cut(pltbir$sum_prltbi,seq(0,1,0.1),labels=seq(1,10,1),right = FALSE)
+pltbir$level_pr_ltbir <- cut(pltbir$sum_prltbi,seq(-0.1,1,0.1),labels=seq(0,100,10),right = TRUE)
 
 ## plot
 countries <- unique(pltbir$country)
@@ -42,11 +42,13 @@ for(i in 1:length(countries)){
                               ymin = 0 ,
                               ymax = 50 ,
                               fill = level_pr_ltbir) ,
-               alpha = .5 ) + facet_wrap(~mdr_rep) + 
-    scale_fill_brewer(name = "Level of\ncontribution\nto LTBI",drop = FALSE,direction = -1,palette = "Spectral") + 
+               alpha = .5 ) + facet_wrap(~mdr_rep, ncol = 4) + 
+    scale_fill_brewer(name = "Level of\ncontribution\nto MDR LTBI",drop = FALSE,direction = -1,palette = "Spectral", 
+                      labels = c("0","(0-10%]","(10-20%]","(20-30%]","(30-40%]","(40-50%]","(50-60%]",
+                                 "(60-70%]","(70-80%]","(80-90%]","(90-100%]")) + 
     scale_x_continuous("Year") + scale_y_continuous("Percentage of new cases that are MDR") + 
     geom_point( data = d , aes(x=year_new, y = mdr_new_pcnt, group = country))
-  ggsave(paste0("when_imp_vs_data_",cnn,".pdf"))
+  ggsave(paste0("when_imp_vs_data_",cnn,".pdf"),width = 12, height = 4)
   
   ## METRIC
   ## sum over 5 yrs % LTBI from that 5 yr x data there (y/n) = M. High = good low = ba
@@ -54,7 +56,7 @@ for(i in 1:length(countries)){
   p$metric <-   rep(ifelse(table(d$cut_year_new)>0,1,0),length(unique(p$mdr_rep))) * as.numeric(p$sum_prltbi) 
   p <- as.data.table(p)
   ## Sum Metric = proportion of LTBI that could be gotten at using this data
-  pp <- p %>% group_by(mdr_rep) %>% summarise(sum_metric = sum(metric))
+  pp <- ddply(p, .(mdr_rep), summarize,  sum_metric=sum(metric)) #pp <- p %>% group_by(mdr_rep) %>% summarise(sum_metric = sum(metric))
   store_metric <- rbind(store_metric,cbind(pp,cnn))
 }
 
@@ -62,9 +64,9 @@ store_metric <- as.data.frame(store_metric)
 colnames(store_metric) <- c("mdr_rep","sum_metric","cnn")
 
 ggplot(store_metric, aes(x=mdr_rep, y = sum_metric)) + geom_point() + 
-  facet_wrap(~cnn) + scale_y_continuous("Proportion of LTBI identifiable") + 
+  facet_wrap(~cnn, ncol = 18) + scale_y_continuous("Proportion of LTBI identifiable") + 
   scale_x_continuous("MDR-ARI trend")
-ggsave("MDR_metric_data_against_need.pdf")
+ggsave("MDR_metric_data_against_need.pdf", width = 14, height = 14)
 
 ggplot(store_metric, aes(x=cnn, y = sum_metric)) + geom_point(aes(col = sum_metric)) + 
  scale_y_continuous("Proportion of LTBI identifiable") + 
@@ -82,15 +84,42 @@ s_level$cnn <- s_level$pop_name
 s_level$mdr_rep <- s_level$rep
 totals <- merge(store_metric, s_level, by = c("cnn", "mdr_rep"))
 
-ggplot(subset(totals, best == 1), aes(x=cnn, y = sum_metric)) + geom_point(aes(col = factor(mdr_rep))) + geom_line(aes(group = cnn)) + 
-  scale_y_continuous("Proportion of LTBI identifiable") + 
+ggplot(subset(totals, best == 1), aes(x=cnn, y = sum_metric)) + geom_point(aes(col = factor(mdr_rep))) + 
+  geom_line(aes(group = cnn)) + 
+  scale_y_continuous("Proportion of LTBI identifiable") + scale_color_discrete("MDR\nTrend") +
   scale_x_discrete("Country") + theme(axis.text.x = element_text(angle = 90, hjust = 1))
-ggsave("MDR_metric_data_against_need_total_best.pdf")
+ggsave("MDR_metric_data_against_need_total_best.pdf", width = 14, height = 8)
 
-ggplot(subset(totals, best == 1), aes(x=cnn, y = ltbir)) + geom_point(aes(col = factor(mdr_rep))) + geom_line(aes(group = cnn)) + 
-  scale_y_continuous("Percentage with LTBI-MDR") + 
+ggplot(subset(totals, best == 1)[20:50,], aes(x=cnn, y = ltbir)) + geom_point(aes(col = factor(mdr_rep))) + geom_line(aes(group = cnn)) + 
+  scale_y_continuous("Percentage with LTBI-MDR")+ scale_color_discrete("MDR\nTrend")  + 
   scale_x_discrete("Country") + theme(axis.text.x = element_text(angle = 90, hjust = 1))
-ggsave("LTBIR_total_best.pdf")
+ggsave("LTBIR_total_best.pdf", width = 14, height = 6)
+
+ggplot(subset(totals, best == 1), aes(x=cnn, y = ltbis)) + geom_point(aes(col = factor(mdr_rep))) + geom_line(aes(group = cnn)) + 
+  scale_y_continuous("Percentage with LTBI-DS")+ scale_color_discrete("MDR\nTrend")  + 
+  scale_x_discrete("Country") + theme(axis.text.x = element_text(angle = 90, hjust = 1))
+ggsave("LTBIS_total_best.pdf", width = 14, height = 6)
+
+# Case studies
+cs1 <- "BRA"
+w<-which(totals$cnn == cs1)
+mm <- melt(totals[w,c("mdr_rep", "sum_metric","ltbir","ltbis","best")],id.vars=c("mdr_rep","best")) 
+ggplot(mm,aes(x = mdr_rep, y = value)) + geom_point(aes(pch = factor(best))) + 
+  ggtitle(cs1) + facet_wrap(~variable, scales = "free") + scale_shape_discrete("Best\nMDR\nType",labels = c("Best just type","Best all types"))
+ggsave(paste0("CS",cs1,"_final.pdf"), width = 14, height = 6)
+
+cs2 <- "UKR"
+w<-which(totals$cnn == cs1)
+mm <- melt(totals[w,c("mdr_rep", "sum_metric","ltbir","ltbis","best")],id.vars=c("mdr_rep","best")) 
+ggplot(mm,aes(x = mdr_rep, y = value)) + geom_point(aes(pch = factor(best))) + 
+  ggtitle(cs1) + facet_wrap(~variable, scales = "free") + scale_shape_discrete("Best\nMDR\nType",labels = c("Best just type","Best all types"))
+ggsave(paste0("CS",cs2,"_final.pdf"), width = 14, height = 6)
+
+
+# stats
+ff <- subset(totals, best == 1)
+100*length(which(ff$ltbir > 1)) / length(ff$ltbir) # 8% > 1%
+mean(ff$ltbir) # mean is 0.3% have ltbir
 
 ####**** Map plot ******************************************************************************************************************************************************************************************************************************** #####
 s_levelb <-s_level[,] # slice by mdr_rep?
