@@ -106,7 +106,7 @@ ggplot(save_jps, aes(x=year,y=out,group=index,colour = factor(tilt))) +
 
 
 
-#### Plateuing sigmoid curves*****####*****####*****####*****####*****####*****####*****####*****####*****####*****####*****####*****####*****####*****####*****####*****####*****####*****####*****####*****####*****####*****####
+#### Plateuing sigmoid curves (double sigmoid)*****####*****####*****####*****####*****####*****####*****####*****####*****####*****####*****####*****####*****####*****####*****####*****####*****####*****####*****####*****####*****####*****####
 ## fdsig-base(t)=1 / 1+exp(−a′1(t−t′mid1))11+exp(−a′2(t−t′mid2)). From "Sicegar" package
 # I(t)=(Imax−Iinite−a1(t−tmid1)+1+Iinit)(1−Ifinalea2(t−tmid2)+1+Ifinal)
 sigm_plateau <- function(x, delta1, delta2, max, final, A = 1, B = 1){ (max / (1 + exp(-A*(x-delta1))) ) * (final + (1 - final)/(1 + exp(B*(x-delta2)) ))} 
