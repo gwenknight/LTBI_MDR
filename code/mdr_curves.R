@@ -168,8 +168,8 @@ ggplot(save_jps_plat, aes(x=year,y=out,group=index,colour = factor(tilt1))) +
 save_quads$tilt = 0
 save_quads$jump = 0
 save_jps$i = 0
-save_jps$type = 1
-save_quads$type = 2
+save_jps$type = 2
+save_quads$type = 3
 save_quads$tilt1 = 0
 save_quads$tilt2 = 0
 save_quads$dist_up = 0
@@ -182,18 +182,18 @@ save_jps$max_up = 0
 
 save_lin$tilt1 = 0
 save_lin$tilt2 = 0
+save_lin$type = 1
 save_lin$dist_up = 0
 save_lin$max_up = 0
 
 save_jps_plat$tilt = 0
 save_jps_plat$i = 0
-save_jps_plat$type = 3
+save_jps_plat$type = 4
 
 save_curves <- rbind(save_lin, save_jps, save_quads, save_jps_plat)
 
-setwd("~/Dropbox/MRC SD Fellowship/Research/MDR/Latent MDR/Data/")
+setwd("~/Dropbox/MRC SD Fellowship/Research/MDR/Latent_MDR/Data/")
 write.csv(save_curves,"lin_sig_quad_sigd_curves.csv")
-
 
 ggplot(save_curves, aes(x=year, y = out, group = index)) + geom_line(aes(col=factor(type))) + 
   facet_wrap(~type, scales = "free") + geom_vline(xintercept = 1970)
