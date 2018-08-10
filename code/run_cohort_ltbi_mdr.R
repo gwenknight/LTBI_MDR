@@ -74,13 +74,14 @@ s_level <- c(); #sum proportions infected
 w_data <- read.csv("~/Documents/LTBI_MDR/datar/new_who_edited.csv")
 
 ## Which countries? 
-cni <- unique(mdr_cn_best$country) # 160
+cni <- unique(mdr_cn_best$country) 
+length(cni) # 160
 # Removed from H&D analysis:
 too_small_pop <- c("WSM","ABW","ATG","BHS","BLZ","BRB","BRN","CUW","FSM","GRD","GUM","ISL","KIR",
                    "LCA","MDV","MLT","NCL","PYF","STP","SYC","TON","VCT","VIR","VUT")
 tb_cnt_mismatch <- c("AIA", "AND", "ANT", "ASM","BMU","COK","CYM","DMA","GRL","KNA","MCO",
                      "MHL","MNP","MSR","NIU","NRU","PLW","SMR","SXM","TCA","TKL","TUV","VGB","WLF")
-cni <- setdiff(cni, too_small_pop)
+cni <- setdiff(cni, too_small_pop) # removes 12
 cni <- setdiff(cni, tb_cnt_mismatch) # removes 20 not in the DS-ARI database = 140
 # In H&D but not in rundata_ari
 cni <- intersect(unique(rundata$iso3),cni) # removes 2
