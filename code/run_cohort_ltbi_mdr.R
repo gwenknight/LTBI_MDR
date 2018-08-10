@@ -62,7 +62,7 @@ save_curves0 <- read.csv("~/Dropbox/MRC SD Fellowship/Research/MDR/Latent_MDR/Da
 mdr_cn_best <- read.csv("~/Documents/LTBI_MDR/output/store_cn_best.csv", stringsAsFactors = FALSE)[-1]
 
 ## ARI trend data for DS TB
-load("../data/rundata_ari.Rdata")
+load("~/Documents/LTBI_MDR/data/rundata_ari.Rdata")
 rundata$ari <- exp(rundata$lari)
 level2014 <- c(); #breakdown proportions infected by age
 s_level <- c(); #sum proportions infected 
@@ -84,11 +84,11 @@ cni <- setdiff(cni, too_small_pop)
 cni <- setdiff(cni, tb_cnt_mismatch) # removes 20 not in the DS-ARI database = 140
 # In H&D but not in rundata_ari
 cni <- intersect(unique(rundata$iso3),cni) # removes 2
-
+length(cni)
 cni_rem <- c() # blank to store what else to remove
 
 # Store all? 
-store_all <- as.data.frame(matrix(0,length(cn)*4*81*100,9))
+store_all <- as.data.frame(matrix(0,length(cni)*4*81*100,9))
 runn <- 1
 nari = 4 # just 4 best
 
@@ -173,7 +173,7 @@ for(cci in 1:length(cni)){
       store_all[lowi:uppi,3:9] <- ssc
       
       runn <- runn + 1
-      sa <- rbind(sa,cbind(i,cn[cci], ssc)) # just for this country
+      sa <- rbind(sa,cbind(i,cni[cci], ssc)) # just for this country
     }
     
     sa <- as.data.frame(sa)
@@ -212,14 +212,17 @@ for(cci in 1:length(cni)){
 
 dim(level2014) #4*100*107
 level2014$cn <- cni[as.numeric(level2014$popf)]
+write.csv(level2014, "level2014.csv")
 
 s_level0 <- s_level
 s_level$pop_name <- cni[as.numeric(s_level0$popf)]
 s_level <- as.data.table(s_level)
 write.csv(s_level, "s_level_7.csv")
+s_level <- read.csv("s_level_7.csv")[,-1]
 
 cni <- cni[-cni_rem] # remove those with < 1 data 
 write.csv(cni, "final_country_est_included.csv")
+cni <- read.csv("final_country_est_included.csv", stringsAsFactors = FALSE)[,-1]
 
 
 
@@ -275,7 +278,10 @@ w<-which(store_all$V2 == 0)
 store_all <- store_all[-w,]
 colnames(store_all) <- c(c("mdr_rep","cn"),colnames(cc$store_c))
 store_all$age <- seq(1,100,1)
+write.csv(store_all,"store_all.csv")
+store_all <- read.csv("store_all.csv")
 store_all_rec <- store_all[which(store_all$year > 1965),] # recent
+
 
 #Check
 length(intersect(unique(level2014$cn), unique(store_all$cn))) # 107
@@ -323,7 +329,7 @@ age_groups <- cbind(seq(1,85,5),seq(5,85,5))
 age_groups[17,2] <- 100
 
 s_all<-c()
-for(i in 45:length(cni)){ # for each country
+for(i in 1:length(cni)){ # for each country
   
   # subset: store_all has the proportion and the new / rei for each age / time
   s <-subset(store_all, cn == cni[i]) # all the new and rei for each age and time
@@ -416,14 +422,17 @@ for(i in 45:length(cni)){ # for each country
 
 ## All data
 ## countries * mdr_rep * age in 2014 * year
-dim(s_all) # 138*4*100*81 = 4471200
+dim(s_all) # 107*4*100*81 = 3466800
 s_all_orig <- as.data.frame(s_all)
 s_all <- as.data.frame(s_all_orig)
+
 colnames(s_all)<-c("pr_r","pr_s","year","age","mdr_rep","abs_pr_r","abs_pr_s","cn")
+
+s_all$cn <- cni[s_all$cn]
 
 ## each row has the age in 2014 the year from which some contribution may come and the size of the contribution
 write.csv(s_all,"s_all.csv")
-s_all <- read.csv("s_all.csv")
+s_all <- read.csv("s_all.csv", stringsAsFactors = FALSE)[,-1]
 
 ### Exploring plots
 ## cumr can go negative - re-infections v important. Proportion infected with R can decrease! 
@@ -450,6 +459,7 @@ s_all$pr_ltbis <- 0
 s_all$yearcat<-cut(s_all$year, seq(1929,2018,5))
 s_all$abs_pr_ltbir <- 0
 s_all$abs_pr_ltbis <- 0
+
 
 #ss_all <- matrix(0,dim(s_all)[1],dim(s_all)[2])
 ss_all<-c()
@@ -481,49 +491,49 @@ for(cci in 1:length(cni)){
   #sum(ss_here[w,"pr_ltbir"]) # = 1
   
   setwd(output)
-  ## This says: by age, when were they infected. The proportion of their % infected that can be 
+  ## This says: by age, when were they infected. The proportion of their % infected that can be
   # allocated to past times.
   ggplot(ss_here, aes(age, pr_s, fill = factor(year))) +
     geom_bar(position = "fill", stat = "identity") +
     scale_y_continuous() + facet_wrap(~mdr_rep) + ggtitle(paste0("DS-TB, ",cni[cci])) +
     scale_fill_hue("clarity")
   ggsave(paste0("DS_age_",cni[cci],"_ltbis_when.pdf"), height = 10, width = 10)
-  
+
   ggplot(ss_here, aes(age, pr_r, fill = factor(year))) +
-    geom_bar(position = "fill", stat = "identity") + 
-    scale_y_continuous() + facet_wrap(~mdr_rep) + ggtitle(paste0("MDR-TB, ",cni[cci])) + 
+    geom_bar(position = "fill", stat = "identity") +
+    scale_y_continuous() + facet_wrap(~mdr_rep) + ggtitle(paste0("MDR-TB, ",cni[cci])) +
     scale_fill_hue("clarity")
   ggsave(paste0("DR_age_",cni[cci],"_ltbir_when.pdf"), height = 10, width = 10)
-  
-  
+
+
   ## This says: by mdr_rep, when is the time window that contributes most
   ## Tried to highlight 1980 period... but not working
   #w <- which(ss_here$yearcat == "(1989,1994]")
   #ss_here$extra_label_fill <- 0
   #ss_here[w,"extra_label_fill"] <- 1
-  #scale_colour_manual( values = c( "1"="black","0" = "white"), guide = FALSE ) 
-  
+  #scale_colour_manual( values = c( "1"="black","0" = "white"), guide = FALSE )
+
   ggplot(ss_here, aes(mdr_rep, pr_ltbis, fill = factor(yearcat))) +
     geom_bar(position = "fill", stat = "identity") +
     scale_y_continuous() + ggtitle("DS-TB") +
     scale_fill_hue("Year")
   ggsave(paste0("DS_",cni[cci],"_ltbis_when.pdf"), height = 10, width = 10)
-  
+
   ggplot(ss_here) +
     geom_bar(aes(mdr_rep, pr_ltbir, fill = factor(yearcat)),
-             position = "fill", stat = "identity") + 
+             position = "fill", stat = "identity") +
     scale_y_continuous("Percentage of LTBI MDR from this 5 year time interval") + ggtitle("MDR-TB") + scale_x_continuous(breaks = c(1,2,3,4),labels = c("linear","sigmoid","quadratic","double sigmoid"),"Type of MDR trend") +
     scale_fill_hue("Year")
   ggsave(paste0("DR_",cni[cci],"_ltbir_when.pdf"), height = 10, width = 10)
-  
+
   ## Absolute contributions
   ggplot(ss_here) +
     geom_bar(aes(mdr_rep, abs_pr_ltbir, fill = factor(yearcat)),
-             position = "fill", stat = "identity") + 
+             position = "fill", stat = "identity") +
     scale_y_continuous() + ggtitle("MDR-TB") +
     scale_fill_hue("Year")
   ggsave(paste0("DR_",cni[cci],"_abs_ltbir_when.pdf"), height = 10, width = 10)
-  
+
   ## Store
   ss_here$cn <- cni[cci]
   #dim(ss_here)
@@ -534,7 +544,7 @@ for(cci in 1:length(cni)){
 
 ss_all <- as.data.table(ss_all)
 sum_ss_all <- ss_all%>%group_by(mdr_rep,yearcat,cn) %>%summarise(sum_prltbi = sum(pr_ltbir)) # if get single number = because plyr loaded after dplyr (has it's own summarise which gives single number)
-dim(sum_ss_all) # 17*4*138 = 9384
+dim(sum_ss_all) # 17*4*107 = 7276
 ## Checks
 #w<-intersect(which(sum_ss_all$cn == "ALB"), which(sum_ss_all$mdr_rep == 1))
 #sum(sum_ss_all[w,"sum_prltbi"]) # 1
