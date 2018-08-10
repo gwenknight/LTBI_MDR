@@ -13,7 +13,8 @@ setwd(home)
 data <- read.csv("datar/new_who_edited.csv")
 
 ## Get proportion LTBI per year data
-pltbir <- read.csv("output/props_ltbi_when.csv")[,-1]
+setwd(output)
+pltbir <- read.csv("props_ltbi_when.csv")[,-1]
 pltbir$country <- pltbir$cn
 
 ## Grab upper and lower
@@ -92,7 +93,7 @@ ggplot(subset(totals, best == 1), aes(x=cnn, y = sum_metric)) + geom_point(aes(c
   scale_x_discrete("Country") + theme(axis.text.x = element_text(angle = 90, hjust = 1))
 ggsave("MDR_metric_data_against_need_total_best.pdf", width = 14, height = 8)
 
-ggplot(subset(totals, best == 1)[20:50,], aes(x=cnn, y = ltbir)) + geom_point(aes(col = factor(mdr_rep))) + geom_line(aes(group = cnn)) + 
+ggplot(subset(totals, best == 1), aes(x=cnn, y = ltbir)) + geom_point(aes(col = factor(mdr_rep))) + geom_line(aes(group = cnn)) + 
   scale_y_continuous("Percentage with LTBI-MDR")+ scale_color_discrete("MDR\nTrend")  + 
   scale_x_discrete("Country") + theme(axis.text.x = element_text(angle = 90, hjust = 1))
 ggsave("LTBIR_total_best.pdf", width = 14, height = 6)
@@ -120,7 +121,7 @@ ggsave(paste0("CS",cs2,"_final.pdf"), width = 14, height = 6)
 
 # stats
 ff <- subset(totals, best == 1)
-100*length(which(ff$ltbir > 1)) / length(ff$ltbir) # 8% > 1%
+100*length(which(ff$ltbir > 1)) / length(ff$ltbir) # 10% > 1%
 mean(ff$ltbir) # mean is 0.3% have ltbir
 
 ####**** Map plot ******************************************************************************************************************************************************************************************************************************** #####
