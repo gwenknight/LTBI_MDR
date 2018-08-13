@@ -11,7 +11,8 @@ who0 <- read.csv("~/Dropbox/MRC SD Fellowship/Research/MDR/WHO_data/new_who_edit
 setwd("~/Documents/LTBI_MDR/output/")
 
 # Countries to look at 
-cn <- unique(mdr_last0$iso3)
+#cn <- unique(mdr_last0$iso3)
+cn <- read.csv("../datar/107_final_list_included_countries.csv",stringsAsFactors = FALSE)[,-1]
 
 who0$year <- who0$year_new
 
@@ -21,7 +22,7 @@ for(i in 1:length(cn)){
   
   ## iso3 which country?
   cc <- cn[i]
-  print(cc)
+  print(c(i,cc))
   
   ## data - for this country
   who <- who0[which(who0$iso3 == cc),c("year","mdr_new_pcnt")]
