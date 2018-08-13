@@ -50,14 +50,14 @@ setdiff(u,utb) # none in WHO MDR that aren't in here = correct
 setdiff(uu,utb) # none in LTBI that aren't in here = correct
 length(setdiff(utb,u)) # 57 in here that aren't in WHO MDR
 
-totaltb14 <- sum(whotb2014$e_inc_100k)
+totaltb14 <- sum(whotb2014$e_inc_num)
 
 # what TB contribution are the countries in latent but not WHO MDR
 wm <- match(inlnw, whotb2014$iso3)
-tbsizewm <- sum(whotb2014[wm,"e_inc_100k"])
-perc_wm <- 100*tbsizewm / totaltb14 # 20% 
+tbsizewm <- sum(whotb2014[wm,"e_inc_num"])
+perc_wm <- 100*tbsizewm / totaltb14 # 6% 
 perc_wm
-round(100*whotb2014[wm,"e_inc_100k"]/ totaltb14,2) # all contribute < 2% individually
+round(100*whotb2014[wm,"e_inc_num"]/ totaltb14,2) # all contribute < 1% individually except 14 COD = 2.3%
 
 ## Top 30 HBC MDR
 mdr30 <- read.csv("~/Dropbox/MRC SD Fellowship/Research/MDR/WHO_data/top30_mdr_countries.csv")
@@ -107,13 +107,54 @@ final_list <- setdiff(final_list, rem_1_dp)
 length(final_list) # 107
 
 #### FINAL LIST
+# MDR tb 2018 percentage
 wm <- match(final_list, mtb18$iso3, nomatch = 0)
 perc_wm <- sum(mtb18[wm,"perc_total"]) # 82.8% 
 perc_wm
 round(mtb18[wm,"perc_total"],2) #
 max(round(mtb18[wm,"perc_total"],2)) # one contributes 26% = CHINA
 
+# contribution of those missing
 wmm <- match(rem_1_dp, mtb18$iso3, nomatch = 0)
 round(mtb18[wmm,"perc_total"],2) # one contributes 2.5% = Nigeria. 5.1% = Pakistan
 sum(100*mtb18[wmm,"mdr_inc_num"]/ totalmtb18) # 14% removed as only one point
 mtb18[wmm,c("country","mdr_inc_num","perc_total")]
+
+# TB 2014 percentage
+wm <- match(final_list, whotb2014$iso3)
+tbsizewm <- sum(whotb2014[wm,"e_inc_num"])
+perc_wm <- 100*tbsizewm / totaltb14 # 74%
+perc_wm
+perc_tb_14 <- 100*whotb2014$e_inc_num / totaltb14
+tb14 <- as.data.frame(cbind(whotb2014$e_inc_num,perc_tb_14))
+tb14$iso3 <- whotb2014$iso3
+tb14$final_list <- 0
+tb14[wm,"final_list"] <- 1
+colnames(tb14) <- c("e_inc_num","perc_tb_14","iso3","in_final_list")
+ggplot(tb14, aes(x=iso3, y = perc_tb_14, fill = factor(in_final_list))) + 
+  geom_bar(stat="identity") +coord_flip() + aes(x=reorder(iso3,perc_tb_14),y=perc_tb_14) 
+
+ggplot(subset(tb14, perc_tb_14 > 0.5), aes(x=iso3, y = perc_tb_14, fill = factor(in_final_list))) + 
+  geom_bar(stat="identity") +coord_flip() + aes(x=reorder(iso3,perc_tb_14),y=perc_tb_14) + 
+  ggtitle("Removed those < 0.5%") + scale_fill_discrete("In\nfinal\ncountry\nlist?", labels = c("No","Yes"))+
+  geom_text(aes(label=round(perc_tb_14,2)), position=position_dodge(width=0.9), hjust=-0.1)
+ggsave("Countries_by_2014_TB_burden.pdf")
+
+# SAVE
+setwd("~/Dropbox/MDR/")
+write.csv(final_list,"107_final_list_included_countries.csv")
+
+#### OLD from run_cohort_ltbi_mdr.R
+## Which countries? 
+# cni <- unique(mdr_cn_best$country) 
+# length(cni) # 160
+# # Removed from H&D analysis:
+# too_small_pop <- c("WSM","ABW","ATG","BHS","BLZ","BRB","BRN","CUW","FSM","GRD","GUM","ISL","KIR",
+#                    "LCA","MDV","MLT","NCL","PYF","STP","SYC","TON","VCT","VIR","VUT")
+# tb_cnt_mismatch <- c("AIA", "AND", "ANT", "ASM","BMU","COK","CYM","DMA","GRL","KNA","MCO",
+#                      "MHL","MNP","MSR","NIU","NRU","PLW","SMR","SXM","TCA","TKL","TUV","VGB","WLF")
+# cni <- setdiff(cni, too_small_pop) # removes 12
+# cni <- setdiff(cni, tb_cnt_mismatch) # removes 20 not in the DS-ARI database = 140
+# # In H&D but not in rundata_ari
+# cni <- intersect(unique(rundata$iso3),cni) # removes 2
+# length(cni)

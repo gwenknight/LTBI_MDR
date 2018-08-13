@@ -1,6 +1,7 @@
 #### Run cohort_ltbi_mdr 
 
-### Libraries and ggplot theme
+
+###********** Libraries and ggplot theme ************************************************************************************************#######
 library(ggplot2)
 theme_set(theme_bw(base_size = 24))
 library(plyr)
@@ -9,24 +10,23 @@ library(cowplot)
 library(data.table)
 library(reshape2)
 
-
-### Home
+###********** Home ************************************************************************************************#######
 home <- "~/Documents/LTBI_MDR/"
 setwd(home)
 #output <- "~/Documents/LTBI_MDR/output"
-output <- "~/Dropbox/MDR/output" # TEMPORARY
+output <- "~/Dropbox/MDR/output" # TEMPORARY - can be shared between computers then
+
+###********** Load code and data ************************************************************************************************#######
 source("code/cohort_ltbi_mdr.R") # loads function for underyling cohort model
 source("code/poss_mdr_curves.R") # loads function for gen MDR curves
 
-### ARI DS - saved from postARIanalysis.R
-load("data/rundata_ind.Rdata")
-#ggplot(rundata_ind, aes(x=year,y=ari,col=replicate)) + geom_point() ## look at
-
-### Countries to explore
-cn_list <- c("India","China","Japan","Ukraine")
-
-## Population examples
+## Population size 2014
 load('data/POP2014.Rdata')  
+
+###********** Example run for India ************************************************************************************************
+### ARI DS - saved from postARIanalysis.R (H&D)
+load("data/rundata_ind.Rdata") # For India
+# ggplot(rundata_ind, aes(x=year,y=ari,col=replicate, group = replicate)) + geom_point() ## look at
 
 ### Run model for example 
 pop1 <- POP2014[which(POP2014$area == "India"),"value"]
@@ -37,6 +37,7 @@ ari$ds <- 0.01
 ## India 2016.perc_new_mdr = ~2%
 ari$mdr <- c(rep(0,1970-1934),seq(0,0.02,length=(2014-1969))) * ari$ds
 
+# Run model
 cc <- cohort_ltbi(ari, pop1) # India
 
 ## output 
@@ -47,19 +48,14 @@ ltbi_dr
 ltbi_ds
 cc$c_2014
 
-##****** Run for different countries  **********############################################################################################################################
-#cn <- c("India","China","Japan","Ukraine")
-#cni <- c("IND","CHN","JPN","UKR"); # levels for these:mdr_perc_new <- c(0.02, 0.057, 0.007, 0.22)
-#cn <- unique(POP2014$iso3)
-#cni <- unique(POP2014$iso3)
+###********** Run for different countries ************************************************************************************************************************#######
 
 setwd(output)
 
-## Number of scenarios for MDR curves
-#nari = 4
 ## Read in MDR curves
 save_curves0 <- read.csv("~/Dropbox/MRC SD Fellowship/Research/MDR/Latent_MDR/Data/lin_sig_quad_sigd_curves.csv",stringsAsFactors = FALSE)[-1]
 mdr_cn_best <- read.csv("~/Documents/LTBI_MDR/output/store_cn_best.csv", stringsAsFactors = FALSE)[-1]
+if(min(mdr_cn_best$Type) == 0){mdr_cn_best$Type = mdr_cn_best$Type + 1}  # make sure types 1 2 3 4 to match save_curves
 
 ## ARI trend data for DS TB
 load("~/Documents/LTBI_MDR/data/rundata_ari.Rdata")
@@ -67,25 +63,12 @@ rundata$ari <- exp(rundata$lari)
 level2014 <- c(); #breakdown proportions infected by age
 s_level <- c(); #sum proportions infected 
 
-
-# f_l is a proportion -> maximum is 1
-
 ## WHO data
 w_data <- read.csv("~/Documents/LTBI_MDR/datar/new_who_edited.csv")
 
 ## Which countries? 
-cni <- unique(mdr_cn_best$country) 
-length(cni) # 160
-# Removed from H&D analysis:
-too_small_pop <- c("WSM","ABW","ATG","BHS","BLZ","BRB","BRN","CUW","FSM","GRD","GUM","ISL","KIR",
-                   "LCA","MDV","MLT","NCL","PYF","STP","SYC","TON","VCT","VIR","VUT")
-tb_cnt_mismatch <- c("AIA", "AND", "ANT", "ASM","BMU","COK","CYM","DMA","GRL","KNA","MCO",
-                     "MHL","MNP","MSR","NIU","NRU","PLW","SMR","SXM","TCA","TKL","TUV","VGB","WLF")
-cni <- setdiff(cni, too_small_pop) # removes 12
-cni <- setdiff(cni, tb_cnt_mismatch) # removes 20 not in the DS-ARI database = 140
-# In H&D but not in rundata_ari
-cni <- intersect(unique(rundata$iso3),cni) # removes 2
-length(cni)
+cni <- read.csv("~/Documents/LTBI_MDR/output/107_final_list_included_countries.csv",stringsAsFactors = FALSE)[,-1]
+length(cni) # 107
 cni_rem <- c() # blank to store what else to remove
 
 # Store all? 
@@ -221,15 +204,18 @@ s_level <- as.data.table(s_level)
 write.csv(s_level, "s_level_7.csv")
 s_level <- read.csv("s_level_7.csv")[,-1]
 
-cni <- cni[-cni_rem] # remove those with < 1 data 
+
+###********** SAVE COUNTRY LIST *****************************************************************#####
+#cni <- cni[-cni_rem] # remove those with < 1 data 
 write.csv(cni, "final_country_est_included.csv")
 cni <- read.csv("final_country_est_included.csv", stringsAsFactors = FALSE)[,-1]
-
+# These are the same as in the 107
 
 
 # READ IN
 #s_level <- read.csv("s_level_7.csv")
-# 
+
+###********** PLOTS *****************************************************************#####
 a2r<-ggplot(s_level, aes(x=popf, y = ltbir, col=factor(rep) )) + geom_point() + guides(colour=FALSE) + 
   scale_x_discrete("MDR-ARI trend") + scale_y_continuous("LTBI-MDR (% population infected)") +
   theme(axis.text.x = element_text(angle = 90, hjust = 1)) + facet_wrap(~rep, scales = "free")
@@ -250,15 +236,22 @@ a2s<-ggplot(s_level, aes(x=rep, y = pltbis, col=factor(rep) )) + geom_point() + 
   theme(axis.text.x = element_text(angle = 90, hjust = 1)) + facet_wrap(~popf)
 save_plot("ltbi_pop_all_countries_s.pdf", a2s, base_aspect_ratio = 1.5 )
 
-## BRAZIL CASE STUDY
-
-
 
 ### To match to supplementary output by H&D
 # Mean levels for each country
 s_mean <- subset(s_level, best == '1') %>% group_by(pop_name) %>% summarise_at(c("ltbir","ltbis","pltbir","pltbis"),funs(mean))
 ggplot(s_mean, aes(x=pop_name, y = ltbir, col=ltbir)) + geom_point() + scale_y_continuous("LTBI-MDR percentage infected") + theme(axis.text.x = element_text(angle = 90, hjust = 1))
 ggsave("ltbir_mean_all_countries.pdf")
+
+ggplot(s_mean, aes(x=pop_name, y = ltbir, fill = ltbir)) + 
+  geom_bar(stat="identity") + coord_flip() + aes(x=reorder(pop_name,ltbir)) + 
+  scale_fill_continuous("MDR-LTBI level")+
+  geom_text(aes(label=round(ltbir,2)), position=position_dodge(width=0.9), hjust=-0.1)
+ 
+  ggtitle("Removed those < 0.5%") 
+  
+ggsave("Countries_by_2014_TB_burden.pdf")
+
 
 ggplot(s_level, aes(x=pop_name, y = ltbir, col=factor(rep))) + geom_point() + geom_line(aes(group = pop_name), col="black") + scale_y_continuous("LTBI-MDR percentage infected") + theme(axis.text.x = element_text(angle = 90, hjust = 1))
 ggsave("ltbir_all_countries_all_types.pdf")
