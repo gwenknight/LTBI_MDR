@@ -232,11 +232,12 @@ save_plot("ltbi_pop_all_countries_s.pdf", a2s, base_aspect_ratio = 1.5 )
 ### To match to supplementary output by H&D
 # Mean levels for each country
 # Include all 
-s_mean <- s_level %>% group_by(pop_name,rep) %>% summarise_at(c("ltbir","ltbis","pltbir","pltbis"),funs(mean))
+s_mean <- s_level #%>% group_by(pop_name,rep) %>% summarise_at(c("ltbir","ltbis","pltbir","pltbis"),funs(mean))
 # Linear trend only
 ggplot(subset(s_mean,rep == "1"), aes(x=pop_name, y = ltbir, col=ltbir)) + geom_point() + scale_y_continuous("LTBI-MDR percentage infected") + theme(axis.text.x = element_text(angle = 90, hjust = 1))
 ggsave("ltbir_mean_all_countries_points_linear_trend.pdf")
 
+## Plot all rep
 ms_mean <- melt(s_mean[,c("pop_name","rep","ltbir","ltbis")], id.vars = c("pop_name","rep"))
 ggplot(subset(ms_mean, variable == "ltbis"), aes(x=pop_name, y = value, fill = factor(rep))) + 
   geom_bar(position = position_dodge(width = 0.5),stat="identity") + 
@@ -254,38 +255,126 @@ ggplot(subset(ms_mean, variable == "ltbir"), aes(x=pop_name, y = value, fill = f
   theme(axis.text.y = element_text(colour="grey20",size=6))
 ggsave("ltbi_by_lr_all_rep.pdf")
 
-gbs <- ggplot(ms_mean, aes(x=pop_name, y = value, fill = factor(rep))) + 
+## All quadratic
+gbs <- ggplot(subset(ms_mean, rep ==1), aes(x=pop_name, y = value, fill = factor(variable))) + 
   geom_bar(position = position_dodge(width = 0.5),stat="identity") + 
   coord_flip() + aes(x=reorder(pop_name,X = value*(variable == "ltbis"))) + 
   scale_fill_discrete("LTBI level", labels = c("MDR","DS")) + 
   scale_x_discrete("Country") + scale_y_continuous("Percentage of population") +
   theme(axis.text.y = element_text(colour="grey20",size=6))
-ggsave("ltbi_by_ls.pdf")
+ggsave("ltbi_by_ls_lin.pdf")
 
 gbs + geom_text(aes(label=round(value,2)), size = 2,position=position_dodge(width=0.9), hjust=-0.2) 
-ggsave("ltbi_by_ls_numbers.pdf")
+ggsave("ltbi_by_ls_lin_numbers.pdf")
 
 
-gbr <- ggplot(ms_mean, aes(x=pop_name, y = value, fill = variable)) + 
+gbr <- ggplot(subset(ms_mean, rep ==1), aes(x=pop_name, y = value, fill = factor(variable))) + 
   geom_bar(position = position_dodge(width = 0.5),stat="identity") + 
   coord_flip() + aes(x=reorder(pop_name,X = value*(variable == "ltbir"))) + 
   scale_fill_discrete("LTBI level", labels = c("MDR","DS")) +
-  scale_x_discrete("Country") + scale_y_continuous("Percentage of population") +
+  scale_x_discrete("Country") + scale_y_continuous("Percentage of population with LTBI-MDR") +
   theme(axis.text.y = element_text(colour="grey20",size=6))
-ggsave("ltbi_by_lr.pdf")
+ggsave("ltbi_by_lr_lin.pdf")
 
 gbr + geom_text(aes(label=round(value,2)), size = 2,position=position_dodge(width=0.9), hjust=-0.2) + 
-ggsave("ltbi_by_lr_numbers.pdf")
+ggsave("ltbi_by_lr_lin_numbers.pdf")
 
-ggplot(s_level, aes(x=pop_name, y = ltbir, col=factor(rep))) + geom_point() + geom_line(aes(group = pop_name), col="black") + scale_y_continuous("LTBI-MDR percentage infected") + theme(axis.text.x = element_text(angle = 90, hjust = 1))
-ggsave("ltbir_all_countries_all_types.pdf")
-ggplot(subset(s_level, best == '1'), aes(x=pop_name, y = ltbir, col=factor(rep))) + geom_point() + geom_line(aes(group = pop_name), col="black") + scale_y_continuous("LTBI-MDR percentage infected") + theme(axis.text.x = element_text(angle = 90, hjust = 1))
-ggsave("ltbir_all_countries_best_types.pdf")
+ggplot(s_level, aes(x=pop_name, y = ltbir, col=factor(rep))) + geom_point() + 
+  geom_line(aes(group = pop_name), col="black") + 
+  scale_y_continuous("Percentage of population with LTBI-MDR") + 
+  theme(axis.text.x = element_text(angle = 90, hjust = 1)) + 
+  coord_flip() + aes(x=reorder(pop_name,X = ltbir)) +
+  scale_x_discrete("Country") + scale_color_discrete("MDR\nARI\ntrend") + 
+  theme(axis.text.y = element_text(colour="grey20",size=6))
+ggsave("ltbir_all_countries_all_trends_dots.pdf")
+
+ggplot(subset(s_level, best == '1'), aes(x=pop_name, y = ltbir, col=factor(rep))) + geom_point() + 
+  geom_line(aes(group = pop_name), col="black") + 
+  scale_y_continuous("Percentage of population with LTBI-MDR") + 
+  theme(axis.text.x = element_text(angle = 90, hjust = 1)) + 
+  coord_flip() + aes(x=reorder(pop_name,X = ltbir)) +
+  scale_x_discrete("Country") + scale_color_discrete("Best\nMDR\nARI\ntrend") + 
+  theme(axis.text.y = element_text(colour="grey20",size=6)) + geom_hline(yintercept = 1, lty = "dashed")
+ggsave("ltbir_all_countries_best_trend_dot.pdf")
+
+ggplot(s_level, aes(x=pop_name, y = ltbis, col=factor(rep))) + geom_point() + 
+  geom_line(aes(group = pop_name), col="black") + 
+  scale_y_continuous("Percentage of population with LTBI-DS") + 
+  theme(axis.text.x = element_text(angle = 90, hjust = 1)) + 
+  coord_flip() + aes(x=reorder(pop_name,X = ltbis)) +
+  scale_x_discrete("Country") + scale_color_discrete("MDR\nARI\ntrend") + 
+  theme(axis.text.y = element_text(colour="grey20",size=6))
+ggsave("ltbis_all_countries_all_trends_dots.pdf")
+
+ggplot(subset(s_level, best == '1'), aes(x=pop_name, y = ltbis, col=factor(rep))) + geom_point() + 
+  geom_line(aes(group = pop_name), col="black") + 
+  scale_y_continuous("Percentage of population with LTBI-DS") + 
+  theme(axis.text.x = element_text(angle = 90, hjust = 1)) + 
+  coord_flip() + aes(x=reorder(pop_name,X = ltbis)) +
+  scale_x_discrete("Country") + scale_color_discrete("Best\nMDR\nARI\ntrend") + 
+  theme(axis.text.y = element_text(colour="grey20",size=6))
+ggsave("ltbis_all_countries_best_trend_dot.pdf")
+
+
 
 
 s_types <- subset(s_level, best == '1') %>% count(rep) 
 ggplot(s_types, aes(x=rep, y=n)) + geom_histogram(stat = "identity") + scale_x_continuous(breaks = c(1,2,3,4),labels = c("linear","sigmoid","quadratic","double sigmoid"),"Type of MDR trend")  
 ggsave("types_mdr_trend_hist.pdf", width = 12, height = 9)
+
+### Percentage difference by MDR ARI type
+perc_diff <- c()
+actual_diff <- c()
+for(i in 1:length(cni)){
+  dd <- subset(s_level, pop_name == cni[i])$ltbir
+  perc_diff <- rbind(perc_diff, c(i,  100*(dd[1] - dd[2])/dd[1],  100*(dd[1] - dd[3])/dd[1],  100*(dd[1] - dd[4])/dd[1],
+                                  100*(dd[2] - dd[3])/dd[2],  100*(dd[2] - dd[4])/dd[2],  100*(dd[3] - dd[4])/dd[3]))
+  
+  actual_diff <- rbind(actual_diff, c(i,  dd[1] - dd[2],  dd[1] - dd[3],  dd[1] - dd[4],dd[2] - dd[3],dd[2] - dd[4],  dd[3] - dd[4]))
+                                  
+}
+colnames(perc_diff) <- c("cni","12","13","14","23","24","34")
+colnames(actual_diff) <- c("cni","12","13","14","23","24","34")
+perc_diff <- as.data.frame(abs(perc_diff))
+actual_diff <- as.data.frame(abs(actual_diff))
+perc_diff$max <- apply(perc_diff[,2:7], 1, max) 
+perc_diff$pop_name <- cni[perc_diff$cni]
+
+actual_diff$max <- apply(actual_diff[,2:7], 1, max) 
+actual_diff$pop_name <- cni[actual_diff$cni]
+
+
+ggplot(perc_diff, aes(x=pop_name, y = max)) + geom_point() +
+  scale_y_continuous("Max percentage difference in LTBI-MDR between reps") + 
+  theme(axis.text.x = element_text(angle = 90, hjust = 1)) + 
+  coord_flip() + aes(x=reorder(pop_name,X = max)) +
+  scale_x_discrete("Country") +
+  theme(axis.text.y = element_text(colour="grey20",size=6))
+
+ggplot(actual_diff, aes(x=pop_name, y = max)) + geom_point() +
+  scale_y_continuous("Max actual difference in LTBI-MDR between reps") + 
+  theme(axis.text.x = element_text(angle = 90, hjust = 1)) + 
+  coord_flip() + aes(x=reorder(pop_name,X = max)) +
+  scale_x_discrete("Country") +
+  theme(axis.text.y = element_text(colour="grey20",size=6))
+
+
+mperc_diff <- melt(perc_diff, id.vars = c("pop_name","max", "cni"))
+ggplot(mperc_diff, aes(x=pop_name, y = value, col = variable)) + geom_point() +
+  scale_y_continuous("Max percentage difference in LTBI-MDR between reps") + 
+  theme(axis.text.x = element_text(angle = 90, hjust = 1)) + 
+  coord_flip() + aes(x=reorder(pop_name,X = max)) +
+  scale_x_discrete("Country") +
+  theme(axis.text.y = element_text(colour="grey20",size=6))
+
+mperc_diff <- melt(perc_diff[,c("pop_name","max","cni","12","13","23")], id.vars = c("pop_name","max", "cni"))
+ggplot(mperc_diff, aes(x=pop_name, y = value, col = variable)) + geom_point() +
+  scale_y_continuous("Max percentage difference in LTBI-MDR between reps") + 
+  theme(axis.text.x = element_text(angle = 90, hjust = 1)) + 
+  coord_flip() + aes(x=reorder(pop_name,X = max)) +
+  scale_x_discrete("Country") +
+  theme(axis.text.y = element_text(colour="grey20",size=6))
+
 
 ###******* AGE *****################################################################################################################
 #ssc <- cc$store_c
