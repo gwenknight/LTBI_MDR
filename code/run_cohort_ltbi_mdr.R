@@ -67,7 +67,7 @@ s_level <- c(); #sum proportions infected
 w_data <- read.csv("~/Documents/LTBI_MDR/datar/new_who_edited.csv")
 
 ## Which countries? 
-cni <- read.csv("~/Documents/LTBI_MDR/output/107_final_list_included_countries.csv",stringsAsFactors = FALSE)[,-1]
+cni <- read.csv("~/Documents/LTBI_MDR/datar/107_final_list_included_countries.csv",stringsAsFactors = FALSE)[,-1]
 length(cni) # 107
 cni_rem <- c() # blank to store what else to remove
 
@@ -202,18 +202,10 @@ s_level0 <- s_level
 s_level$pop_name <- cni[as.numeric(s_level0$popf)]
 s_level <- as.data.table(s_level)
 write.csv(s_level, "s_level_7.csv")
-s_level <- read.csv("s_level_7.csv")[,-1]
 
-
-###********** SAVE COUNTRY LIST *****************************************************************#####
-#cni <- cni[-cni_rem] # remove those with < 1 data 
-write.csv(cni, "final_country_est_included.csv")
-cni <- read.csv("final_country_est_included.csv", stringsAsFactors = FALSE)[,-1]
-# These are the same as in the 107
-
-
-# READ IN
-#s_level <- read.csv("s_level_7.csv")
+### OR READ IN
+level2014 <- read.csv("level2014.csv",stringsAsFactors = FALSE)[,-1]
+s_level <- read.csv("s_level_7.csv", stringsAsFactors = FALSE)[,-1]
 
 ###********** PLOTS *****************************************************************#####
 a2r<-ggplot(s_level, aes(x=popf, y = ltbir, col=factor(rep) )) + geom_point() + guides(colour=FALSE) + 
@@ -239,19 +231,51 @@ save_plot("ltbi_pop_all_countries_s.pdf", a2s, base_aspect_ratio = 1.5 )
 
 ### To match to supplementary output by H&D
 # Mean levels for each country
-s_mean <- subset(s_level, best == '1') %>% group_by(pop_name) %>% summarise_at(c("ltbir","ltbis","pltbir","pltbis"),funs(mean))
-ggplot(s_mean, aes(x=pop_name, y = ltbir, col=ltbir)) + geom_point() + scale_y_continuous("LTBI-MDR percentage infected") + theme(axis.text.x = element_text(angle = 90, hjust = 1))
-ggsave("ltbir_mean_all_countries.pdf")
+# Include all 
+s_mean <- s_level %>% group_by(pop_name,rep) %>% summarise_at(c("ltbir","ltbis","pltbir","pltbis"),funs(mean))
+# Linear trend only
+ggplot(subset(s_mean,rep == "1"), aes(x=pop_name, y = ltbir, col=ltbir)) + geom_point() + scale_y_continuous("LTBI-MDR percentage infected") + theme(axis.text.x = element_text(angle = 90, hjust = 1))
+ggsave("ltbir_mean_all_countries_points_linear_trend.pdf")
 
-ggplot(s_mean, aes(x=pop_name, y = ltbir, fill = ltbir)) + 
-  geom_bar(stat="identity") + coord_flip() + aes(x=reorder(pop_name,ltbir)) + 
-  scale_fill_continuous("MDR-LTBI level")+
-  geom_text(aes(label=round(ltbir,2)), position=position_dodge(width=0.9), hjust=-0.1)
- 
-  ggtitle("Removed those < 0.5%") 
-  
-ggsave("Countries_by_2014_TB_burden.pdf")
+ms_mean <- melt(s_mean[,c("pop_name","rep","ltbir","ltbis")], id.vars = c("pop_name","rep"))
+ggplot(subset(ms_mean, variable == "ltbis"), aes(x=pop_name, y = value, fill = factor(rep))) + 
+  geom_bar(position = position_dodge(width = 0.5),stat="identity") + 
+  coord_flip() + aes(x=reorder(pop_name,X = value*(variable == "ltbis"))) + 
+  scale_fill_discrete("MDR\nARI\ntrend") + 
+  scale_x_discrete("Country") + scale_y_continuous("Percentage of population") +
+  theme(axis.text.y = element_text(colour="grey20",size=6))
+ggsave("ltbi_by_ls_all_rep.pdf")
 
+ggplot(subset(ms_mean, variable == "ltbir"), aes(x=pop_name, y = value, fill = factor(rep))) + 
+  geom_bar(position = position_dodge(width = 0.5),stat="identity") + 
+  coord_flip() + aes(x=reorder(pop_name,X = value*(variable == "ltbir"))) + 
+  scale_fill_discrete("MDR\nARI\ntrend") + 
+  scale_x_discrete("Country") + scale_y_continuous("Percentage of population") +
+  theme(axis.text.y = element_text(colour="grey20",size=6))
+ggsave("ltbi_by_lr_all_rep.pdf")
+
+gbs <- ggplot(ms_mean, aes(x=pop_name, y = value, fill = factor(rep))) + 
+  geom_bar(position = position_dodge(width = 0.5),stat="identity") + 
+  coord_flip() + aes(x=reorder(pop_name,X = value*(variable == "ltbis"))) + 
+  scale_fill_discrete("LTBI level", labels = c("MDR","DS")) + 
+  scale_x_discrete("Country") + scale_y_continuous("Percentage of population") +
+  theme(axis.text.y = element_text(colour="grey20",size=6))
+ggsave("ltbi_by_ls.pdf")
+
+gbs + geom_text(aes(label=round(value,2)), size = 2,position=position_dodge(width=0.9), hjust=-0.2) 
+ggsave("ltbi_by_ls_numbers.pdf")
+
+
+gbr <- ggplot(ms_mean, aes(x=pop_name, y = value, fill = variable)) + 
+  geom_bar(position = position_dodge(width = 0.5),stat="identity") + 
+  coord_flip() + aes(x=reorder(pop_name,X = value*(variable == "ltbir"))) + 
+  scale_fill_discrete("LTBI level", labels = c("MDR","DS")) +
+  scale_x_discrete("Country") + scale_y_continuous("Percentage of population") +
+  theme(axis.text.y = element_text(colour="grey20",size=6))
+ggsave("ltbi_by_lr.pdf")
+
+gbr + geom_text(aes(label=round(value,2)), size = 2,position=position_dodge(width=0.9), hjust=-0.2) + 
+ggsave("ltbi_by_lr_numbers.pdf")
 
 ggplot(s_level, aes(x=pop_name, y = ltbir, col=factor(rep))) + geom_point() + geom_line(aes(group = pop_name), col="black") + scale_y_continuous("LTBI-MDR percentage infected") + theme(axis.text.x = element_text(angle = 90, hjust = 1))
 ggsave("ltbir_all_countries_all_types.pdf")
