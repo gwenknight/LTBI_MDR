@@ -1,7 +1,7 @@
 ### Which countries included?
 
 ### Original WHO data on MDR
-w_data <- read.csv("~/Documents/LTBI_MDR/datar/new_who_edited.csv", stringsAsFactors = FALSE)
+w_data <- read.csv("~/Dropbox/MRC SD Fellowship/RESEARCH/MDR/WHO_data/new_who_edited.csv", stringsAsFactors = FALSE)
 u <- unique(w_data$iso3)
 length(unique(w_data$iso3)) # 159
 
@@ -24,11 +24,11 @@ setdiff(u,uu)
 # setdiff(new,u)
 
 
-## SCG = Serbia and Montenegro prior to split in 2005
+## SCG = Serbia and Montenegro prior to split in 2005 - already chagned in new_who_edited
 
 
 ### Pop size in 2014
-load("/Users/macbook_IC/Documents/LTBI_MDR/data/POP2014.Rdata")
+load("~/Documents/LTBI_MDR/data/POP2014.Rdata")
 inlnw <- setdiff(uu,u) # in latent not MDR - what percentage of global population?
 
 # have to aggregate over age groups for each country
@@ -94,17 +94,42 @@ round(mtb18[wm,"perc_total"],2) # two contribute 0.9 and 1.5% individually
 w<-which(mdr30$iso3 == "AGO")
 100*mdr30[w,"mdr_inc_num"]/totalmtb14
 
-### Remove those with only 1 MDR datapoint
-mdr_cn_best <- read.csv("~/Documents/LTBI_MDR/output/store_cn_best.csv", stringsAsFactors = FALSE)[-1]
+### Some only have data for sub-regions. 
+w<-which(w_data$all_areas_covered_new < 1)
+length(w) # 226
 
-wm <- match(final_list,mdr_cn_best$country, nomatch = 0)
-n_datapoints <- mdr_cn_best[wm,c("country","n_data")]
-dim(subset(n_datapoints, n_data < 2)) # 31 only have 1 datapoint
-rem_1_dp <- subset(n_datapoints, n_data < 2)[,1]
+### Remove those with only 1 MDR datapoint
+n_data <- w_data %>% group_by(iso3) %>% count(iso3)
+n_data1 <- w_data[-w,] %>% group_by(iso3) %>% count(iso3)
+s <- setdiff(n_data$iso3, n_data1$iso3) # 7 removed by this
+length(s)
+intersect(s, mdr30$iso3) # include 3 in the top MDR! 
+
+####***************************************************************************************************************************************####
+# Average MDR over multiple measures in same year - only happens if sub_group? 
+w_data_subreg <- w_data %>% group_by(iso3,year_new) %>% summarise(av_mdr_new_pcnt = mean(mdr_new_pcnt), 
+                                                                  mhi = mean(mhi),
+                                                                  mlo = mean(mlo))
+
+w_data_subreg$year <- w_data_subreg$year_new
+write.csv(w_data_subreg, "~/Dropbox/MRC SD Fellowship/RESEARCH/MDR/WHO_data/new_who_edited_sub.csv") ### NEW STANDARD DATA TO USE
+####***************************************************************************************************************************************####
+
+
+wm <- match(final_list,n_data$iso3, nomatch = 0)
+wm1 <- match(final_list,n_data1$iso3, nomatch = 0)
+length(which(n_data[wm,"n"] < 2)) # 36 only have 1 datapoint - extra 5 from removing those with only sub-national
+length(which(n_data1[wm1,"n"] < 2)) # 36 only have 1 datapoint - extra 5 from removing those with only sub-national
+setdiff( n_data1[which(n_data1[wm1,"n"] < 2),"iso3"],n_data[which(n_data[wm,"n"] < 2),"iso3"])
+
+rem_1_dp_m <- n_data[which(n_data$n < 2),]
+rem_1_dp <- pull(rem_1_dp_m, iso3)
 
 # remove these from the final_list
 final_list <- setdiff(final_list, rem_1_dp)
 length(final_list) # 107
+
+
 
 #### FINAL LIST
 # MDR tb 2018 percentage
