@@ -7,15 +7,15 @@
 library(ggplot2)
 
 #### Linear curves to use *****####*****####*****####*****####*****####*****####*****####*****####*****####*****####*****####*****####*****####*****####*****####*****####*****####*****####*****####*****####*****####*****####
-lin <- function(jump, max){c(rep(0,jump-1934),seq(0,max,length=(2014-(jump-1))))}
+lin <- function(jump, max){c(rep(0,jump-1934),seq(0,max,length=(2018-(jump-1))))}
 save_lin <- c()
 index = 1
-jump_point <- seq(1970,2010,5)
+jump_point <- seq(1970,2010,1)
 
 for(i in 1:length(jump_point)){
-  plot(  seq(1934,2014,1),lin(jump_point[i],0.02) )
+  plot(  seq(1934,2018,1),lin(jump_point[i],0.02) )
   save_lin <- rbind(save_lin,
-                    cbind(index, i, jump_point[i],seq(1934,2014,1),lin(jump_point[i],0.02)))
+                    cbind(index, i, jump_point[i],seq(1934,2018,1),lin(jump_point[i],0.02)))
   index = index + 1
 }
 
@@ -23,6 +23,7 @@ save_lin <- as.data.frame(save_lin)
 colnames(save_lin) <-c("index","i","jump","year","out")
 save_lin$tilt <- 0
 save_lin$type <- 0
+ggplot(save_lin, aes(x=year, y = out, group = index, color = factor(index))) + geom_line()
 
 #### Quadratic curves to use*****####*****####*****####*****####*****####*****####*****####*****####*****####*****####*****####*****####*****####*****####*****####*****####*****####*****####*****####*****####*****##
 quad <- function(x,maxv){ 
