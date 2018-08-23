@@ -2,7 +2,7 @@
 
 ### GK: Gaussian Process regression to generate ARIs for countries without data and for uncertainty
 ## Want to find the correct properties of functions that will go through the data
-
+## Fits GP models to data - uses Maximum Likelihood to optimise parameters
 
 #args <- commandArgs(TRUE) # used if running on cluster... 
 #jj <- as.numeric(args[1]) # counter
@@ -12,6 +12,7 @@ library(MASS)
 library(Matrix)
 
 #### GK: to run on desktop reorganised the below
+setwd("~/Documents/LTBI_MDR/")
 
 ####**** FUNCTIONS ********************************************************************************************************************************************************************#####
 ## 
@@ -142,20 +143,7 @@ lin <- 1                           #linear (1) or constant (0)  --- CHANGE HERE!
 
 uu <- unique(as.character(All0$iso3)) # number of unique countries
 uu <- uu[-is.na(uu)] 
-length(uu) # 137
-
-## Repeated in postARI analysis... but left in both
-too_small_pop <- c("WSM","ABW","ATG","BHS","BLZ","BRB","BRN","CUW","FSM","GRD","GUM","ISL","KIR",
-                   "LCA","MDV","MLT","NCL","PYF","STP","SYC","TON","VCT","VIR","VUT")
-tb_cnt_mismatch <- c("AIA", "AND", "ANT", "ASM","BMU","COK","CYM","DMA","GRL","KNA","MCO",
-                     "MHL","MNP","MSR","NIU","NRU","PLW","SMR","SXM","TCA","TKL","TUV","VGB","WLF")
-remove_cnt <- c(too_small_pop,tb_cnt_mismatch)
-for(i in 1:length(remove_cnt)){
-  w_t <- which(uu == remove_cnt[i])
-  if(length(w_t)>0){uu <- uu[-w_t]}
-  print(length(uu))
-}
-skp <- c()
+length(uu) # 107 = final_list
 
 ## For each country in turn
 for(jj in 1:length(uu)){
@@ -220,7 +208,7 @@ for(jj in 1:length(uu)){
   if(lin == 0){save(erw,file=paste0('datar_const/',cn,'.Rdata'))}
   
   
-  runs <- mvrnorm(n=2e2,mu=as.numeric(tot$mg),Sigma=as.matrix(symmpart(tot$cg)))
+  runs <- mvrnorm(n=1e3,mu=as.numeric(tot$mg),Sigma=as.matrix(symmpart(tot$cg))) # CHANGED to 1,000 from 2e2
   runsdf <- data.frame(year=tez+fyear,iso3=as.character(unique(All$iso3)),
                        lari=c(t(runs)),replicate=rep(1:nrow(runs),each=ncol(runs)))
   
