@@ -13,7 +13,7 @@ who0 <- read.csv("~/Dropbox/MRC SD Fellowship/Research/MDR/WHO_data/new_who_edit
 
 ## add in extra columns
 who0$year <- who0$year_new
-who0$mdr_new <- who0$av_mdr_new_pcnt / 100 # convert to proportion from percentage
+who0$mdr_new <- who0$av_mdr_new_pcnt / 100 # convert to proportion from percentage to match H&D
 
 ## years after 2014...
 #ww <- which(who$year > 2014)
@@ -136,7 +136,7 @@ ggplot(ll_all_cn, aes(x=mdr_last, y = likelihood_v, group = mdr_last)) + geom_po
 ll_all <- as.data.table(ll_all)
 ll_all %>% group_by(cn) %>% sample(ll_all,10, prob=likelihood_v, replace = TRUE)
 
-s <- sample(seq(1,length(ll_all_cn[,1]),1), 10000, prob = ll_all_cn$likelihood_v, replace = TRUE)
+s <- sample(seq(1,length(ll_all_cn[,1]),1), 100 0, prob = ll_all_cn$likelihood_v, replace = TRUE)
 hist(ll_all_cn[s,"likelihood_v"])
 
 
