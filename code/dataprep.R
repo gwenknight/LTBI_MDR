@@ -220,37 +220,48 @@ summary(1e2*(1-NH2$S/NH3$S))             #0.14% IQR=[0.04 - 0.55]
 ## ALL (too big to read)
 #ggplot(All, aes(x=year, y = ari, colour = factor(iso3))) + geom_point() + facet_wrap(~iso3)
 # Just one country
-w<-which(All$iso3 == "EST")
+w<-which(All$iso3 == "ETH")
 ggplot(All[w,], aes(x=year, y = ari, colour = factor(iso3))) + geom_point()
 
 
 ######*** MDR ***********************************************************************************************************************
 ### Where MDR data from: 
+
+## This is old data - what I gaterhed from the literature before getting the WHO data
 ## r <- read.csv("datar/who_drtb_by_country.csv")
 ## save(r,file='datar/mdr.Rdata')
+## load('datar/mdr.Rdata')
 
-load('datar/mdr.Rdata')
+
+#### DON'T NEED TO DO THIS UNTIL HAVE ALL ARI RUNS
+### Read in WHO data
+## This has the final levels - average where more than one in a year in a sub-set of the country. 
+who0 <- read.csv("~/Dropbox/MRC SD Fellowship/Research/MDR/WHO_data/new_who_edited_sub.csv",stringsAsFactors = FALSE)[-1]
+
 
 # Assume
 # (1) percentage new infections with MDR = proportion of ARI
 Allm <- All
-r2 <- r[,c("iso3","perc_new_mdr","year")] # CHANGE ON DESKTOP
-## r2$year <- r$source_drs_year_new  # CHANGE ON DESKTOP
-r2$perc_new_mdr <- r2$perc_new_mdr / 100
-r2 <- r2[!is.na(r2$perc_new_mdr),]
-Allm <- merge(All,r2,by=c('iso3','year'),all=TRUE)
+who0_r <- who0[,c("iso3","new_mdr_prop","year","mlo","mhi")] 
+
+# Only keep those countries in the final analysis
+Allm <- Allm[Allm$iso3 %in% unique(who0$iso3),]
+
+# Merge in WHO data
+Allm <- merge(All,who0_r,by=c('iso3','year'),all=TRUE)
+
 # missing values for mdr
-100*length(which(is.na(Allm$perc_new_mdr))) / dim(Allm)[1] # 80% missing... 
+100*length(which(is.na(Allm$new_mdr_prop))) / dim(Allm)[1] # 85% missing... 
 
 
-Allm$r_ari <- Allm$perc_new_mdr * Allm$ari
+Allm$r_ari <- Allm$new_mdr_prop * Allm$ari
 Allm$lr_ari <- log(Allm$r_ari)
 
 save(Allm,file='datar/All_mdr.Rdata')
 
 # Plot
 w<-which(Allm$iso3 == "ZWE")
-ggplot(Allm[w,], aes(x=year, y = ari, colour = "red")) + geom_point() + geom_point(aes(x=year, y = perc_new_mdr), colour = "blue")
+ggplot(Allm[w,], aes(x=year, y = ari, colour = "red")) + geom_point() + geom_point(aes(x=year, y = new_mdr_prop), colour = "blue")
 
 ####*** For MDR approx (i.e. overestimate by using only global values from 2017)
 load('data/whokey.Rdata')
