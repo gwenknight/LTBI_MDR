@@ -1,4 +1,6 @@
 ### Which countries included?
+library(magrittr)
+library(dplyr)
 
 ### Original WHO data on MDR
 w_data <- read.csv("~/Dropbox/MRC SD Fellowship/RESEARCH/MDR/WHO_data/new_who_edited.csv", stringsAsFactors = FALSE)
@@ -105,17 +107,6 @@ s <- setdiff(n_data$iso3, n_data1$iso3) # 7 removed by this
 length(s)
 intersect(s, mdr30$iso3) # include 3 in the top MDR! 
 
-####***************************************************************************************************************************************####
-# Average MDR over multiple measures in same year - only happens if sub_group? 
-w_data_subreg <- w_data %>% group_by(iso3,year_new) %>% summarise(av_mdr_new_pcnt = mean(mdr_new_pcnt), 
-                                                                  mhi = mean(mhi),
-                                                                  mlo = mean(mlo))
-
-w_data_subreg$year <- w_data_subreg$year_new
-write.csv(w_data_subreg, "~/Dropbox/MRC SD Fellowship/RESEARCH/MDR/WHO_data/new_who_edited_sub.csv") ### NEW STANDARD DATA TO USE
-####***************************************************************************************************************************************####
-
-
 wm <- match(final_list,n_data$iso3, nomatch = 0)
 wm1 <- match(final_list,n_data1$iso3, nomatch = 0)
 length(which(n_data[wm,"n"] < 2)) # 36 only have 1 datapoint - extra 5 from removing those with only sub-national
@@ -130,6 +121,24 @@ final_list <- setdiff(final_list, rem_1_dp)
 length(final_list) # 107
 
 
+####***************************************************************************************************************************************####
+# Average MDR over multiple measures in same year - only happens if sub_group? 
+w_data_subreg <- w_data %>% group_by(iso3,year_new) %>% summarise(av_mdr_new_pcnt = mean(mdr_new_pcnt), 
+                                                                  mhi = mean(mhi),
+                                                                  mlo = mean(mlo))
+
+w_data_subreg$year <- w_data_subreg$year_new
+w_data_subreg2 <- w_data_subreg[w_data_subreg$iso3 %in% final_list,]
+
+# Convert from a % to a proportion
+w_data_subreg2$new_mdr_prop <- w_data_subreg2$av_mdr_new_pcnt / 100
+w_data_subreg2$mhi <- w_data_subreg2$mhi / 100
+w_data_subreg2$mlo <- w_data_subreg2$mlo / 100
+
+
+write.csv(w_data_subreg2, "~/Dropbox/MRC SD Fellowship/RESEARCH/MDR/WHO_data/new_who_edited_sub.csv") ### NEW STANDARD DATA TO USE - only has final list of countries
+write.csv(w_data_subreg2, "~/Dropbox/MDR/new_who_edited_sub.csv") 
+####***************************************************************************************************************************************####
 
 #### FINAL LIST
 # MDR tb 2018 percentage
