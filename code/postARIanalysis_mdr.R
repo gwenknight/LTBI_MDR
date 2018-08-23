@@ -53,6 +53,16 @@ rundr <- data.table(rundatar)
 ## rundatar
 rundatar[,year:=2014-year]               #now age
 rundatar[,lari:=exp(lari)]               #now real ari!! 
+
+
+
+## ADD IN MDR DATA
+# Require mdr proportion for every year from 1934, for 1,000 replicates
+
+
+
+
+
 rundatar <- rundatar[order(replicate,iso3,year),
                      list(ari=lari,H=cumsum(lari),year=year),
                      by=list(iso3=iso3,replicate=replicate)]
