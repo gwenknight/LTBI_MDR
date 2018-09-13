@@ -14,7 +14,10 @@ likelihood <- function(who_l, curve_l){
   # PREDICTED
   curves_use <- as.data.frame(filter(curve_l, year %in% who_l$year))
   if(length(curves_use$out) < length(who_l$mdr_new)){print("ERROR")}
-  who_l$L <- (log(who_l$sigma) + 0.5 * log(2*pi)) + (who_l$mdr_new - curves_use$out)^2/(2*(who_l$sigma2))
+  # Maximise the likelihood
+  who_l$L <- 1/(who_l$sigma*sqrt(2*pi)) * exp(-(who_l$mdr_new - curves_use$out)^2/(2*(who_l$sigma2)))
+  # Minimise the negative log likelihood
+  #who_l$L <- (n)*log(who_l$sigma) + (n/2) * log(2*pi) + (who_l$mdr_new - curves_use$out)^2/(2*(who_l$sigma2))
   
   return(sum(who_l$L))
 }
