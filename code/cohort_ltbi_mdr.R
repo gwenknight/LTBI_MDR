@@ -41,24 +41,26 @@ cohort_ltbi <- function(ari,pop){
     
     ## Add together existing with new proportions ds / dr
     ## remove reinfecteds move to the other... 
-    c_now$pr_ds <- c_now$pr_ds + c_now$new_ds + c_now$rei_rs - c_now$rei_sr
-    c_now$pr_dr <- c_now$pr_dr + c_now$new_dr + c_now$rei_sr - c_now$rei_rs 
+    c_now$pr_ds <- round(c_now$pr_ds,4) + round(c_now$new_ds,4) + round(c_now$rei_rs,4) - round(c_now$rei_sr,4)
+    c_now$pr_dr <- round(c_now$pr_dr,4) + round(c_now$new_dr,4) + round(c_now$rei_sr,4) - round(c_now$rei_rs,4) 
     # Set new to zero
     c_now[,c("new_ds","rei_rs","new_dr","rei_sr")] <- 0
     
     # New calculations
     # ARI for this year
-    ari_s <- as.numeric(ari[i,"ds"])
-    ari_s[ari_s > 1] <- 1
-    ari_r <- as.numeric(ari[i,"mdr"])
+    ari_s <- as.numeric(ari[i,"ds"]) 
+    ari_s[ari_s > 1] <- 1 # cap at everyone!
+    ari_r <- as.numeric(ari[i,"mdr"]) 
     ari_r[ari_r > 1] <- 1
     
     # Calculations
-    c_now$new_ds <- ari_s * (1 - c_now$pr_ds - c_now$pr_dr) # currently none, new infection DS
-    c_now$new_dr <- ari_r * (1 - c_now$pr_ds - c_now$pr_dr - c_now$new_ds) # currently none, new infection DR
+    c_now$new_ds <- round(ari_s * (1 - c_now$pr_ds - c_now$pr_dr),4) # currently none, new infection DS
+    c_now$new_dr <- round(ari_r * (1 - c_now$pr_ds - c_now$pr_dr - c_now$new_ds),4) # currently none, new infection DR
+    c_now[c_now$new_ds < 0, "new_ds"] <- 0 # no new if go negative
+    c_now[c_now$new_dr < 0, "new_dr"] <- 0 # no new if go negative
     c_now$rei_sr <- c_now$pr_ds * ari_r * alph[i,] 
     c_now$rei_rs <- c_now$pr_dr * ari_s * alph[i,]
-    if(length(which(c_now < 0))>0){print(c(i,"negative c_now"))}
+    if(length(which(c_now < 0))>0){print(c(i,"negative c_now", ari_s, ari_r,c_now[i,],"which",which(c_now < 0)))}
     
     ### Store and update
     c_last <- c_now  
