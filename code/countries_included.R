@@ -3,7 +3,8 @@ library(magrittr)
 library(dplyr)
 
 ### Original WHO data on MDR
-w_data <- read.csv("~/Dropbox/MRC SD Fellowship/RESEARCH/MDR/WHO_data/new_who_edited.csv", stringsAsFactors = FALSE)
+w_data <- read.csv("~/Dropbox/MDR/who/new_who_edited.csv",stringsAsFactors = FALSE)[,-1]
+#w_data <- read.csv("~/Dropbox/MRC SD Fellowship/RESEARCH/MDR/WHO_data/new_who_edited.csv", stringsAsFactors = FALSE)
 u <- unique(w_data$iso3)
 length(unique(w_data$iso3)) # 159
 
@@ -99,21 +100,22 @@ w<-which(mdr30$iso3 == "AGO")
 ### Some only have data for sub-regions. 
 w<-which(w_data$all_areas_covered_new < 1)
 length(w) # 226
+length(unique(w_data$iso3))
 
 ### Remove those with only 1 MDR datapoint
-n_data <- w_data %>% group_by(iso3) %>% count(iso3)
-n_data1 <- w_data[-w,] %>% group_by(iso3) %>% count(iso3)
-s <- setdiff(n_data$iso3, n_data1$iso3) # 7 removed by this
+n_data <- w_data %>% group_by(iso3) %>% count("iso3")
+n_data1 <- w_data[-w,] %>% group_by(iso3) %>% count("iso3")
+s <- setdiff(n_data$iso3, n_data1$iso3) # 8 removed by this
 length(s)
 intersect(s, mdr30$iso3) # include 3 in the top MDR! 
 
 wm <- match(final_list,n_data$iso3, nomatch = 0)
 wm1 <- match(final_list,n_data1$iso3, nomatch = 0)
-length(which(n_data[wm,"n"] < 2)) # 36 only have 1 datapoint - extra 5 from removing those with only sub-national
-length(which(n_data1[wm1,"n"] < 2)) # 36 only have 1 datapoint - extra 5 from removing those with only sub-national
-setdiff( n_data1[which(n_data1[wm1,"n"] < 2),"iso3"],n_data[which(n_data[wm,"n"] < 2),"iso3"])
+length(which(n_data[wm,"freq"] < 2)) # 31 only have 1 datapoint - extra 5 from removing those with only sub-national
+length(which(n_data1[wm1,"freq"] < 2)) # 36 only have 1 datapoint - extra 5 from removing those with only sub-national
+setdiff( n_data1[which(n_data1[wm1,"freq"] < 2),"iso3"],n_data[which(n_data[wm,"freq"] < 2),"iso3"])
 
-rem_1_dp_m <- n_data[which(n_data$n < 2),]
+rem_1_dp_m <- n_data[which(n_data$freq < 2),]
 rem_1_dp <- pull(rem_1_dp_m, iso3)
 
 # remove these from the final_list
@@ -123,7 +125,7 @@ length(final_list) # 107
 
 ####***************************************************************************************************************************************####
 # Average MDR over multiple measures in same year - only happens if sub_group? 
-w_data_subreg <- w_data %>% group_by(iso3,year_new) %>% summarise(av_mdr_new_pcnt = mean(mdr_new_pcnt), 
+w_data_subreg <- w_data %>% dplyr::group_by(iso3,year_new) %>% dplyr::summarise(av_mdr_new_pcnt = mean(mdr_new_pcnt), 
                                                                   mhi = mean(mhi),
                                                                   mlo = mean(mlo))
 
@@ -132,9 +134,9 @@ w_data_subreg2 <- w_data_subreg[w_data_subreg$iso3 %in% final_list,]
 
 # Convert from a % to a proportion
 w_data_subreg2$new_mdr_prop <- w_data_subreg2$av_mdr_new_pcnt / 100
-w_data_subreg2$mhi <- w_data_subreg2$mhi / 100
-w_data_subreg2$mlo <- w_data_subreg2$mlo / 100
-
+w_data_subreg2$mhi <- w_data_subreg2$mhi # already a proportion: see who_data_drs.R
+w_data_subreg2$mlo <- w_data_subreg2$mlo # already a proportion: see who_data_drs.R
+length(unique(w_data_subreg2$iso3)) # 107
 
 write.csv(w_data_subreg2, "~/Dropbox/MRC SD Fellowship/RESEARCH/MDR/WHO_data/new_who_edited_sub.csv") ### NEW STANDARD DATA TO USE - only has final list of countries
 write.csv(w_data_subreg2, "~/Dropbox/MDR/new_who_edited_sub.csv") 
