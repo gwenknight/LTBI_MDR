@@ -37,8 +37,8 @@ dev.off()
 values0 <- c("U" = 92, "LS" = 8, "LR" = 0)
 
 iron(
-waffle(c(50, 30, 15, 5), rows = 1),
-waffle(c(50, 30, 15, 5), rows = 1)
+waffle(c(50, 30, 15, 5), rows = 3),
+waffle(c(50, 30, 15, 5), rows = 3)
 )
 
        
