@@ -1,7 +1,7 @@
 ##### Compare linear MDR ARI curves to data
 
 ### Libraries
-library(ggplot2); library(dplyr)
+library(ggplot2); library(dplyr); library(data.table)
 theme_set(theme_bw(base_size=24))
 
 ### Read in trends
@@ -12,8 +12,7 @@ save_curves0 <- read.csv("~/Dropbox/MRC SD Fellowship/Research/MDR/Latent_MDR/Da
 who0 <- read.csv("~/Dropbox/MRC SD Fellowship/Research/MDR/WHO_data/new_who_edited_sub.csv",stringsAsFactors = FALSE)[-1]
 
 ## add in extra columns
-who0$year <- who0$year_new
-who0$mdr_new <- who0$av_mdr_new_pcnt / 100 # convert to proportion from percentage to match H&D
+who0$mdr_new <- who0$new_mdr_prop
 
 ## years after 2014...
 #ww <- which(who$year > 2014)
@@ -21,6 +20,8 @@ who0$mdr_new <- who0$av_mdr_new_pcnt / 100 # convert to proportion from percenta
 
 ## Countries to look at 
 cn <- read.csv("~/Dropbox/MDR/107_final_list_included_countries.csv",stringsAsFactors = FALSE)[,-1]
+length(unique(who0$iso3))
+length(intersect(unique(who0$iso3), cn)) # 107? yep. 
 
 ## Where saving output? 
 setwd("~/Dropbox/MDR/output/")
@@ -55,12 +56,12 @@ for(i in 1:length(cn)){
   if(length(ww10) > 1){ # if many then take 1/3 of range above and below
     max_who <- max(who[ww10,"mdr_new"]); min_who <- min(who[ww10,"mdr_new"])
     dist_who <- max_who - min_who
-    final_levels <- seq(min_who - dist_who, max_who + dist_who, length.out = 100) # do from min distance between to max + dist between
+    final_levels <- seq(min_who - 2*dist_who, max_who + 2*dist_who, length.out = 100) # do from min - 2*distance between to max + 2*dist between
     final_levels <- final_levels[final_levels > 0] # remove negative ones}
   }
   if(length(ww10) == 1){ # if one then take 1/3 above and below this single point
     fl1 <- who[ww10,"mdr_new"]
-    final_levels <- seq(fl1-(fl1), fl1 + fl1, length.out = 100) # do from min minus distance between to max + dist between
+    final_levels <- seq(fl1-2*(fl1), fl1 + 2*fl1, length.out = 100) # do from min minus 2*distance between to max + 2*dist between
   }
   if(length(ww10) < 1){final_levels <- head(who,1)$mdr_new} # Just last point #mdr_last0[which(mdr_last0$iso3==cc),"mdr_new_pcnt"]/100} # original mdr_last
   
@@ -95,51 +96,75 @@ for(i in 1:length(cn)){
 
 ll_all <- as.data.frame(ll_all)
 colnames(ll_all) <- c("cn","nind","likelihood_v","mdr_last","mdr_last_index")
+write.csv(ll_all,"~/Dropbox/MDR/output/likelihood_data.csv")
 
-# Find minimum likelihood for each country over all 
+# Find maximum likelihood for each country over all 
 # ind = all potential curve shapes
 # mdr_last = all potential end points for shapes
-ll_min <- as.data.frame(ll_all %>% group_by(cn) %>% slice(which.min(likelihood_v)))
+ll_max <- as.data.frame(ll_all %>% group_by(cn) %>% slice(which.max(likelihood_v)))
 
-ggplot(subset(ll_all, cn == 1), aes(x=mdr_last, y = likelihood_v, group = nind, color = factor(nind))) + 
-  geom_line() + scale_x_continuous(lim = c(0,0.003))
+hist(ll_max$nind) # many have the linear increase from 1970
 
-## For one country check
+##**** For one country check ****************************************************************######
+cn_id = 1
+# Likelihoods
+ll_all_cn <- subset(ll_all, ll_all$cn == cn_id)
+ggplot(ll_all_cn, aes(x=mdr_last, y = likelihood_v)) + geom_point()
 # WHO data
-who <- as.data.frame(who0[which(who0$iso3 == cn[1]),c("year","mdr_new","mhi")])
-# MDR levels explore
-final_levels_cn <- as.data.frame(ll_all[which(ll_all$cn == 1),])
-final_levels_cn$index <-0; final_levels_cn$best <-4
-# Modify curves for these final levels 
-#save_curves$out <- ll_min[1,"mdr_last"] * save_curves_lin$out/0.02 # rescale for this country 
-save_curves$out <- final_levels_cn[4000,"mdr_last"] * save_curves_lin$out/0.02 # rescale for this country 
-
+who <- as.data.frame(who0[which(who0$iso3 == cn[cn_id]),c("year","mdr_new","mhi","mlo")])
+# Likelihood data
+ll_low <- subset(ll_max, ll_max$cn == cn_id)
+mdr_l <- ll_low[,"mdr_last"] # mdr_level at min
+# Best curves
+save_curves<-save_curves_lin
 save_curves$best <- 0
-save_curves[which(save_curves$index == ll_min[1,"nind"]),"best"] <- 1
-save_curves[which(save_curves$index == 10),"best"] <- 2
+save_curves$out <- mdr_l * save_curves_lin$out/0.02
+save_curves[which(save_curves$index == ll_low$nind),"best"] <- 1
+who$best <- 0
+ggplot(save_curves, aes(x=year, y = out, group = index, col = factor(best))) + geom_line() +
+  geom_point(data = who, aes(x = year, y = mdr_new, group = ""), col = "blue") + geom_errorbar(data = who, aes(group = "",y = mdr_new, ymin=mlo, ymax = mhi), col="blue") + 
+  scale_color_manual("Curves with\nbest final\nmdr level",values = c("grey","red"), labels = c("all","best fit")) + 
+  scale_x_continuous("Year") + scale_y_continuous("Proportion new with MDR")
 
-who$index <- 0;who$best <- 3;
-ggplot(save_curves, aes(x=year, y = out, group = index, color = factor(best))) + geom_line() +
-   geom_point(data = who, aes(x=year, y = mdr_new))
+# All curves
+mdrs <- unique(subset(ll_all, ll_all$cn == cn_id)["mdr_last"])
+mm <- unique(save_curves$index)
+ll <- length(which(save_curves$index == 1))
+ss <- c()
+for(i in 1:length(mdrs[,1])){
+  save_curves$out <- mdrs[i,] * save_curves_lin$out/0.02
+  ss <- rbind(ss, cbind(save_curves,rep(((i-1)*mm):(i*mm-1),each = ll)))
+}
+ss <- as.data.frame(ss)
+colnames(ss) <- c(colnames(save_curves),"nrun")
+ss$best = 2
+who$best = 3
+ggplot(save_curves, aes(x=year, y = out, group = index, col = factor(best))) + geom_line() +
+  geom_point(data = who, aes(x = year, y = mdr_new, group = "")) + geom_errorbar(data = who, aes(group = "",y = mdr_new, ymin=mlo, ymax = mhi)) + 
+  geom_line(data = ss, aes(x = year, y = out, group = nrun),alpha = 0.02) + 
+  scale_color_manual("",values = c("black","red","grey","blue"), 
+                     labels = c("Curves best final mdr","Lowest Likelihood","All curves","WHO data")) +
+  scale_x_continuous("Year") + scale_y_continuous("Proportion new with MDR")
 
-ggplot(save_curves, aes(x=year, y = out, group = index, color = factor(best))) + geom_line() +
-  geom_point(data = who, aes(x=year, y = mdr_new)) + 
-  geom_point(data = final_levels_cn, aes(x=2014, y = mdr_last), shape = 4)
 
 
-ll_all_cn <- ll_all[which(ll_all$cn == 3),]
-ggplot(ll_all_cn, aes(x=mdr_last, y = likelihood_v, group = mdr_last)) + geom_point(aes(col = factor(nind)))
-
-
-
-## Sampling
+##**** For one country check ****************************************************************######
 ll_all <- as.data.table(ll_all)
 ll_all %>% group_by(cn) %>% sample(ll_all,10, prob=likelihood_v, replace = TRUE)
 
-s <- sample(seq(1,length(ll_all_cn[,1]),1), 100 0, prob = ll_all_cn$likelihood_v, replace = TRUE)
-hist(ll_all_cn[s,"likelihood_v"])
+ll_all_cn$likeli_corr <- ll_all_cn$likelihood_v/sum(ll_all_cn$likelihood_v)
+s <- sample(seq(1,length(ll_all_cn$cn),1), 1000, prob = ll_all_cn$likeli_corr, replace = TRUE)
+hist(ll_all_cn[s,"mdr_last"], breaks = seq(0,max(ll_all_cn$mdr_last)+0.02,0.01))
+ggplot(ll_all_cn, aes(x=mdr_last, y = likeli_corr)) + geom_point()
+ggplot(ll_all_cn, aes(x = seq(1,2870,1), y = likelihood_v)) + geom_point()
+hist(s)
 
+somax <- exp(ll_all_cn$likelihood_v)/sum(exp(ll_all_cn$likelihood_v)) # deals with negative likelihoods but weights oddly
+plot(ll_all_cn$likelihood_v, somax)
+s <- sample(seq(1,length(ll_all_cn$cn),1), 1000, prob = somax, replace = TRUE)
+hist(s, breaks = seq(1,length(ll_all_cn$cn),1))
 
+hist(sample(c(1,2,3),1000,prob = c(1,2,3), replace = TRUE))
 # sort ascending: s <- sort(sum_ls$x, index.return=TRUE); best_all = rbind(best_all, cbind(final_levels[j],sum_ls[s$ix[1:10],])) # returns top 10
 ls_best <- as.data.frame(sum_ls %>% group_by(Type) %>% slice(which.min(x)))
 
