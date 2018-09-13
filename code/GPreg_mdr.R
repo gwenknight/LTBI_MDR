@@ -141,9 +141,12 @@ load('datar/All_mdr.Rdata')
 All0 <- Allm[Allm$lr_ari!=-Inf,]
 lin <- 1                           #linear (1) or constant (0)  --- CHANGE HERE! 
 
-uu <- unique(as.character(All0$iso3)) # number of unique countries
+final_list_cn <- read.csv("~/Dropbox/MDR/107_final_list_included_countries.csv", stringsAsFactors = FALSE)[,-1]
+#uu <- unique(as.character(All0$iso3)) # number of unique countries
 uu <- uu[-is.na(uu)] 
+uu <- final_list_cn
 length(uu) # 107 = final_list
+skp <- c()
 
 ## For each country in turn
 for(jj in 1:length(uu)){
