@@ -22,5 +22,12 @@ model {
 }
 generated quantities {
   vector[N2] p_pred;
+  vector[N] log_likelihood;
   p_pred = a * years + b * years2 + c; // observations predicted by the model
+  
+  for (i in 1:N) {
+
+   log_likelihood[i] = normal_lpdf(q | quadpred, sigma);
+    
+  }
 }
