@@ -24,6 +24,8 @@ w<-which(who0$sigma == 0)
 
 pred_samples_lin <- list()
 pred_samples_quad <- list()
+pred_samples_quadc <- list()
+cc<-c() # compare outputs
 
 # Cycle through all countries
 for(ii in 1:luu) {
@@ -80,8 +82,9 @@ for(ii in 1:luu) {
   quadc_loo <- loo::loo(log_lik_quadc)
   compare(lin_loo, quad_loo)
   compare(quad_loo, quadc_loo)
-  compare(lin_loo, quad_loo, quadc_loo)
+  c <- compare(lin_loo, quad_loo, quadc_loo)
   # if elpd_diff is positive the second model is preferred. If it’s negative, the first model is preferred
+  cc <- rbind(cc,cbind(c,uu[ii]))
   
   waic1 <- waic(log_lik_lin)
   waic2 <- waic(log_lik_quad)
@@ -182,11 +185,22 @@ for(ii in 1:luu) {
     mutate(country = country)
 }
 
-all_samples <- pred_samples %>% 
+all_samples_lin <- pred_samples_lin %>% 
   bind_rows
 
-write.csv(pred_samples,"../output/pred_samples.csv")
-write.csv(all_samples,"../output/all_samples.csv")
+all_samples_quad <- pred_samples_quad %>% 
+  bind_rows
 
-# CHECKS
-ggplot(who_l, aes(x=year,y=mdr_new)) + geom_errorbar(aes(ymin = mdr_new - sigma, ymax = mdr_new + sigma))
+all_samples_quadc <- pred_samples_quadc %>% 
+  bind_rows
+
+write.csv(pred_samples_lin,"../output/pred_samples_lin.csv")
+write.csv(all_samples_lin,"../output/all_samples_lin.csv")
+
+write.csv(pred_samples_quad,"../output/pred_samples_quad.csv")
+write.csv(all_samples_quad,"../output/all_samples_quad.csv")
+
+write.csv(pred_samples_quadc,"../output/pred_samples_quadc.csv")
+write.csv(all_samples_quadc,"../output/all_samples_quadc.csv")
+
+write.csv(cc, "../output/compare_models_elpd.csv")
