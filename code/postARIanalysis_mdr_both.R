@@ -58,7 +58,7 @@ for(i in 1:length(cnz)){ # for all the countries
 bdzdf <- do.call('rbind',BDZ)
 rundatar <- do.call('rbind',RUNZ)
 length(unique(rundatar$iso3)) # 107
-save(rundatar,"~/Dropbox/MDR/data/rundata_ari_1000.Rdata")
+save(rundatar,file = "~/Dropbox/MDR/output/rundata_ari_1000.Rdata")
 
 ## ------------- analyse data -------------
 rundatar <- data.table(rundatar)
