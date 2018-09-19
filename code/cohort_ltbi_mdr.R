@@ -41,8 +41,8 @@ cohort_ltbi <- function(ari,pop){
     
     ## Add together existing with new proportions ds / dr
     ## remove reinfecteds move to the other... 
-    c_now$pr_ds <- round(c_now$pr_ds,4) + round(c_now$new_ds,4) + round(c_now$rei_rs,4) - round(c_now$rei_sr,4)
-    c_now$pr_dr <- round(c_now$pr_dr,4) + round(c_now$new_dr,4) + round(c_now$rei_sr,4) - round(c_now$rei_rs,4) 
+    c_now$pr_ds <- c_now$pr_ds + c_now$new_ds + c_now$rei_rs - c_now$rei_sr
+    c_now$pr_dr <- c_now$pr_dr + c_now$new_dr + c_now$rei_sr - c_now$rei_rs 
     # Set new to zero
     c_now[,c("new_ds","rei_rs","new_dr","rei_sr")] <- 0
     
@@ -54,8 +54,8 @@ cohort_ltbi <- function(ari,pop){
     ari_r[ari_r > 1] <- 1
     
     # Calculations
-    c_now$new_ds <- round(ari_s * (1 - c_now$pr_ds - c_now$pr_dr),4) # currently none, new infection DS
-    c_now$new_dr <- round(ari_r * (1 - c_now$pr_ds - c_now$pr_dr - c_now$new_ds),4) # currently none, new infection DR
+    c_now$new_ds <- ari_s * (1 - c_now$pr_ds - c_now$pr_dr) # currently none, new infection DS
+    c_now$new_dr <- ari_r * (1 - c_now$pr_ds - c_now$pr_dr - c_now$new_ds) # currently none, new infection DR
     c_now[c_now$new_ds < 0, "new_ds"] <- 0 # no new if go negative
     c_now[c_now$new_dr < 0, "new_dr"] <- 0 # no new if go negative
     c_now$rei_sr <- c_now$pr_ds * ari_r * alph[i,] 
@@ -69,6 +69,8 @@ cohort_ltbi <- function(ari,pop){
   
   # Add in year
   store_c$year <- rep(1934:2014,each = 100)
+  # Add in age
+  store_c$age <- rep(1:100,each = 1)
   
   ## Capture last one
   c_2014 <- c_last
