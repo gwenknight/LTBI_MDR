@@ -6,6 +6,9 @@ library('dplyr')
 library('ggmcmc')
 library('loo')
 
+# PRINT? 
+pp <- 0
+
 # where
 setwd("~/Documents/LTBI_MDR/code")
 
@@ -13,6 +16,8 @@ setwd("~/Documents/LTBI_MDR/code")
 who0 <- as.data.frame(read.csv("~/Dropbox/MDR/new_who_edited_sub.csv")[,-1])
 uu <- unique(who0$iso3) # 107
 luu <- length(unique(who0$iso3)) # 107
+
+luu <- 5 ##### DO JUST FOR FIRST FIVE! *******************************************************************************************
 
 # Add in sigma to data
 who0$mdr_new <- who0$new_mdr_prop
@@ -93,7 +98,7 @@ for(ii in 1:luu) {
   
   ## Linear
   posterior.lin<-As.mcmc.list(m.lin,pars=c("a", "b"))
-  ggmcmc(ggs(posterior.lin), file=paste0("~/Dropbox/MDR/output/",country, "lin_mcmc.pdf"))
+  if(pp > 0){ggmcmc(ggs(posterior.lin), file=paste0("~/Dropbox/MDR/output/",country, "lin_mcmc.pdf"))}
   samples.lin <- rstan::extract(m.lin, pars="p_pred")[[1]][1001:2000, ]
   
   mcmc.samples.lin <- data.frame(samples.lin) %>%
@@ -111,20 +116,21 @@ for(ii in 1:luu) {
     ungroup %>%
     select(-n)
   
+  if(pp > 0){
   g <- ggplot(annual.lin, aes(x=year)) +
     geom_line(aes(y=mean)) +
     geom_ribbon(aes(ymin=min, ymax=max), alpha=0.3, fill = "red") +
     geom_point(data=who_l, aes(y=mdr_new)) +
     geom_errorbar(data=who_l, aes(ymin=mlo, ymax=mhi)) +
     geom_vline(xintercept=2014, linetype="dashed")
-  ggsave(paste0("~/Dropbox/MDR/output/",country, "lin_mcmc_fit.pdf"))
-  
+  ggsave(paste0("~/Dropbox/MDR/output/",country, "lin_mcmc_fit.pdf"))}
+
   pred_samples_lin[[country]] <- mcmc.samples.lin %>%
     mutate(country = country)
   
   ## Quadratic
   posterior.quad<-As.mcmc.list(m.quad,pars=c("a", "b"))
-  ggmcmc(ggs(posterior.quad), file=paste0("~/Dropbox/MDR/output/",country, "quad_mcmc.pdf"))
+  if(pp > 0){ggmcmc(ggs(posterior.quad), file=paste0("~/Dropbox/MDR/output/",country, "quad_mcmc.pdf"))}
   samples.quad <- rstan::extract(m.quad, pars="p_pred")[[1]][1001:2000, ]
   
   mcmc.samples.quad <- data.frame(samples.quad) %>%
@@ -142,20 +148,21 @@ for(ii in 1:luu) {
     ungroup %>%
     select(-n)
   
+  if(pp > 0){
   g <- ggplot(annual.quad, aes(x=year)) +
     geom_line(aes(y=mean)) +
     geom_ribbon(aes(ymin=min, ymax=max), alpha=0.3, fill = "red") +
     geom_point(data=who_l, aes(y=mdr_new)) +
     geom_errorbar(data=who_l, aes(ymin=mlo, ymax=mhi)) +
     geom_vline(xintercept=2014, linetype="dashed")
-  ggsave(paste0("~/Dropbox/MDR/output/",country, "quad_mcmc_fit.pdf"))
+  ggsave(paste0("~/Dropbox/MDR/output/",country, "quad_mcmc_fit.pdf"))}
   
   pred_samples_quad[[country]] <- mcmc.samples.quad %>%
     mutate(country = country)
   
   ## Quadratic with c > 0
   posterior.quadc<-As.mcmc.list(m.quadc,pars=c("a", "b"))
-  ggmcmc(ggs(posterior.quadc), file=paste0("~/Dropbox/MDR/output/",country, "quadc_mcmc.pdf"))
+  if(pp > 0){ggmcmc(ggs(posterior.quadc), file=paste0("~/Dropbox/MDR/output/",country, "quadc_mcmc.pdf"))}
   samples.quadc <- rstan::extract(m.quadc, pars="p_pred")[[1]][1001:2000, ]
   
   mcmc.samples.quadc <- data.frame(samples.quadc) %>%
@@ -173,13 +180,14 @@ for(ii in 1:luu) {
     ungroup %>%
     select(-n)
   
+  if(pp > 0){
   g <- ggplot(annual.quadc, aes(x=year)) +
     geom_line(aes(y=mean)) +
     geom_ribbon(aes(ymin=min, ymax=max), alpha=0.3, fill = "red") +
     geom_point(data=who_l, aes(y=mdr_new)) +
     geom_errorbar(data=who_l, aes(ymin=mlo, ymax=mhi)) +
     geom_vline(xintercept=2014, linetype="dashed")
-  ggsave(paste0("~/Dropbox/MDR/output/",country, "quadc_mcmc_fit.pdf"))
+  ggsave(paste0("~/Dropbox/MDR/output/",country, "quadc_mcmc_fit.pdf"))}
   
   pred_samples_quadc[[country]] <- mcmc.samples.quadc %>%
     mutate(country = country)
