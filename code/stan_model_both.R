@@ -40,26 +40,26 @@ for(ii in 1:luu) {
   years_to_predict <- seq(1970, 2018) - 1970
   
   m.lin <- stan(file="linear.stan",
-            data = list(N=nrow(who_l), 
-                        N2=length(years_to_predict), 
-                        q=who_l$mdr_new, 
-                        years_obs=who_l$year-1970, 
-                        sigma=who_l$sigma, 
-                        years=years_to_predict),
-            pars=c("a", "b", "p_pred","log_likelihood"),
-            chains=2, iter=20000, warmup=10000, thin=10)
+                data = list(N=nrow(who_l), 
+                            N2=length(years_to_predict), 
+                            q=who_l$mdr_new, 
+                            years_obs=who_l$year-1970, 
+                            sigma=who_l$sigma, 
+                            years=years_to_predict),
+                pars=c("a", "b", "p_pred","log_likelihood"),
+                chains=2, iter=20000, warmup=10000, thin=10)
   
   m.quad <- stan(file="quadratic.stan",
-            data = list(N=nrow(who_l), 
-                        N2=length(years_to_predict), 
-                        q=who_l$mdr_new, 
-                        years_obs=who_l$year-1970,
-                        years_obs2=(who_l$year-1970)^2,
-                        sigma=who_l$sigma, 
-                        years=years_to_predict,
-                        years2=(years_to_predict)^2),
-            pars=c("a", "b","p_pred","log_likelihood"),
-            chains=2, iter=20000, warmup=10000, thin=10)
+                 data = list(N=nrow(who_l), 
+                             N2=length(years_to_predict), 
+                             q=who_l$mdr_new, 
+                             years_obs=who_l$year-1970,
+                             years_obs2=(who_l$year-1970)^2,
+                             sigma=who_l$sigma, 
+                             years=years_to_predict,
+                             years2=(years_to_predict)^2),
+                 pars=c("a", "b","p_pred","log_likelihood"),
+                 chains=2, iter=20000, warmup=10000, thin=10)
   
   m.quadc <- stan(file="quadratic_cgreatzero.stan",
                   data = list(N=nrow(who_l), 
@@ -204,3 +204,62 @@ write.csv(pred_samples_quadc,"../output/pred_samples_quadc.csv")
 write.csv(all_samples_quadc,"../output/all_samples_quadc.csv")
 
 write.csv(cc, "../output/compare_models_elpd.csv")
+
+
+##### make correct for adding to other data
+# and merge
+load("~/Dropbox/MDR/output/rundata_ari_1000.Rdata")
+rundatar$ari <- exp(rundatar$lari)
+
+for(ii in 1:3){
+  print(ii)
+  
+  if (ii == 1){ all_samples0 <- all_samples_lin}
+  if (ii == 2){ all_samples0 <- all_samples_quad}
+  if (ii == 3){ all_samples0 <- all_samples_quadc}
+  
+  # Rename
+  all_samples <- all_samples0 %>%
+    mutate(replicate = sample, iso3 = country) %>%
+    dplyr::select(-sample) %>% dplyr::select(-country)
+  # Set negative to 0
+  all_samples[which(all_samples$prediction < 0), "prediction"] <- 0
+  
+  # Add in 0 before 1970
+  ns <- max(all_samples0$sample)
+  sample_v <- seq(1,ns,1)
+  years <- unique(rundatar$year) 
+  years_v <- years[which(years < 1970)]
+  ny <- length(years_v)
+  nc <- length(final_list_cn)
+  pre_1970_mdr <- as.data.frame(cbind(rep(sample_v,ny*nc),rep(years_v, each = ns*nc)))
+  colnames(pre_1970_mdr) <- c("replicate", "year")   
+  pre_1970_mdr$iso3 <-rep(final_list_cn, each = ns)
+  pre_1970_mdr$prediction <- 0
+  
+  all_samples <- rbind(all_samples, pre_1970_mdr)
+  
+  all_samples_1970_2014 <-all_samples
+  if (ii == 1){ write.csv(all_samples_1970_2014, "~/Dropbox/MDR/output/all_samples_lin_1970_2014.csv") }
+  if (ii == 2){ write.csv(all_samples_1970_2014, "~/Dropbox/MDR/output/all_samples_quad_1970_2014.csv") }
+  if (ii == 3){ write.csv(all_samples_1970_2014, "~/Dropbox/MDR/output/all_samples_quadc_1970_2014.csv") }
+  
+  ## MERGE DS AND MDR
+  all0 <- merge(all_samples, rundatar, by = c("year","iso3","replicate"))
+  # MDR-ARI
+  all0$mdr_ari <- all0$prediction * all0$ari
+  
+  # TOTAL AND MDR
+  all0$ds_ari <- all0$ari - all0$mdr_ari # ds ARI is the remainder of the ari
+  
+  if (ii == 1){ save(all0,file="~/Dropbox/MDR/output/all0_lin_ds_mdr.Rdata") }
+  if (ii == 2){ save(all0,file="~/Dropbox/MDR/output/all0_quad_ds_mdr.Rdata") }
+  if (ii == 3){ save(all0,file="~/Dropbox/MDR/output/all0_quadc_ds_mdr.Rdata") }
+  
+  
+}
+
+
+
+
+
