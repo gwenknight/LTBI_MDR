@@ -45,6 +45,11 @@ cni_rem <- c() # blank to store what else to remove
 # DS and MDR data
 for(ii in 1:3){ # 3 models
   
+  # Label for plots 
+  if(ii == 1){pp <- "lin"}
+  if(ii == 2){pp <- "quadc"}
+  if(ii == 3){pp <- "quad"}
+  
   # Store all? 
   store_all <- as.data.frame(matrix(0,length(cni)*4*81*100,9))
   runn <- 1
@@ -65,25 +70,25 @@ for(ii in 1:3){ # 3 models
     print(c(cci,cni[cci]))
     
     ### WHO data
-    d <-subset(w_data, iso3 == cni[cci] )
+    d <-subset(w_data, iso3 == as.character(cni[cci]) )
     
     # Remove if only one data point
     if(dim(d)[1] < 2){print(c("not enough data",cni[cci])); cni_rem = c(cni_rem, cci);
     } else {
       
       ### ARI for both DS and mDR in all0
-      rdata <- all0[which(all0$iso3 == cni[cci]),]
+      rdata <- all0[which(all0$iso3 == as.character(cni[cci])),]
       
       a1 <- ggplot(d, aes(x=year_new, y = new_mdr_prop),col="red",pch = 10) + # points won't plot over lines unless do points first?!
         geom_point() + 
         geom_line(data = rdata, aes(x=year, y = prediction, group = factor(replicate)),alpha = 0.2) + 
         scale_y_continuous("Prop. new with MDR") + scale_x_continuous("Year") +
         geom_point(data = d, aes(x=year_new, y = new_mdr_prop),col="red",pch = 10)
-      save_plot(paste0("~/Dropbox/MDR/output/",cni[cci],"_mdr_trends_with_data.pdf"), a1, base_aspect_ratio = 2 )
+      save_plot(paste0("~/Dropbox/MDR/output/",cni[cci],"_mdr_trends_with_data_",pp,".pdf"), a1, base_aspect_ratio = 2 )
       
       a2 <- ggplot(rdata, aes(x=year, y = mdr_ari, group = factor(replicate))) + geom_line() + 
         scale_y_continuous("MDR ARI") + scale_x_continuous("Year") 
-      save_plot(paste0("~/Dropbox/MDR/output/",cni[cci],"_mdr_ari.pdf"), a2, base_aspect_ratio = 2 )
+      save_plot(paste0("~/Dropbox/MDR/output/",cni[cci],"_mdr_ari_",pp,".pdf"), a2, base_aspect_ratio = 2 )
       
       for(i in 1:nari){
         print(c(i,"ari rep"))
@@ -125,9 +130,7 @@ for(ii in 1:3){ # 3 models
       # store all for this country
       sa <- as.data.frame(sa)
       colnames(sa) <- c(c("mdr_rep","cn"),colnames(cc$store_c)) 
-      if(ii == 1){write.csv(sa, paste0("~/Dropbox/MDR/output/",cni[cci],"_sa_",nari,"_lin.csv"))}
-      if(ii == 2){write.csv(sa, paste0("~/Dropbox/MDR/output/",cni[cci],"_sa_",nari,"quad.csv"))}
-      if(ii == 3){write.csv(sa, paste0("~/Dropbox/MDR/output/",cni[cci],"_sa_",nari,"quadc.csv"))}
+      write.csv(sa, paste0("~/Dropbox/MDR/output/",cni[cci],"_sa_",nari,"_",pp,".csv"))}
       # sa_rec <- sa[which(sa$year > 1965),] # recent
       
       # #### Plot by age
@@ -161,16 +164,12 @@ for(ii in 1:3){ # 3 models
   
   dim(level2014) #nari * 107
   level2014$cn <- cni[as.numeric(level2014$popf)]
-  if(ii == 1){write.csv(level2014, paste0("~/Dropbox/MDR/output/level2014_",nari,"lin.csv"))}
-  if(ii == 2){write.csv(level2014, paste0("~/Dropbox/MDR/output/level2014_",nari,"quad.csv"))}
-  if(ii == 3){write.csv(level2014, paste0("~/Dropbox/MDR/output/level2014_",nari,"quadc.csv"))}
+  write.csv(level2014, paste0("~/Dropbox/MDR/output/level2014_",nari,"_",pp,".csv"))
   
   s_level0 <- s_level
   s_level$pop_name <- cni[as.numeric(s_level0$popf)]
   s_level <- as.data.table(s_level)
-  if(ii == 1){write.csv(s_level, paste0("~/Dropbox/MDR/output/s_level_",nari,"lin.csv"))}
-  if(ii == 2){write.csv(s_level, paste0("~/Dropbox/MDR/output/s_level_",nari,"quad.csv"))}
-  if(ii == 3){write.csv(s_level, paste0("~/Dropbox/MDR/output/s_level_",nari,"quadc.csv"))}
+  write.csv(s_level, paste0("~/Dropbox/MDR/output/s_level_",nari,"_",pp,".csv"))
   
   ### OR READ IN
   #level2014 <- read.csv("~/Dropbox/MDR/output/level2014_10.csv",stringsAsFactors = FALSE)[,-1]
@@ -183,9 +182,7 @@ for(ii in 1:3){ # 3 models
     theme(axis.text.y = element_text(size = 6)) + 
     coord_flip() + aes(x=reorder(pop_name,ltbir),y=ltbir) 
   a2r
-  if(ii == 1){save_plot(paste0("~/Dropbox/MDR/output/ltbi_all_countries_r",nari,"lin.pdf"), a2r, base_aspect_ratio = 1.5 )}
-  if(ii == 2){save_plot(paste0("~/Dropbox/MDR/output/ltbi_all_countries_r",nari,"quad.pdf"), a2r, base_aspect_ratio = 1.5 )}
-  if(ii == 3){save_plot(paste0("~/Dropbox/MDR/output/ltbi_all_countries_r",nari,"quadc.pdf"), a2r, base_aspect_ratio = 1.5 )}
+  save_plot(paste0("~/Dropbox/MDR/output/ltbi_all_countries_r",nari,"_",pp,".pdf"), a2r, base_aspect_ratio = 1.5 )
   
   a2s<-ggplot(s_level, aes(x=pop_name, y = ltbis, col=factor(rep) )) + geom_point() + 
     guides(colour=FALSE) + 
@@ -193,9 +190,7 @@ for(ii in 1:3){ # 3 models
     theme(axis.text.y = element_text(size = 6)) + 
     coord_flip() + aes(x=reorder(pop_name,ltbis),y=ltbis) 
   a2s
-  if(ii == 1){save_plot(paste0("~/Dropbox/MDR/output/ltbi_all_countries_s",nari,"lin.pdf"), a2s, base_aspect_ratio = 1.5 )}
-  if(ii == 2){save_plot(paste0("~/Dropbox/MDR/output/ltbi_all_countries_s",nari,"quad.pdf"), a2s, base_aspect_ratio = 1.5 )}
-  if(ii == 3){save_plot(paste0("~/Dropbox/MDR/output/ltbi_all_countries_s",nari,"quadc.pdf"), a2s, base_aspect_ratio = 1.5 )}
+  save_plot(paste0("~/Dropbox/MDR/output/ltbi_all_countries_s",nari,"_",pp,".pdf"), a2s, base_aspect_ratio = 1.5 )
   
   s_level_mean <- s_level %>%
     group_by(pop_name) %>% 
@@ -224,9 +219,7 @@ for(ii in 1:3){ # 3 models
     coord_flip() + aes(x=reorder(pop_name,ltbir),y=ltbir) +
     geom_errorbar(aes(min = ltbir.lo, max = ltbir.hi))
   a2r
-  if(ii == 1){save_plot(paste0("~/Dropbox/MDR/output/ltbi_all_countries_r_mean",nari,"lin.pdf"), a2r, base_aspect_ratio = 0.8)}
-  if(ii == 2){save_plot(paste0("~/Dropbox/MDR/output/ltbi_all_countries_r_mean",nari,"quad.pdf"), a2r, base_aspect_ratio = 0.8)}
-  if(ii == 3){save_plot(paste0("~/Dropbox/MDR/output/ltbi_all_countries_r_mean",nari,"quadc.pdf"), a2r, base_aspect_ratio = 0.8)}
+  save_plot(paste0("~/Dropbox/MDR/output/ltbi_all_countries_r_mean",nari,"_",pp,".pdf"), a2r, base_aspect_ratio = 0.8)
   
   a2s<-ggplot(s_level_mean, aes(x=pop_name, y = ltbis )) + geom_point() +  
     scale_x_discrete("Country") + scale_y_continuous("LTBI-DS\n(% population infected)") +
@@ -234,16 +227,7 @@ for(ii in 1:3){ # 3 models
     coord_flip() + aes(x=reorder(pop_name,ltbis),y=ltbis)  +
     geom_errorbar(aes(min = ltbis.lo, max = ltbis.hi))
   a2s
-  if(ii == 1){save_plot(paste0("~/Dropbox/MDR/output/ltbi_all_countries_s_mean",nari,"lin.pdf"), a2s, base_aspect_ratio = 1.5 )}
-  if(ii == 2){save_plot(paste0("~/Dropbox/MDR/output/ltbi_all_countries_s_mean",nari,"quad.pdf"), a2s, base_aspect_ratio = 1.5 )}
-  if(ii == 3){save_plot(paste0("~/Dropbox/MDR/output/ltbi_all_countries_s_mean",nari,"quadc.pdf"), a2s, base_aspect_ratio = 1.5 )}
-  
-  
-  ##### UP TO HERE ########
-  
-  if(ii == 1){pp <- "lin"}
-  if(ii == 2){pp <- "quadc"}
-  if(ii == 3){pp <- "quad"}
+  save_plot(paste0("~/Dropbox/MDR/output/ltbi_all_countries_s_mean",nari,"_",pp,".pdf"), a2s, base_aspect_ratio = 1.5 )
   
   #### *** MAP **** ###
   library(maps)
@@ -264,7 +248,7 @@ for(ii in 1:3){ # 3 models
                               colourPalette = cols,
                               addLegend = FALSE)
   
-  pdf(paste0("~/Dropbox/MDR/output/map_ltbis",pp,".pdf"))
+  pdf(paste0("~/Dropbox/MDR/output/map_ltbis_",pp,".pdf"))
   mapParams <- mapCountryData(mapped_data, nameColumnToPlot = "ltbis", catMethod = seq(0,50,10),
                               colourPalette = cols,
                               addLegend = FALSE)
@@ -275,7 +259,7 @@ for(ii in 1:3){ # 3 models
   ))
   dev.off()
   
-  pdf(paste0("~/Dropbox/MDR/output/map_ltbir",pp,".pdf"))
+  pdf(paste0("~/Dropbox/MDR/output/map_ltbir_",pp,".pdf"))
   mapParams <- mapCountryData(mapped_data, nameColumnToPlot = "ltbir", catMethod = seq(0,3,0.25),
                               colourPalette = cols,
                               addLegend = FALSE)
@@ -292,26 +276,28 @@ for(ii in 1:3){ # 3 models
 
 for(ii in 1:3){ # three models
   
+  ss_mean <- c()
+  
   # Run for all countries
   for(cci in 1:llu){
     print(c(cci,cni[cci]))
     
     # Read in all data for this country
     if(ii == 1){sa <- read.csv(paste0("~/Dropbox/MDR/output/",cni[cci],"_sa_",nari,"_lin.csv"))[,-1]}
-    if(ii == 2){sa <- read.csv(paste0("~/Dropbox/MDR/output/",cni[cci],"_sa_",nari,"quad.csv"))[,-1]}
-    if(ii == 3){sa <- read.csv(paste0("~/Dropbox/MDR/output/",cni[cci],"_sa_",nari,"quadc.csv"))[,-1]}  
+    if(ii == 2){sa <- read.csv(paste0("~/Dropbox/MDR/output/",cni[cci],"_sa_",nari,"_quad.csv"))[,-1]}
+    if(ii == 3){sa <- read.csv(paste0("~/Dropbox/MDR/output/",cni[cci],"_sa_",nari,"_quadc.csv"))[,-1]}  
     
     # 2014 level
-    if(ii == 1){level2014 <- read.csv(paste0("~/Dropbox/MDR/output/level2014_",nari,"lin.csv"))[,-1]}
-    if(ii == 2){level2014 <- read.csv(paste0("~/Dropbox/MDR/output/level2014_",nari,"quad.csv"))[,-1]}
-    if(ii == 3){level2014 <- read.csv(paste0("~/Dropbox/MDR/output/level2014_",nari,"quadc.csv"))[,-1]}
+    if(ii == 1){level2014 <- read.csv(paste0("~/Dropbox/MDR/output/level2014_",nari,"_lin.csv"))[,-1]}
+    if(ii == 2){level2014 <- read.csv(paste0("~/Dropbox/MDR/output/level2014_",nari,"_quad.csv"))[,-1]}
+    if(ii == 3){level2014 <- read.csv(paste0("~/Dropbox/MDR/output/level2014_",nari,"_quadc.csv"))[,-1]}
     
     sa_rec <- sa[which(sa$year > 1965),] # recent
     
+    # Labels for plots
     if(ii == 1){labl = "lin"}
     if(ii == 2){labl = "quad"}
     if(ii == 3){labl = "quadc"}
-    
     
     ggplot(sa_rec[which(sa_rec$mdr_rep < 5),], aes(x=year, y = pr_dr, group = age, col = age)) + 
       geom_line() + facet_wrap(~mdr_rep, ncol = 5) + 
@@ -375,16 +361,29 @@ for(ii in 1:3){ # three models
         s_temp$cumr_py <- s_temp$new_dr - s_temp$rei_rs + s_temp$rei_sr
         s_temp$cums_py <- s_temp$new_ds - s_temp$rei_sr + s_temp$rei_rs
         
+        w<-which(s_temp$year == 1934) 
+        if(length(w) > 0 ){s_temp[w,"cums_py"] <- 0} # remove initial infections prior to 1934}
+        
+        
         ### Gives the right proportion as in l14_k_j
+        # s_temp <- as.data.frame(s_temp)
         # colwise(sum)(s_temp)[,"new_dr"] - colwise(sum)(s_temp)[,"rei_rs"] + colwise(sum)(s_temp)[,"rei_sr"]
         # tail(s_temp,1)[,"pr_ds"] + colwise(sum)(s_temp)[,"new_ds"] - colwise(sum)(s_temp)[,"rei_sr"] + colwise(sum)(s_temp)[,"rei_rs"]
+        # tail(s_temp,1)[,"pr_ds"] + sum(s_temp$new_ds) - sum(s_temp$rei_sr) + sum(s_temp$rei_rs)
         # sum(s_temp$cumr_py)
         # sum(s_temp$cums_py)
         # l14_k_j
         
         ## proportion of amount in 2014 that is from this cumulative change
-        if(l14_k_j$pr_dr > 0){s_propr <- s_temp$cumr_py /l14_k_j$pr_dr}else{s_propr <- matrix(0,81,1)}
-        s_props <- s_temp$cums_py / (l14_k_j$pr_ds - tail(s_temp,1)[,"pr_ds"])
+        s_propr <- matrix(0,81,1);   s_props <- matrix(0,81,1)
+        if(l14_k_j$pr_dr > 0){
+          w<-which(s_temp$cumr_py > 0) # only take those that add to the LTBI burden
+          s_propr[w,] <- s_temp[w,"cumr_py"] / sum(s_temp[w,"cumr_py"])} # Divide by added LTBI not final total. #s_temp$cumr_py /l14_k_j$pr_dr}
+        
+        w<-which(s_temp$cums_py > 0) # only take those that add to the LTBI burden
+        s_props[w,] <- s_temp[w,"cums_py"] / sum(s_temp[w,"cums_py"]) # Divide by added LTBI not final total. #s_temp$cumr_py /l14_k_j$pr_dr}
+      
+        #Don't need to do this now as just cumulative increase s_props <- s_temp$cums_py / (l14_k_j$pr_ds - tail(s_temp,1)[,"pr_ds"]) # remove level in 1934 if there was any
         
         s_npropr <- matrix(0,81,1);
         s_nprops <- matrix(0,81,1);
@@ -398,39 +397,18 @@ for(ii in 1:3){ # three models
         #sum(s_props)
         #sum(s_propr)
         
-        ## Absolute cumulative change - could use if think often have decline pr_dr...
-        ## here artefact of using odd Gaussian curves?
-        s_temp$abs_cumr_py <- abs(s_temp$cumr_py)
-        s_temp$abs_cums_py <- abs(s_temp$cums_py)
-        ## new total = sum of all changes in LTBI
-        abs_total_r <- sum(s_temp$abs_cumr_py)
-        abs_total_s <- sum(s_temp$abs_cums_py)
-        
-        
-        if(abs_total_r > 0){abs_s_propr <- s_temp$abs_cumr_py /abs_total_r}else{abs_s_propr <- matrix(0,81,1)}
-        abs_s_props <- s_temp$abs_cums_py / (abs_total_s - tail(s_temp,1)[,"pr_ds"])
-        
-        abs_s_npropr <- matrix(0,81,1);
-        abs_s_nprops <- matrix(0,81,1);
-        for(kk in 1:length(s_props)){
-          abs_s_npropr[kk] <-  abs_s_propr[kk]
-          abs_s_nprops[kk] <-  abs_s_props[kk]
-        }
         
         s_new <- rbind(s_new,(cbind(
           s_npropr, s_nprops, # proportion of amount in 2014 that is from this cumulative change
-          seq(2014,1934,-1),j,k, # years, age, rep
-          abs_s_npropr, abs_s_nprops))) # absolute version if first goes negative
-        ## should be 1
-        
-        
+          seq(2014,1934,-1),j,k # years, age, rep
+        ))) 
       }
       
     }
     
     ## All data
     s_new <- as.data.frame(s_new)
-    colnames(s_new)<-c("pr_r","pr_s","year","age","mdr_rep","abs_pr_r","abs_pr_s")
+    colnames(s_new)<-c("pr_r","pr_s","year","age","mdr_rep")
     
     ## s_new: each row has the age in 2014 the year from which some contribution may come 
     # and the size of the contribution
@@ -460,8 +438,6 @@ for(ii in 1:3){ # three models
     s_new$pr_ltbir <- 0
     s_new$pr_ltbis <- 0
     s_new$yearcat<-cut(s_new$year, seq(1929,2018,5))
-    s_new$abs_pr_ltbir <- 0
-    s_new$abs_pr_ltbis <- 0
     
     
     ## For each country get population distribution
@@ -478,14 +454,12 @@ for(ii in 1:3){ # three models
       m <- intersect(which(age_groups[,1] <= i), which(age_groups[,2] >= i))
       ss_here[w,"pr_ltbir"] = ss_here[w,"pr_r"] * as.numeric(pr_2014_age[m])
       ss_here[w,"pr_ltbis"] = ss_here[w,"pr_s"] * as.numeric(pr_2014_age[m])
-      ss_here[w,"abs_pr_ltbir"] = ss_here[w,"abs_pr_r"] * as.numeric(pr_2014_age[m])
-      ss_here[w,"abs_pr_ltbis"] = ss_here[w,"abs_pr_s"] * as.numeric(pr_2014_age[m])
     }
     
     ## Grouped by mdr_rep
-    #w<-which(ss_here$mdr_rep == 5)
-    #sum(ss_here[w,"pr_ltbis"]) # = 1
-    #sum(ss_here[w,"pr_ltbir"]) # = 1
+    # w<-which(ss_here$mdr_rep == 5)
+    # sum(ss_here[w,"pr_ltbis"]) # = 1
+    # sum(ss_here[w,"pr_ltbir"]) # = 1
     
     setwd(output)
     ## This says: by age, when were they infected. The proportion of their % infected that can be
@@ -523,18 +497,42 @@ for(ii in 1:3){ # three models
       ggtitle("MDR-TB") + 
       scale_fill_hue("Year")
     ggsave(paste0("~/Dropbox/MDR/output/DR_",cni[cci],"_ltbir_when_",labl,".pdf"), height = 10, width = 20)
-    
-    ## Absolute contributions
-    ggplot(ss_here) +
-      geom_bar(aes(mdr_rep, abs_pr_ltbir, fill = factor(yearcat)),
-               position = "fill", stat = "identity") +
-      scale_y_continuous() + ggtitle("MDR-TB") +
-      scale_fill_hue("Year")
-    ggsave(paste0("~/Dropbox/MDR/output/DR_",cni[cci],"_abs_ltbir_when_",labl,".pdf"), height = 10, width = 10)
-    
    
-  write.csv(ss_here, paste0("~/Dropbox/MDR/output/",cni[cci],"props_ltbi_when_",labl,".csv"))
-  }
+    # Average over yearcat
+    mean <- ss_here %>% group_by(yearcat,mdr_rep) %>%
+      dplyr::summarise(sum_prltbir = sum(pr_ltbir), sum_prltbis = sum(pr_ltbis)) 
+    
+  write.csv(mean, paste0("~/Dropbox/MDR/output/",cni[cci],"props_ltbi_when_",labl,".csv"))
 
+  # Average over all reps
+  means <- ss_here %>% group_by(yearcat,mdr_rep) %>%
+    dplyr::summarise(totals = sum(pr_ltbis)) %>%
+    ungroup %>%
+    group_by(yearcat) %>%
+    dplyr::summarise(mean=mean(totals), min=quantile(totals, 0.025), max=quantile(totals, 0.975))
   
+  meanr <- ss_here %>% group_by(yearcat,mdr_rep) %>%
+    dplyr::summarise(totals = sum(pr_ltbir)) %>%
+    ungroup %>%
+    group_by(yearcat) %>%
+    dplyr::summarise(mean=mean(totals), min=quantile(totals, 0.025), max=quantile(totals, 0.975))
+  
+  means$type <- 0
+  meanr$type <- 1
+  mean <- rbind(means,meanr)
+  
+  ggplot(mean, aes(x= yearcat, y= mean, fill = factor(type) )) + 
+    geom_bar(stat = "identity", position = "dodge") + geom_errorbar(aes(ymin = min, ymax = max), position = "dodge") + 
+    scale_fill_discrete("TB type",labels = c("DS","MDR")) + theme(axis.text.x = element_text(angle = 90, hjust = 1)) + 
+    scale_x_discrete("Year grouping") + scale_y_continuous("Contribution of this year\nto LTBI burden")
+  ggsave(paste0("~/Dropbox/MDR/output/DR_mean_",cni[cci],"_ltbir_when_",labl,".pdf"), height = 10, width = 20)
+  
+  ss_mean <- rbind(ss_mean, cbind(mean,cni[cci],ii))
+  
+  }
+  
+  write.csv(paste0("~/Dropbox/MDR/output/",cni[cci],"_ss_mean_",nari,"_",labl,".csv"))[,-1]
+
 }
+
+
