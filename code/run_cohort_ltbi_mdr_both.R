@@ -29,18 +29,19 @@ load('data/POP2014.Rdata')
 w_data <- read.csv("~/Dropbox/MDR/new_who_edited_sub.csv")[,-1]
 
 ## Which countries? 
-#cni <- read.csv("~/Dropbox/MDR/107_final_list_included_countries.csv",stringsAsFactors = FALSE)[,-1]
-#length(cni) # 107
-#llu <- length(cni)
+cni <- read.csv("~/Dropbox/MDR/107_final_list_included_countries.csv",stringsAsFactors = FALSE)[,-1]
+length(cni) # 107
+llu <- length(cni)
 
-##### DO JUST FOR FIRST FIVE! *******************************************************************************************
-llu <- 5 
-#w <- which(all0$mdr_ari > 0) 
-#cni <- unique(all0[w,"iso3"])
-##### DO JUST FOR FIRST FIVE! *******************************************************************************************
+# ##### DO JUST FOR FIRST FIVE! *******************************************************************************************
+# llu <- 5 
+# #w <- which(all0$mdr_ari > 0) 
+# #cni <- unique(all0[w,"iso3"])
+# ##### DO JUST FOR FIRST FIVE! *******************************************************************************************
 
 cni_rem <- c() # blank to store what else to remove
 
+nari = 5 # up to 1000
 
 # DS and MDR data
 for(ii in 1:3){ # 3 models
@@ -53,7 +54,6 @@ for(ii in 1:3){ # 3 models
   # Store all? 
   store_all <- as.data.frame(matrix(0,length(cni)*4*81*100,9))
   runn <- 1
-  nari = 50 # up to 1000
   level2014 <- c(); #breakdown proportions infected by age
   s_level <- c(); #sum proportions infected 
   
@@ -94,7 +94,7 @@ for(ii in 1:3){ # 3 models
         print(c(i,"ari rep"))
         ari <- rdata[which(rdata$replicate == i),c("ds_ari","mdr_ari")]
         colnames(ari) <- c("ds","mdr")
-        pop <-  POP2014[which(as.character(POP2014$iso3) == as.character(cni[cci])),"value"]
+        pop <- as.data.frame(POP2014[which(as.character(POP2014$iso3) == as.character(cni[cci])),"value"])
         
         cc <- cohort_ltbi(ari, pop)
         
@@ -113,8 +113,13 @@ for(ii in 1:3){ # 3 models
         pltbi_dr <- sum(combs$size_dr) # number of people infected
         pltbi_ds <- sum(combs$size_ds)
         
+        ltbi_dr_kids <- sum(combs$perc_dr[1:3]) # percentage infected
+        ltbi_ds_kids <- sum(combs$perc_ds[1:3])
+        pltbi_dr_kids <- sum(combs$size_dr[1:3]) # number of people infected
+        pltbi_ds_kids <- sum(combs$size_ds[1:3])
+        
         # Bind together.
-        s_level <- rbind(s_level,c(i,ltbi_dr,ltbi_ds,cci,pltbi_dr, pltbi_ds))
+        s_level <- rbind(s_level,c(i,ltbi_dr,ltbi_ds,cci,pltbi_dr, pltbi_ds,ltbi_dr_kids,ltbi_ds_kids, pltbi_dr_kids, pltbi_ds_kids, sum(pop), sum(pop[1:3,1])))
         
         ssc <- cc$store_c
         lowi <- ((runn-1)*(dim(ssc)[1])+1)
@@ -131,35 +136,35 @@ for(ii in 1:3){ # 3 models
       sa <- as.data.frame(sa)
       colnames(sa) <- c(c("mdr_rep","cn"),colnames(cc$store_c)) 
       write.csv(sa, paste0("~/Dropbox/MDR/output/",cni[cci],"_sa_",nari,"_",pp,".csv"))}
-      # sa_rec <- sa[which(sa$year > 1965),] # recent
-      
-      # #### Plot by age
-      #g1<-ggplot(sa_rec, aes(x=year, y = pr_dr, group = age, col = age)) + geom_line() +
-      #  facet_wrap(~mdr_rep, ncol = 5) + scale_colour_gradientn(limits = c(0,100),colours=c("navyblue", "darkorange1","darkgreen"))
-      #ggsave(paste0("all_age_",cni[cci],"_r.pdf"), height = 10, width = 10)
-      
-      #g2<-ggplot(sa_rec, aes(x=year, y = pr_ds, group = age, col = age)) + geom_line() +
-      #  facet_wrap(~mdr_rep, ncol = 5) + scale_colour_gradientn(limits = c(0,100),colours=c("navyblue", "darkmagenta", "darkgreen"))
-      #ggsave(paste0("all_age_",cni[cci],"_s.pdf"), height = 10, width = 10)
-      
-      # g3<-ggplot(sa_rec, aes(year, age)) + geom_tile(aes(fill = pr_ds),colour = "white") + scale_fill_gradient(low = "white",high = "steelblue","DS-TB") +
-      #   labs(x = "Year",y = "Age") + scale_y_continuous(lim = c(0,100)) + facet_wrap(~mdr_rep)
-      # ggsave(paste0("all_age_",cni[cci],"_map_s.pdf"), height = 10, width = 10)
-      # 
-      # g4<-ggplot(sa_rec, aes(year, age)) + geom_tile(aes(fill = pr_dr),colour = "white") + scale_fill_gradient(low = "white",high = "red4","MDR-TB") +
-      #   labs(x = "Year",y = "Age") + scale_y_continuous(lim = c(0,100)) + facet_wrap(~mdr_rep)
-      # ggsave(paste0("all_age_",cni[cci],"_map_r.pdf"), height = 10, width = 10)
-      
-      s_level <- as.data.frame(s_level)
-      colnames(s_level) <- c("rep","ltbir","ltbis","popf","pltbir", "pltbis")
-      # 
-      # ss <- merge(s_level,ari, by = 'rep')
-      # bottom_row <- plot_grid(g3,g4, labels = c('B', 'C'), align = 'h', rel_widths = c(1, 1))
-      # a<-plot_grid(a1, bottom_row, labels = c('A', ''), ncol = 1, rel_heights = c(1, 1.2))
-      # save_plot(paste0("combined_",cni[cci],".pdf"), a, base_aspect_ratio = 2)
-      
-      #p.cn <- plot_grid(a1, a1, labels = c("A", "B"), align = "h",ncol = 2,rel_widths = c(1, 1.8))
-    }
+    # sa_rec <- sa[which(sa$year > 1965),] # recent
+    
+    # #### Plot by age
+    #g1<-ggplot(sa_rec, aes(x=year, y = pr_dr, group = age, col = age)) + geom_line() +
+    #  facet_wrap(~mdr_rep, ncol = 5) + scale_colour_gradientn(limits = c(0,100),colours=c("navyblue", "darkorange1","darkgreen"))
+    #ggsave(paste0("all_age_",cni[cci],"_r.pdf"), height = 10, width = 10)
+    
+    #g2<-ggplot(sa_rec, aes(x=year, y = pr_ds, group = age, col = age)) + geom_line() +
+    #  facet_wrap(~mdr_rep, ncol = 5) + scale_colour_gradientn(limits = c(0,100),colours=c("navyblue", "darkmagenta", "darkgreen"))
+    #ggsave(paste0("all_age_",cni[cci],"_s.pdf"), height = 10, width = 10)
+    
+    # g3<-ggplot(sa_rec, aes(year, age)) + geom_tile(aes(fill = pr_ds),colour = "white") + scale_fill_gradient(low = "white",high = "steelblue","DS-TB") +
+    #   labs(x = "Year",y = "Age") + scale_y_continuous(lim = c(0,100)) + facet_wrap(~mdr_rep)
+    # ggsave(paste0("all_age_",cni[cci],"_map_s.pdf"), height = 10, width = 10)
+    # 
+    # g4<-ggplot(sa_rec, aes(year, age)) + geom_tile(aes(fill = pr_dr),colour = "white") + scale_fill_gradient(low = "white",high = "red4","MDR-TB") +
+    #   labs(x = "Year",y = "Age") + scale_y_continuous(lim = c(0,100)) + facet_wrap(~mdr_rep)
+    # ggsave(paste0("all_age_",cni[cci],"_map_r.pdf"), height = 10, width = 10)
+    
+    s_level <- as.data.frame(s_level)
+    colnames(s_level) <- c("rep","ltbir","ltbis","popf","pltbir", "pltbis","ltbir_kids","ltbis_kids",
+                           "pltbir_kids", "pltbis_kids","pop","pop_kids")
+    # 
+    # ss <- merge(s_level,ari, by = 'rep')
+    # bottom_row <- plot_grid(g3,g4, labels = c('B', 'C'), align = 'h', rel_widths = c(1, 1))
+    # a<-plot_grid(a1, bottom_row, labels = c('A', ''), ncol = 1, rel_heights = c(1, 1.2))
+    # save_plot(paste0("combined_",cni[cci],".pdf"), a, base_aspect_ratio = 2)
+    
+    #p.cn <- plot_grid(a1, a1, labels = c("A", "B"), align = "h",ncol = 2,rel_widths = c(1, 1.8))
   }
   
   dim(level2014) #nari * 107
@@ -172,8 +177,8 @@ for(ii in 1:3){ # 3 models
   write.csv(s_level, paste0("~/Dropbox/MDR/output/s_level_",nari,"_",pp,".csv"))
   
   ### OR READ IN
-  #level2014 <- read.csv("~/Dropbox/MDR/output/level2014_10.csv",stringsAsFactors = FALSE)[,-1]
-  #s_level <- read.csv("~/Dropbox/MDR/output/s_level_10.csv", stringsAsFactors = FALSE)[,-1]
+  #level2014 <- read.csv("~/Dropbox/MDR/output/level2014_10_lin.csv",stringsAsFactors = FALSE)[,-1]
+  #s_level <- read.csv("~/Dropbox/MDR/output/s_level_10_lin.csv", stringsAsFactors = FALSE)[,-1]
   
   ###********** PLOTS *****************************************************************#####
   a2r<-ggplot(s_level, aes(x=pop_name, y = ltbir, col=factor(rep) )) + geom_point() + 
@@ -248,7 +253,7 @@ for(ii in 1:3){ # 3 models
                               colourPalette = cols,
                               addLegend = FALSE)
   
-  pdf(paste0("~/Dropbox/MDR/output/map_ltbis_",pp,".pdf"))
+  pdf(paste0("~/Dropbox/MDR/output/map_ltbis_",nari,"_",pp,".pdf"))
   mapParams <- mapCountryData(mapped_data, nameColumnToPlot = "ltbis", catMethod = seq(0,50,10),
                               colourPalette = cols,
                               addLegend = FALSE)
@@ -259,7 +264,7 @@ for(ii in 1:3){ # 3 models
   ))
   dev.off()
   
-  pdf(paste0("~/Dropbox/MDR/output/map_ltbir_",pp,".pdf"))
+  pdf(paste0("~/Dropbox/MDR/output/map_ltbir_",nari,"_",pp,".pdf"))
   mapParams <- mapCountryData(mapped_data, nameColumnToPlot = "ltbir", catMethod = seq(0,3,0.25),
                               colourPalette = cols,
                               addLegend = FALSE)
@@ -272,7 +277,13 @@ for(ii in 1:3){ # 3 models
   
 } 
 
+################**######################################################################################################################################################################################################
+################**######################################################################################################################################################################################################
+################**######################################################################################################################################################################################################
 ###******* AGE *****################################################################################################################
+################**######################################################################################################################################################################################################
+################**######################################################################################################################################################################################################
+################**######################################################################################################################################################################################################
 
 for(ii in 1:3){ # three models
   
@@ -382,7 +393,7 @@ for(ii in 1:3){ # three models
         
         w<-which(s_temp$cums_py > 0) # only take those that add to the LTBI burden
         s_props[w,] <- s_temp[w,"cums_py"] / sum(s_temp[w,"cums_py"]) # Divide by added LTBI not final total. #s_temp$cumr_py /l14_k_j$pr_dr}
-      
+        
         #Don't need to do this now as just cumulative increase s_props <- s_temp$cums_py / (l14_k_j$pr_ds - tail(s_temp,1)[,"pr_ds"]) # remove level in 1934 if there was any
         
         s_npropr <- matrix(0,81,1);
@@ -497,42 +508,42 @@ for(ii in 1:3){ # three models
       ggtitle("MDR-TB") + 
       scale_fill_hue("Year")
     ggsave(paste0("~/Dropbox/MDR/output/DR_",cni[cci],"_ltbir_when_",labl,".pdf"), height = 10, width = 20)
-   
+    
     # Average over yearcat
-    mean <- ss_here %>% group_by(yearcat,mdr_rep) %>%
+    meanv <- ss_here %>% group_by(yearcat,mdr_rep) %>%
       dplyr::summarise(sum_prltbir = sum(pr_ltbir), sum_prltbis = sum(pr_ltbis)) 
     
-  write.csv(mean, paste0("~/Dropbox/MDR/output/",cni[cci],"props_ltbi_when_",labl,".csv"))
-
-  # Average over all reps
-  means <- ss_here %>% group_by(yearcat,mdr_rep) %>%
-    dplyr::summarise(totals = sum(pr_ltbis)) %>%
-    ungroup %>%
-    group_by(yearcat) %>%
-    dplyr::summarise(mean=mean(totals), min=quantile(totals, 0.025), max=quantile(totals, 0.975))
-  
-  meanr <- ss_here %>% group_by(yearcat,mdr_rep) %>%
-    dplyr::summarise(totals = sum(pr_ltbir)) %>%
-    ungroup %>%
-    group_by(yearcat) %>%
-    dplyr::summarise(mean=mean(totals), min=quantile(totals, 0.025), max=quantile(totals, 0.975))
-  
-  means$type <- 0
-  meanr$type <- 1
-  mean <- rbind(means,meanr)
-  
-  ggplot(mean, aes(x= yearcat, y= mean, fill = factor(type) )) + 
-    geom_bar(stat = "identity", position = "dodge") + geom_errorbar(aes(ymin = min, ymax = max), position = "dodge") + 
-    scale_fill_discrete("TB type",labels = c("DS","MDR")) + theme(axis.text.x = element_text(angle = 90, hjust = 1)) + 
-    scale_x_discrete("Year grouping") + scale_y_continuous("Contribution of this year\nto LTBI burden")
-  ggsave(paste0("~/Dropbox/MDR/output/DR_mean_",cni[cci],"_ltbir_when_",labl,".pdf"), height = 10, width = 20)
-  
-  ss_mean <- rbind(ss_mean, cbind(mean,cni[cci],ii))
-  
+    write.csv(meanv, paste0("~/Dropbox/MDR/output/",cni[cci],"_props_ltbi_when_",labl,".csv"))
+    
+    # Average over all reps
+    means <- ss_here %>% group_by(yearcat,mdr_rep) %>%
+      dplyr::summarise(totals = sum(pr_ltbis)) %>%
+      ungroup %>%
+      group_by(yearcat) %>%
+      dplyr::summarise(mean=mean(totals), min=quantile(totals, 0.025), max=quantile(totals, 0.975))
+    
+    meanr <- ss_here %>% group_by(yearcat,mdr_rep) %>%
+      dplyr::summarise(totals = sum(pr_ltbir)) %>%
+      ungroup %>%
+      group_by(yearcat) %>%
+      dplyr::summarise(mean=mean(totals), min=quantile(totals, 0.025), max=quantile(totals, 0.975))
+    
+    means$type <- 0
+    meanr$type <- 1
+    mean_both <- rbind(means,meanr)
+    
+    ggplot(mean_both, aes(x= yearcat, y= mean, fill = factor(type) )) + 
+      geom_bar(stat = "identity", position = "dodge") + geom_errorbar(aes(ymin = min, ymax = max), position = "dodge") + 
+      scale_fill_discrete("TB type",labels = c("DS","MDR")) + theme(axis.text.x = element_text(angle = 90, hjust = 1)) + 
+      scale_x_discrete("Year grouping") + scale_y_continuous("Contribution of this year\nto LTBI burden")
+    ggsave(paste0("~/Dropbox/MDR/output/DR_mean_",cni[cci],"_ltbir_when_",labl,".pdf"), height = 10, width = 20)
+    
+    ss_mean <- rbind(ss_mean, cbind(mean_both,cni[cci],ii))
+    
+    write.csv(paste0("~/Dropbox/MDR/output/",cni[cci],"_ss_mean_",nari,"_",labl,".csv"))[,-1]
+    
   }
   
-  write.csv(paste0("~/Dropbox/MDR/output/",cni[cci],"_ss_mean_",nari,"_",labl,".csv"))[,-1]
-
 }
 
 
