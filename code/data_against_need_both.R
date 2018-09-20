@@ -1,7 +1,7 @@
 ### Plot when need data against when have data
 
 ## Libraries / home
-library(ggplot2); library(gdata);library(RColorBrewer); library(data.table); library(magrittr); library(dplyr)
+library(ggplot2); library(gdata);library(RColorBrewer); library(data.table); library(magrittr); library(dplyr); library(plyr)
 
 home <- "~/Documents/LTBI_MDR/"
 output <- "~/Documents/LTBI_MDR/output/"
@@ -28,7 +28,7 @@ for(ii in 1:3){ #models
     cnn <- as.character(countries[i])
     print(cnn)
     ## Get proportion LTBI per year data
-    pltbir <- read.csv(paste0("~/Dropbox/MDR/output/",cni[i],"props_ltbi_when_",labl,".csv"))[,-1]
+    pltbir <- read.csv(paste0("~/Dropbox/MDR/output/",cnn,"_props_ltbi_when_",labl,".csv"))[,-1]
     pltbir$country <- pltbir$cn
     
     ## Grab upper and lower
@@ -68,12 +68,12 @@ for(ii in 1:3){ #models
     
     mean_ps$type <- "DS"
     mean_pr$type <- "MDR"
-    mean <- rbind(mean_ps,mean_pr)
+    mean_both <- rbind(mean_ps,mean_pr)
     
-    mean$level_pr_ltbi <- cut(mean$mean,seq(-0.1,1,0.1),labels=seq(0,100,10),right = TRUE)
+    mean_both$level_pr_ltbi <- cut(mean_both$mean,seq(-0.1,1,0.1),labels=seq(0,100,10),right = TRUE)
     
     ggplot() + 
-      geom_rect( data = mean , 
+      geom_rect( data = mean_both , 
                  mapping = aes( xmin = lowery , 
                                 xmax = uppery ,
                                 ymin = 0 ,
@@ -103,7 +103,7 @@ for(ii in 1:3){ #models
 ## UP TO HERE
 store_metric <- as.data.frame(store_metric)
 colnames(store_metric) <- c("mdr_rep","sum_metric","cnn","model")
-write.csv(paste0("~/Dropbox/MDR/output/",cni[cci],"_store_metric_",unique(p$mdr_rep),".csv"))[,-1]
+write.csv(store_metric, paste0("~/Dropbox/MDR/output/store_metric_",length(unique(p$mdr_rep)),".csv"))
 
 if(ii == 1){labl = "lin"}
 if(ii == 2){labl = "quad"}
