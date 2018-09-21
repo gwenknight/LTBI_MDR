@@ -18,7 +18,6 @@ output <- "~/Dropbox/MDR/output" # TEMPORARY - can be shared between computers t
 
 ###********** Load code and data ************************************************************************************************#######
 source("code/cohort_ltbi_mdr.R") # loads function for underyling cohort model
-source("code/poss_mdr_curves.R") # loads function for gen MDR curves
 
 ## Population size 2014
 load('data/POP2014.Rdata')  
@@ -41,7 +40,7 @@ llu <- length(cni)
 
 cni_rem <- c() # blank to store what else to remove
 
-nari = 5 # up to 1000
+nari = 3 # up to 1000
 
 # DS and MDR data
 for(ii in 1:3){ # 3 models
