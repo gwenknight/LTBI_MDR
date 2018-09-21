@@ -20,6 +20,19 @@ cohort_ltbi <- function(ari,pop,prot == 0){
     alph <- rbeta(100*81,shape1=pb,shape2=pa)
     dim(alph) <-  c(81, 100)
   }
+  if(prot == 1){
+    pm <- 0.79                      # Mean        #0.5 #CHANGE HERE!
+    pv <- (0.86-0.7)^2/3.92^2
+    apb <- pm*(1-pm)/pv-1
+    # Shape parameters
+    pa <- pm*apb                            #77.88
+    pb <- (1-pm)*apb                        #20.70
+    
+    ### Random sample of level of protection - beta distribution
+    # same for dr/ds
+    alph <- rbeta(100*81,shape1=pb,shape2=pa)
+    dim(alph) <-  c(81, 100)
+  } 
   
   
   # Matrix framework
