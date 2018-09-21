@@ -1,7 +1,9 @@
 ### Plot when need data against when have data
 
 ## Libraries / home
-library(ggplot2); library(gdata);library(RColorBrewer); library(data.table); library(magrittr); library(dplyr); library(plyr)
+library(ggplot2); library(gdata);library(RColorBrewer); library(data.table); library(magrittr); library(dplyr); library(plyr); library(maps)
+library(rworldmap)
+
 
 home <- "~/Documents/LTBI_MDR/"
 output <- "~/Documents/LTBI_MDR/output/"
@@ -31,6 +33,8 @@ for(ii in 1:3){ #models
     pltbir <- read.csv(paste0("~/Dropbox/MDR/output/",cnn,"_props_ltbi_when_",labl,".csv"))[,-1]
     pltbir$country <- pltbir$cn
     
+    nari <- length(unique(pltbir$mdr_rep))
+    
     ## Grab upper and lower
     labs <- pltbir$yearcat
     pltbir$lowery = as.numeric( sub("\\((.+),.*", "\\1", labs) )
@@ -57,7 +61,7 @@ for(ii in 1:3){ #models
                                    "(60-70%]","(70-80%]","(80-90%]","(90-100%]")) + 
       scale_x_continuous("Year") + scale_y_continuous("Percentage of new cases that are MDR") + 
       geom_point( data = d , aes(x=year_new, y = 100*new_mdr_prop, group = iso3)) 
-    ggsave(paste0("~/Dropbox/MDR/output/eg_when_imp_vs_data_",cnn,"_",labl,".pdf"),width = 12, height = 4)
+    ggsave(paste0("~/Dropbox/MDR/output/eg_when_imp_vs_data_",cnn,"_",nari,"_",labl,".pdf"),width = 12, height = 4)
     
     ### Mean over mdr_rep
     mean_pr <- pltbir %>% group_by(yearcat,lowery,uppery) %>%
@@ -86,7 +90,7 @@ for(ii in 1:3){ #models
       scale_x_continuous("Year") + scale_y_continuous("Percentage of new cases that are MDR") + 
       geom_point( data = d , aes(x=year_new, y = 100*new_mdr_prop, group = iso3)) + 
       geom_errorbar(data = d, aes(x= year_new, ymax = 100*mhi, ymin = 100*mlo))
-    ggsave(paste0("~/Dropbox/MDR/output/when_imp_vs_data_mean_",cnn,"_",labl,".pdf"),width = 12, height = 4)
+    ggsave(paste0("~/Dropbox/MDR/output/when_imp_vs_data_mean_",cnn,"_",nari,"_",labl,".pdf"),width = 12, height = 4)
     
     
     ## METRIC
@@ -103,7 +107,9 @@ for(ii in 1:3){ #models
 ## UP TO HERE
 store_metric <- as.data.frame(store_metric)
 colnames(store_metric) <- c("mdr_rep","sum_metric","cnn","model")
-write.csv(store_metric, paste0("~/Dropbox/MDR/output/store_metric_",length(unique(p$mdr_rep)),".csv"))
+write.csv(store_metric, paste0("~/Dropbox/MDR/output/store_metric_",nari,".csv"))
+
+store_metric <- read.csv(paste0("~/Dropbox/MDR/output/store_metric_",nari,".csv"))[,-1]
 
 if(ii == 1){labl = "lin"}
 if(ii == 2){labl = "quad"}
@@ -113,22 +119,32 @@ for(ii in 1:3){
   ggplot(store_metric[which(store_metric$model == ii),], aes(x=mdr_rep, y = sum_metric)) + geom_point() + 
     facet_wrap(~cnn, ncol = 18) + scale_y_continuous("Proportion of LTBI identifiable") + 
     scale_x_continuous("MDR-ARI trend")
-  ggsave(paste0("~/Dropbox/MDR/output/MDR_metric_data_against_need_by_country_",labl,".pdf"), width = 14, height = 14)
+  ggsave(paste0("~/Dropbox/MDR/output/MDR_metric_data_against_need_by_country_",nari,"_",labl,".pdf"), width = 14, height = 14)
   
   ggplot(store_metric[which(store_metric$model == ii),], aes(x=cnn, y = sum_metric)) + geom_boxplot() + 
     scale_y_continuous("Proportion of LTBI identifiable") + 
     scale_x_discrete("Country")
-  ggsave(paste0("~/Dropbox/MDR/output/MDR_metric_data_against_need_",labl,".pdf"), width = 14, height = 14)
+  ggsave(paste0("~/Dropbox/MDR/output/MDR_metric_data_against_need_",nari,"_",labl,".pdf"), width = 14, height = 14)
+
   
+  #### *** MAP **** ###
+  
+  store_metric_med <- as.data.frame(store_metric) %>% group_by(cnn, model) %>% dplyr::summarise(med = median(sum_metric))
+  
+  # define color buckets
+  store_metric_med$metric <- as.numeric(cut(store_metric_med$med, c(0, 0.1,0.2,0.3,0.4,0.5,0.6,0.7, 0.8, 0.9, 1)))
+  store_metric_med <- as.data.frame(store_metric_med)
+  
+  mapped_data <- joinCountryData2Map(store_metric_med, joinCode = "ISO3", nameJoinColumn = "cnn")
+  
+  pdf(paste0("../output/map_metric_",nari,"_",labl,".pdf"))
+  mapParams <- mapCountryData(mapped_data, nameColumnToPlot = "med", catMethod = seq(0,1,0.1),
+                              colourPalette = cols,
+                              addLegend = FALSE)
+  do.call( addMapLegend, c( mapParams
+                            , legendLabels="all"
+                            , legendWidth=0.5
+                            
+  ))
+  dev.off()
 }
-
-
-# ####**** Map plot ******************************************************************************************************************************************************************************************************************************** #####
-# s_levelb <-s_level[,] # slice by mdr_rep?
-# 
-# 
-# n2016 <- joinCountryData2Map(r2016, joinCode="NAME", nameJoinColumn="country")
-# mapCountryData(n2016, nameColumnToPlot="ltbir", 
-#                mapTitle="MDR LTBI percentage of population, 2014",
-#                colourPalette="terrain",catMethod=c(0,0.5,1,1.5,2,3,4,5,10,15,20,25,30,35,40))
-# dev.copy2pdf(file="MDRLTBI_map_2014.pdf", width = 7, height = 5)
