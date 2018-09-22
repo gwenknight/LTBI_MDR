@@ -1,23 +1,39 @@
 #### Cohort model for MDRLTBI
 
-cohort_ltbi <- function(ari,pop){
+cohort_ltbi <- function(ari,pop,prot == 0){
   ### inputs 
   # ari: 2 columns
   # pop: population in 2014
   
   #### Protection from re-infecton
   ## Andrews: 0.79 .7-.86 
-  pm <- 0.79                      # Mean        #0.5 #CHANGE HERE!
-  pv <- (0.86-0.7)^2/3.92^2
-  apb <- pm*(1-pm)/pv-1
-  # Shape parameters
-  pa <- pm*apb                            #77.88
-  pb <- (1-pm)*apb                        #20.70
+  if(prot < 1){
+    pm <- 0.79                      # Mean        #0.5 #CHANGE HERE!
+    pv <- (0.86-0.7)^2/3.92^2
+    apb <- pm*(1-pm)/pv-1
+    # Shape parameters
+    pa <- pm*apb                            #77.88
+    pb <- (1-pm)*apb                        #20.70
+    
+    ### Random sample of level of protection - beta distribution
+    # same for dr/ds
+    alph <- rbeta(100*81,shape1=pb,shape2=pa)
+    dim(alph) <-  c(81, 100)
+  }
+  if(prot == 1){
+    pm <- 0.79                      # Mean        #0.5 #CHANGE HERE!
+    pv <- (0.86-0.7)^2/3.92^2
+    apb <- pm*(1-pm)/pv-1
+    # Shape parameters
+    pa <- pm*apb                            #77.88
+    pb <- (1-pm)*apb                        #20.70
+    
+    ### Random sample of level of protection - beta distribution
+    # same for dr/ds
+    alph <- rbeta(100*81,shape1=pb,shape2=pa)
+    dim(alph) <-  c(81, 100)
+  } 
   
-  ### Random sample of level of protection - beta distribution
-  # same for dr/ds
-  alph <- rbeta(100*81,shape1=pb,shape2=pa)
-  dim(alph) <-  c(81, 100)
   
   # Matrix framework
   c_last <- as.data.frame(matrix(0,100,6))
