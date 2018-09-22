@@ -89,7 +89,7 @@ for(ii in 1:luu) {
   compare(quad_loo, quadc_loo)
   c <- compare(lin_loo, quad_loo, quadc_loo)
   # if elpd_diff is positive the second model is preferred. If it’s negative, the first model is preferred
-  cc <- rbind(cc,cbind(c,uu[ii]))
+  cc <- rbind(cc,cbind(c,as.character(uu[ii])))
   
   waic1 <- waic(log_lik_lin)
   waic2 <- waic(log_lik_quad)
@@ -202,16 +202,17 @@ all_samples_quad <- pred_samples_quad %>%
 all_samples_quadc <- pred_samples_quadc %>% 
   bind_rows
 
-write.csv(pred_samples_lin,"../output/pred_samples_lin.csv")
-write.csv(all_samples_lin,"../output/all_samples_lin.csv")
+write.csv(pred_samples_lin,"~/Dropbox/MDR/output/pred_samples_lin.csv")
+write.csv(all_samples_lin,"~/Dropbox/MDR/output/all_samples_lin.csv")
 
-write.csv(pred_samples_quad,"../output/pred_samples_quad.csv")
-write.csv(all_samples_quad,"../output/all_samples_quad.csv")
+write.csv(pred_samples_quad,"~/Dropbox/MDR/output/pred_samples_quad.csv")
+write.csv(all_samples_quad,"~/Dropbox/MDR/output/all_samples_quad.csv")
 
-write.csv(pred_samples_quadc,"../output/pred_samples_quadc.csv")
-write.csv(all_samples_quadc,"../output/all_samples_quadc.csv")
+write.csv(pred_samples_quadc,"~/Dropbox/MDR/output/pred_samples_quadc.csv")
+write.csv(all_samples_quadc,"~/Dropbox/MDR/output/all_samples_quadc.csv")
 
-write.csv(cc, "../output/compare_models_elpd.csv")
+colnames(cc) <- c(colnames(c), "iso3")
+write.csv(cc, "~/Dropbox/MDR/output/compare_models_elpd.csv")
 
 
 ##### make correct for adding to other data
