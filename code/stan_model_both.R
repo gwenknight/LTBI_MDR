@@ -17,7 +17,7 @@ who0 <- as.data.frame(read.csv("~/Dropbox/MDR/new_who_edited_sub.csv")[,-1])
 uu <- unique(who0$iso3) # 107
 luu <- length(unique(who0$iso3)) # 107
 
-luu <- 5 ##### DO JUST FOR FIRST FIVE! *******************************************************************************************
+#luu <- 5 ##### DO JUST FOR FIRST FIVE! *******************************************************************************************
 
 # Add in sigma to data
 who0$mdr_new <- who0$new_mdr_prop

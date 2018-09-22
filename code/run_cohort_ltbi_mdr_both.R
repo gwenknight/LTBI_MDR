@@ -29,15 +29,15 @@ load('data/POP2014.Rdata')
 w_data <- read.csv("~/Dropbox/MDR/new_who_edited_sub.csv")[,-1]
 
 ## Which countries? 
-#cni <- read.csv("~/Dropbox/MDR/107_final_list_included_countries.csv",stringsAsFactors = FALSE)[,-1]
-#length(cni) # 107
-#llu <- length(cni)
+cni <- read.csv("~/Dropbox/MDR/107_final_list_included_countries.csv",stringsAsFactors = FALSE)[,-1]
+length(cni) # 107
+llu <- length(cni)
 
-##### DO JUST FOR FIRST FIVE! *******************************************************************************************
-llu <- 5 
-#w <- which(all0$mdr_ari > 0) 
-#cni <- unique(all0[w,"iso3"])
-##### DO JUST FOR FIRST FIVE! *******************************************************************************************
+# ##### DO JUST FOR FIRST FIVE! *******************************************************************************************
+# llu <- 5 
+# #w <- which(all0$mdr_ari > 0) 
+# #cni <- unique(all0[w,"iso3"])
+# ##### DO JUST FOR FIRST FIVE! *******************************************************************************************
 
 cni_rem <- c() # blank to store what else to remove
 
