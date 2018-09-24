@@ -25,7 +25,7 @@ cni <- read.csv("../data/107_final_list_included_countries.csv",stringsAsFactors
 length(cni) # 107
 llu <- length(cni)
 
-nari <- 10
+nari <- 1000
 
 # DS and MDR data
 for(ii in 1:3){ # 3 models
