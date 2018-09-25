@@ -9,9 +9,6 @@ library('loo')
 # PRINT? 
 pp <- 1
 
-# where
-setwd("~/Documents/LTBI_MDR/code")
-
 # Country list and WHO data
 who0 <- as.data.frame(read.csv("~/Dropbox/MDR/new_who_edited_sub.csv")[,-1])
 uu <- unique(who0$iso3) # 107
@@ -220,6 +217,8 @@ write.csv(cc, "~/Dropbox/MDR/output/compare_models_elpd.csv")
 load("~/Dropbox/MDR/output/rundata_ari_1000.Rdata")
 rundatar$ari <- exp(rundatar$lari)
 
+final_list_cn <- read.csv("~/Dropbox/MDR/107_final_list_included_countries.csv")[,-1]
+
 for(ii in 1:3){
   print(ii)
   
@@ -233,6 +232,9 @@ for(ii in 1:3){
     dplyr::select(-sample) %>% dplyr::select(-country)
   # Set negative to 0
   all_samples[which(all_samples$prediction < 0), "prediction"] <- 0
+  
+  # Set greater than 1 to 1! Data on proportion (0-1) so cannot go above 1. 
+  all_samples[which(all_samples$prediction > 1), "prediction"] <- 1
   
   # Add in 0 before 1970
   ns <- max(all_samples0$sample)
