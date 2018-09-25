@@ -13,15 +13,24 @@ for(ii in 1:4){# Three models and best
   if(ii == 4){labl = "best"}
   
   # number of replicates (up to 1000)
-  nari <- 5
+  nari <- 200
   
   # functions
   ub <- function(x)quantile(x,probs = .975, na.rm = TRUE)
   lb <- function(x)quantile(x,probs = .025, na.rm = TRUE)
   
   # level at 2014
-  s_level <- read.csv(paste0("~/Dropbox/MDR/output/s_level_",nari,"_",labl,".csv"))[,-1]
+  s_level <- read.csv(paste0("~/Dropbox/MDR/cluster/s_level_",nari,"_",labl,".csv"))[,-1]
   s_level$iso3 <- s_level$pop_name
+  
+  ## How many at each level?
+  if(ii == 4){
+    n_level <- table(s_level$model) / 200
+    # 1 = lin, 2 = quad, 3 = quadc (fixed 0 1970)
+    unique(s_level[which(s_level$model == 1),"iso3"])
+    unique(s_level[which(s_level$model == 2),"iso3"])
+    unique(s_level[which(s_level$model == 3),"iso3"])
+  }
   
   ### ADDITIONAL CALCULATIONS
   # Kid levels
@@ -34,25 +43,25 @@ for(ii in 1:4){# Three models and best
   #### By country
   med.ltbir <- aggregate(s_level[,c("ltbir","ltbis","pltbir","pltbis","ltbir_kids","ltbis_kids",
                                     "pltbir_kids","pltbis_kids","perc_ds_kids","perc_dr_kids","perc_ltbi_mdr")], 
-            list(s_level$iso3), median, na.rm = TRUE)
-
+                         list(s_level$iso3), median, na.rm = TRUE)
+  
   ub.ltbir <- aggregate(s_level[,c("ltbir","ltbis","pltbir","pltbis","ltbir_kids","ltbis_kids","pltbir_kids","pltbis_kids","perc_ds_kids","perc_dr_kids","perc_ltbi_mdr")], 
-                         list(s_level$iso3), ub)
+                        list(s_level$iso3), ub)
   
   lb.ltbir <- aggregate(s_level[,c("ltbir","ltbis","pltbir","pltbis","ltbir_kids","ltbis_kids","pltbir_kids","pltbis_kids","perc_ds_kids","perc_dr_kids","perc_ltbi_mdr")], 
-                         list(s_level$iso3), lb)
+                        list(s_level$iso3), lb)
   
   med.ltbir$iso3 <- med.ltbir$Group.1
   ub.ltbir$iso3 <- ub.ltbir$Group.1
   lb.ltbir$iso3 <- lb.ltbir$Group.1
-
+  
   #### By global region
   # Add in global regions
   ltbi <- merge(s_level,WHOkey[,c('iso3','g_whoregion')],by='iso3',all.x=TRUE)
   
   # Sum over countries
   ltbi_global <- aggregate(ltbi[,c("pltbir","pltbis","pltbir_kids","pltbis_kids","pop","pop_kids")], 
-                         list(ltbi$g_whoregion,ltbi$rep), sum)
+                           list(ltbi$g_whoregion,ltbi$rep), sum)
   # Total global level
   ltbi_total <- aggregate(ltbi[,c("pltbir","pltbis","pltbir_kids","pltbis_kids","pop","pop_kids")], 
                           list(ltbi$rep), sum) # still got replicates in there
@@ -61,10 +70,10 @@ for(ii in 1:4){# Three models and best
                            list(ltbi_global$Group.1),median)
   
   ub.ltbir.g <- aggregate(ltbi_global[,c("pltbir","pltbis","pltbir_kids","pltbis_kids","pop","pop_kids")],
-                           list(ltbi_global$Group.1),ub)
+                          list(ltbi_global$Group.1),ub)
   
   lb.ltbir.g <- aggregate(ltbi_global[,c("pltbir","pltbis","pltbir_kids","pltbis_kids","pop","pop_kids")],
-                           list(ltbi_global$Group.1),lb)
+                          list(ltbi_global$Group.1),lb)
   
   med.total <- colwise(median)(ltbi_total[,c("pltbir","pltbis","pltbir_kids","pltbis_kids","pop","pop_kids")])
   lb.total <- colwise(lb)(ltbi_total[,c("pltbir","pltbis","pltbir_kids","pltbis_kids","pop","pop_kids")])
@@ -115,64 +124,64 @@ for(ii in 1:4){# Three models and best
   #### Output tables
   ## All countries 
   table1_countries <- as.data.frame(cbind( as.character(med.ltbir$iso3),
-                                 paste0(sprintf('%.1f',med.ltbir$ltbis), " [", 
-                                        sprintf('%.1f',lb.ltbir$ltbis), "-", 
-                                        sprintf('%.1f',ub.ltbir$ltbis),"]"),
-                                 paste0(sprintf('%.1f',med.ltbir$perc_ds_kids), " [", 
-                                        sprintf('%.1f',lb.ltbir$perc_ds_kids), "-", 
-                                        sprintf('%.1f',ub.ltbir$perc_ds_kids),"]"),
-                                 paste0(sprintf('%.2f',med.ltbir$ltbis_kids), " [", 
-                                        sprintf('%.2f',lb.ltbir$ltbis_kids), "-", 
-                                        sprintf('%.2f',ub.ltbir$ltbis_kids),"]"),
-                                 paste0(sprintf('%.2f',med.ltbir$ltbir), " [", 
-                                        sprintf('%.2f',lb.ltbir$ltbir), "-", 
-                                        sprintf('%.2f',ub.ltbir$ltbir),"]"),
-                                 paste0(sprintf('%.2f',med.ltbir$perc_dr_kids), " [", 
-                                        sprintf('%.2f',lb.ltbir$perc_dr_kids), "-", 
-                                        sprintf('%.2f',ub.ltbir$perc_dr_kids),"]"),
-                                 paste0(sprintf('%.2f',med.ltbir$ltbir_kids), " [", 
-                                        sprintf('%.2f',lb.ltbir$ltbir_kids), "-", 
-                                        sprintf('%.2f',ub.ltbir$ltbir_kids),"]"),
-                                 paste0(sprintf('%.2f',med.ltbir$perc_ltbi_mdr), " [", 
-                                        sprintf('%.2f',lb.ltbir$perc_ltbi_mdr), "-", 
-                                        sprintf('%.2f',ub.ltbir$perc_ltbi_mdr),"]")))
+                                           paste0(sprintf('%.1f',med.ltbir$ltbis), " [", 
+                                                  sprintf('%.1f',lb.ltbir$ltbis), "-", 
+                                                  sprintf('%.1f',ub.ltbir$ltbis),"]"),
+                                           paste0(sprintf('%.1f',med.ltbir$perc_ds_kids), " [", 
+                                                  sprintf('%.1f',lb.ltbir$perc_ds_kids), "-", 
+                                                  sprintf('%.1f',ub.ltbir$perc_ds_kids),"]"),
+                                           paste0(sprintf('%.2f',med.ltbir$ltbis_kids), " [", 
+                                                  sprintf('%.2f',lb.ltbir$ltbis_kids), "-", 
+                                                  sprintf('%.2f',ub.ltbir$ltbis_kids),"]"),
+                                           paste0(sprintf('%.2f',med.ltbir$ltbir), " [", 
+                                                  sprintf('%.2f',lb.ltbir$ltbir), "-", 
+                                                  sprintf('%.2f',ub.ltbir$ltbir),"]"),
+                                           paste0(sprintf('%.2f',med.ltbir$perc_dr_kids), " [", 
+                                                  sprintf('%.2f',lb.ltbir$perc_dr_kids), "-", 
+                                                  sprintf('%.2f',ub.ltbir$perc_dr_kids),"]"),
+                                           paste0(sprintf('%.2f',med.ltbir$ltbir_kids), " [", 
+                                                  sprintf('%.2f',lb.ltbir$ltbir_kids), "-", 
+                                                  sprintf('%.2f',ub.ltbir$ltbir_kids),"]"),
+                                           paste0(sprintf('%.2f',med.ltbir$perc_ltbi_mdr), " [", 
+                                                  sprintf('%.2f',lb.ltbir$perc_ltbi_mdr), "-", 
+                                                  sprintf('%.2f',ub.ltbir$perc_ltbi_mdr),"]")))
   
   colnames(table1_countries) <- c("iso3","Perc. with LTBIS", "Perc. of LTBIS in <15yos","Perc. of <15yos with LTBIS",
                                   "Perc. with LTBIR", "Perc. of LTBIR in <15yos","Perc. of <15yos with LTBIR","Perc. of LTBI that is MDR")
-
+  
   
   ## Global
   table1_global <- as.data.frame(cbind( as.character(med.ltbir.g$Group.1),
-                                         paste0(sprintf('%.1f',med.ltbir.g$ltbis), " [", 
-                                                  sprintf('%.1f',lb.ltbir.g$ltbis), "-", 
-                                                  sprintf('%.1f',ub.ltbir.g$ltbis),"]"),
+                                        paste0(sprintf('%.1f',med.ltbir.g$ltbis), " [", 
+                                               sprintf('%.1f',lb.ltbir.g$ltbis), "-", 
+                                               sprintf('%.1f',ub.ltbir.g$ltbis),"]"),
                                         paste0(sprintf('%.1f',med.ltbir.g$ltbis_kids), " [", 
                                                sprintf('%.1f',lb.ltbir.g$ltbis_kids), "-", 
                                                sprintf('%.1f',ub.ltbir.g$ltbis_kids),"]"),
-                                           paste0(sprintf('%.2f',med.ltbir.g$ltbir), " [", 
-                                                  sprintf('%.2f',lb.ltbir.g$ltbir), "-", 
-                                                  sprintf('%.2f',ub.ltbir.g$ltbir),"]"),
+                                        paste0(sprintf('%.2f',med.ltbir.g$ltbir), " [", 
+                                               sprintf('%.2f',lb.ltbir.g$ltbir), "-", 
+                                               sprintf('%.2f',ub.ltbir.g$ltbir),"]"),
                                         paste0(sprintf('%.2f',med.ltbir.g$ltbir_kids), " [", 
                                                sprintf('%.2f',lb.ltbir.g$ltbir_kids), "-", 
                                                sprintf('%.2f',ub.ltbir.g$ltbir_kids),"]"),
                                         paste0(sprintf('%.2f',med.ltbir.g$perc_ltbi_mdr), " [", 
                                                sprintf('%.2f',lb.ltbir.g$perc_ltbi_mdr), "-", 
                                                sprintf('%.2f',ub.ltbir.g$perc_ltbi_mdr),"]")
-                                        ))
+  ))
   ## Total
   total <- as.data.frame(cbind("GLOBAL",
-                                paste0(sprintf('%.1f',med.total$ltbis), " [", 
-                                       sprintf('%.1f',lb.total$ltbis), "-", 
-                                       sprintf('%.1f',ub.total$ltbis),"]"),
-                                paste0(sprintf('%.1f',med.total$ltbis_kids), " [", 
-                                       sprintf('%.1f',lb.total$ltbis_kids), "-", 
-                                       sprintf('%.1f',ub.total$ltbis_kids),"]"),
-                                paste0(sprintf('%.2f',med.total$ltbir), " [", 
-                                       sprintf('%.2f',lb.total$ltbir), "-", 
-                                       sprintf('%.2f',ub.total$ltbir),"]"),
-                                paste0(sprintf('%.2f',med.total$ltbir_kids), " [", 
-                                       sprintf('%.2f',lb.total$ltbir_kids), "-", 
-                                       sprintf('%.2f',ub.total$ltbir_kids),"]"),
+                               paste0(sprintf('%.1f',med.total$ltbis), " [", 
+                                      sprintf('%.1f',lb.total$ltbis), "-", 
+                                      sprintf('%.1f',ub.total$ltbis),"]"),
+                               paste0(sprintf('%.1f',med.total$ltbis_kids), " [", 
+                                      sprintf('%.1f',lb.total$ltbis_kids), "-", 
+                                      sprintf('%.1f',ub.total$ltbis_kids),"]"),
+                               paste0(sprintf('%.2f',med.total$ltbir), " [", 
+                                      sprintf('%.2f',lb.total$ltbir), "-", 
+                                      sprintf('%.2f',ub.total$ltbir),"]"),
+                               paste0(sprintf('%.2f',med.total$ltbir_kids), " [", 
+                                      sprintf('%.2f',lb.total$ltbir_kids), "-", 
+                                      sprintf('%.2f',ub.total$ltbir_kids),"]"),
                                paste0(sprintf('%.2f',med.total$perc_ltbi_mdr), " [", 
                                       sprintf('%.2f',lb.total$perc_ltbi_mdr), "-", 
                                       sprintf('%.2f',ub.total$perc_ltbi_mdr),"]")
@@ -181,14 +190,45 @@ for(ii in 1:4){# Three models and best
   table1_global <- rbind(table1_global, total)
   
   colnames(table1_global) <- c("WHO Region","Perc. with LTBIS", "Perc. of <15yos with LTBIS",
-                                  "Perc. with LTBIR", "Perc. of <15yos with LTBIR","Perc. of LTBI that is MDR")
-  table1_global <- table1_global[c(1,2,5,3,6,3,7),]
+                               "Perc. with LTBIR", "Perc. of <15yos with LTBIR","Perc. of LTBI that is MDR")
+  table1_global <- table1_global[c(1,2,5,3,6,4,7),]
   
   ## Store
-  xtable(table1_countries)
-  xtable(table1_global)
+  print(xtable(table1_countries), include.rownames=FALSE)
+  print(xtable(table1_global), include.rownames=FALSE)
   
   write.csv(table1_countries, paste0("~/Dropbox/MDR/paper_output/table1_countries_",labl,".csv"))
   write.csv(table1_global, paste0("~/Dropbox/MDR/paper_output/table1_global_",labl,".csv"))
-
+  
+  if(ii == 1){med.ltbir.g.lin <- med.ltbir.g; med.total.lin <- med.total}
+  if(ii == 2){med.ltbir.g.quad <- med.ltbir.g; med.total.quad <- med.total}
+  if(ii == 3){med.ltbir.g.quadc <- med.ltbir.g; med.total.quadc <- med.total}
+  if(ii == 4){med.ltbir.g.best <- med.ltbir.g; med.total.best <- med.total}
+  
+  
 }
+
+rs1<-round(100*(med.ltbir.g.best$ltbis - med.ltbir.g.lin$ltbis)/med.ltbir.g.best$ltbis,2)
+rr1<-round(100*(med.ltbir.g.best$ltbir - med.ltbir.g.lin$ltbir)/med.ltbir.g.best$ltbir,2)
+
+rs2<-round(100*(med.ltbir.g.best$ltbis - med.ltbir.g.quad$ltbis)/med.ltbir.g.best$ltbis,2)
+rr2<-round(100*(med.ltbir.g.best$ltbir - med.ltbir.g.quad$ltbir)/med.ltbir.g.best$ltbir,2)
+
+rs3<-round(100*(med.ltbir.g.best$ltbis - med.ltbir.g.quadc$ltbis)/med.ltbir.g.best$ltbis,2)
+rr3<-round(100*(med.ltbir.g.best$ltbir - med.ltbir.g.quadc$ltbir)/med.ltbir.g.best$ltbir,2)
+
+
+tt <- c(as.character("Global"),
+        round(100*(med.total.best$ltbis - med.total.lin$ltbis)/med.total.best$ltbis,2),
+        round(100*(med.total.best$ltbir - med.total.lin$ltbir)/med.total.best$ltbir,2),
+        round(100*(med.total.best$ltbis - med.total.quad$ltbis)/med.total.best$ltbis,2),
+        round(100*(med.total.best$ltbir - med.total.quad$ltbir)/med.total.best$ltbir,2),
+        round(100*(med.total.best$ltbis - med.total.quadc$ltbis)/med.total.best$ltbis,2),
+        round(100*(med.total.best$ltbir - med.total.quadc$ltbir)/med.total.best$ltbir,2))
+
+
+tb <- rbind(cbind(as.character(med.ltbir.g[,1]), 
+            rs1,rs2,rs3,rr1,rr2,rr3), tt)
+colnames(tb) <- c("WHO region","best-lin ds","best-quad ds","best-quadc ds","best-lin dr","best-quad dr","best-quadc dr")
+write.csv(tb, "~/Dropbox/MDR/paper_output/compare_linquadquadc.csv")
+print(xtable(tb), include.rownames=FALSE)
