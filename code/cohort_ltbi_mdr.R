@@ -1,37 +1,32 @@
 #### Cohort model for MDRLTBI
 
-cohort_ltbi <- function(ari,pop,prot == 0){
+cohort_ltbi <- function(ari,pop,prot = 0){
   ### inputs 
   # ari: 2 columns
   # pop: population in 2014
+  # prot: if switching on fitness cost to resistance, prot = 1
   
   #### Protection from re-infecton
   ## Andrews: 0.79 .7-.86 
-  if(prot < 1){
-    pm <- 0.79                      # Mean        #0.5 #CHANGE HERE!
-    pv <- (0.86-0.7)^2/3.92^2
-    apb <- pm*(1-pm)/pv-1
-    # Shape parameters
-    pa <- pm*apb                            #77.88
-    pb <- (1-pm)*apb                        #20.70
-    
-    ### Random sample of level of protection - beta distribution
-    # same for dr/ds
-    alph <- rbeta(100*81,shape1=pb,shape2=pa)
-    dim(alph) <-  c(81, 100)
-  }
+  pm <- 0.79                      # Mean        #0.5 #CHANGE HERE!
+  pv <- (0.86-0.7)^2/3.92^2
+  apb <- pm*(1-pm)/pv-1
+  # Shape parameters
+  pa <- pm*apb                            #77.88
+  pb <- (1-pm)*apb                        #20.70
+  
+  ### Random sample of level of protection - beta distribution
+  # same for dr/ds
+  alphs <- rbeta(100*81,shape1=pb,shape2=pa)
+  dim(alphs) <-  c(81, 100)
+  
+  alphr <- alphs # standard assumption that same level of protection
+  
   if(prot == 1){
-    pm <- 0.79                      # Mean        #0.5 #CHANGE HERE!
-    pv <- (0.86-0.7)^2/3.92^2
-    apb <- pm*(1-pm)/pv-1
-    # Shape parameters
-    pa <- pm*apb                            #77.88
-    pb <- (1-pm)*apb                        #20.70
-    
-    ### Random sample of level of protection - beta distribution
-    # same for dr/ds
-    alph <- rbeta(100*81,shape1=pb,shape2=pa)
-    dim(alph) <-  c(81, 100)
+    print("Fitness affects protection ON")
+    rf = 0.6
+    alphr <- (1-rf*pm) / (1-pm) * alphs ### alphr = 1 - relfit * pm = y * (1 - pm) = y * alphs # reorganise to give factor multiplying alphs
+    # mean(alphr) # ~ 0.53 = 1 - 0.6*0.78
   } 
   
   
@@ -74,8 +69,8 @@ cohort_ltbi <- function(ari,pop,prot == 0){
     c_now$new_dr <- ari_r * (1 - c_now$pr_ds - c_now$pr_dr - c_now$new_ds) # currently none, new infection DR
     c_now[c_now$new_ds < 0, "new_ds"] <- 0 # no new if go negative
     c_now[c_now$new_dr < 0, "new_dr"] <- 0 # no new if go negative
-    c_now$rei_sr <- c_now$pr_ds * ari_r * alph[i,] 
-    c_now$rei_rs <- c_now$pr_dr * ari_s * alph[i,]
+    c_now$rei_sr <- c_now$pr_ds * ari_r * alphs[i,] 
+    c_now$rei_rs <- c_now$pr_dr * ari_s * alphr[i,]
     if(length(which(c_now < 0))>0){print(c(i,"negative c_now", ari_s, ari_r,c_now[i,],"which",which(c_now < 0)))}
     
     ### Store and update

@@ -7,7 +7,7 @@ library('ggmcmc')
 library('loo')
 
 # PRINT? 
-pp <- 0
+pp <- 1
 
 # where
 setwd("~/Documents/LTBI_MDR/code")
