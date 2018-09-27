@@ -38,18 +38,24 @@ for(ii in 1:4){# Three models and best
   s_level$perc_ds_kids <- 100*s_level$pltbis_kids / s_level$pltbis
   s_level$perc_dr_kids <- 100*s_level$pltbir_kids / s_level$pltbir
   
+  s_level$perc_ds_kids_all <- 100*s_level$pltbis_kids / (s_level$pltbis_kids + s_level$pltbir_kids)
+  s_level$perc_dr_kids_all <- 100*s_level$pltbir_kids / (s_level$pltbis_kids + s_level$pltbir_kids)
+  
   # Percentage of LTBI that is MDR
   s_level$perc_ltbi_mdr <- 100*s_level$pltbir/(s_level$pltbir + s_level$pltbis)
   
   #### By country
   med.ltbir <- aggregate(s_level[,c("ltbir","ltbis","pltbir","pltbis","ltbir_kids","ltbis_kids",
-                                    "pltbir_kids","pltbis_kids","perc_ds_kids","perc_dr_kids","perc_ltbi_mdr")], 
+                                    "pltbir_kids","pltbis_kids",
+                                    "perc_ds_kids","perc_dr_kids","perc_ltbi_mdr","perc_ds_kids_all","perc_dr_kids_all")], 
                          list(s_level$iso3), median, na.rm = TRUE)
   
-  ub.ltbir <- aggregate(s_level[,c("ltbir","ltbis","pltbir","pltbis","ltbir_kids","ltbis_kids","pltbir_kids","pltbis_kids","perc_ds_kids","perc_dr_kids","perc_ltbi_mdr")], 
+  ub.ltbir <- aggregate(s_level[,c("ltbir","ltbis","pltbir","pltbis","ltbir_kids","ltbis_kids","pltbir_kids","pltbis_kids",
+                                   "perc_ds_kids","perc_dr_kids","perc_ltbi_mdr","perc_ds_kids_all","perc_dr_kids_all")], 
                         list(s_level$iso3), ub)
   
-  lb.ltbir <- aggregate(s_level[,c("ltbir","ltbis","pltbir","pltbis","ltbir_kids","ltbis_kids","pltbir_kids","pltbis_kids","perc_ds_kids","perc_dr_kids","perc_ltbi_mdr")], 
+  lb.ltbir <- aggregate(s_level[,c("ltbir","ltbis","pltbir","pltbis","ltbir_kids","ltbis_kids","pltbir_kids","pltbis_kids",
+                                   "perc_ds_kids","perc_dr_kids","perc_ltbi_mdr","perc_ds_kids_all","perc_dr_kids_all")], 
                         list(s_level$iso3), lb)
   
   med.ltbir$iso3 <- med.ltbir$Group.1
@@ -67,28 +73,37 @@ for(ii in 1:4){# Three models and best
   ltbi_global$perc_ds_kids <- 100*ltbi_global$pltbis_kids / ltbi_global$pltbis
   ltbi_global$perc_dr_kids <- 100*ltbi_global$pltbir_kids / ltbi_global$pltbir
   
+  ltbi_global$perc_ds_kids_all <- 100*ltbi_global$pltbis_kids / (ltbi_global$pltbis_kids + ltbi_global$pltbir_kids)
+  ltbi_global$perc_dr_kids_all <- 100*ltbi_global$pltbir_kids / (ltbi_global$pltbis_kids + ltbi_global$pltbir_kids)
+  
+  ltbi_global$perc_ltbi_mdr <- 100*ltbi_global$pltbir / (ltbi_global$pltbir + ltbi_global$pltbis)
+  
   # Total global level
   ltbi_total <- aggregate(ltbi[,c("pltbir","pltbis","pltbir_kids","pltbis_kids",
                                   "pop","pop_kids")], 
                           list(ltbi$rep), sum) # still got replicates in there
   ltbi_total$perc_ds_kids <- 100*ltbi_total$pltbis_kids / ltbi_total$pltbis
   ltbi_total$perc_dr_kids <- 100*ltbi_total$pltbir_kids / ltbi_total$pltbir
+  ltbi_total$perc_ds_kids_all <- 100*ltbi_total$pltbis_kids / (ltbi_total$pltbis_kids + ltbi_total$pltbir_kids)
+  ltbi_total$perc_dr_kids_all <- 100*ltbi_total$pltbir_kids / (ltbi_total$pltbis_kids + ltbi_total$pltbir_kids)
+  
+  ltbi_total$perc_ltbi_mdr <- 100*ltbi_total$pltbir / (ltbi_total$pltbir + ltbi_total$pltbis)
   
   med.ltbir.g <- aggregate(ltbi_global[,c("pltbir","pltbis","pltbir_kids","pltbis_kids",
-                                          "pop","pop_kids","perc_ds_kids","perc_dr_kids")],
+                                          "pop","pop_kids","perc_ds_kids","perc_dr_kids","perc_ltbi_mdr","perc_ds_kids_all","perc_dr_kids_all")],
                            list(ltbi_global$Group.1),median)
   
   ub.ltbir.g <- aggregate(ltbi_global[,c("pltbir","pltbis","pltbir_kids","pltbis_kids",
-                                         "pop","pop_kids","perc_ds_kids","perc_dr_kids")],
+                                         "pop","pop_kids","perc_ds_kids","perc_dr_kids","perc_ltbi_mdr","perc_ds_kids_all","perc_dr_kids_all")],
                           list(ltbi_global$Group.1),ub)
   
   lb.ltbir.g <- aggregate(ltbi_global[,c("pltbir","pltbis","pltbir_kids","pltbis_kids",
-                                         "pop","pop_kids","perc_ds_kids","perc_dr_kids")],
+                                         "pop","pop_kids","perc_ds_kids","perc_dr_kids","perc_ltbi_mdr","perc_ds_kids_all","perc_dr_kids_all")],
                           list(ltbi_global$Group.1),lb)
   
-  med.total <- colwise(median)(ltbi_total[,c("pltbir","pltbis","pltbir_kids","pltbis_kids","pop","pop_kids","perc_ds_kids","perc_dr_kids")])
-  lb.total <- colwise(lb)(ltbi_total[,c("pltbir","pltbis","pltbir_kids","pltbis_kids","pop","pop_kids","perc_ds_kids","perc_dr_kids")])
-  ub.total <- colwise(ub)(ltbi_total[,c("pltbir","pltbis","pltbir_kids","pltbis_kids","pop","pop_kids","perc_ds_kids","perc_dr_kids")])
+  med.total <- colwise(median)(ltbi_total[,c("pltbir","pltbis","pltbir_kids","pltbis_kids","pop","pop_kids","perc_ds_kids","perc_dr_kids","perc_ltbi_mdr","perc_ds_kids_all","perc_dr_kids_all")])
+  lb.total <- colwise(lb)(ltbi_total[,c("pltbir","pltbis","pltbir_kids","pltbis_kids","pop","pop_kids","perc_ds_kids","perc_dr_kids","perc_ltbi_mdr","perc_ds_kids_all","perc_dr_kids_all")])
+  ub.total <- colwise(ub)(ltbi_total[,c("pltbir","pltbis","pltbir_kids","pltbis_kids","pop","pop_kids","perc_ds_kids","perc_dr_kids","perc_ltbi_mdr","perc_ds_kids_all","perc_dr_kids_all")])
   
   ## Global level
   med.ltbir.g$ltbir <- 100*med.ltbir.g$pltbir / med.ltbir.g$pop
@@ -107,10 +122,6 @@ for(ii in 1:4){# Three models and best
   ub.ltbir.g$ltbis_kids <- 100*ub.ltbir.g$pltbis_kids / ub.ltbir.g$pop_kids
   lb.ltbir.g$ltbis_kids <- 100*lb.ltbir.g$pltbis_kids / lb.ltbir.g$pop_kids
   
-  med.ltbir.g$perc_ltbi_mdr <- 100*med.ltbir.g$pltbir / (med.ltbir.g$pltbir + med.ltbir.g$pltbis)
-  ub.ltbir.g$perc_ltbi_mdr <- 100*ub.ltbir.g$pltbir / (ub.ltbir.g$pltbir + ub.ltbir.g$pltbis)
-  lb.ltbir.g$perc_ltbi_mdr <- 100*lb.ltbir.g$pltbir / (lb.ltbir.g$pltbir + lb.ltbir.g$pltbis)
-  
   ## Total levels
   med.total$ltbir <- 100*med.total$pltbir / med.total$pop
   ub.total$ltbir <- 100*ub.total$pltbir / ub.total$pop
@@ -128,28 +139,24 @@ for(ii in 1:4){# Three models and best
   ub.total$ltbis_kids <- 100*ub.total$pltbis_kids / ub.total$pop_kids
   lb.total$ltbis_kids <- 100*lb.total$pltbis_kids / lb.total$pop_kids
   
-  med.total$perc_ltbi_mdr <- 100*med.total$pltbir / (med.total$pltbir + med.total$pltbis)
-  ub.total$perc_ltbi_mdr <- 100*ub.total$pltbir / (ub.total$pltbir + ub.total$pltbis)
-  lb.total$perc_ltbi_mdr <- 100*lb.total$pltbir / (lb.total$pltbir + lb.total$pltbis)
-  
   #### Output tables
   ## All countries 
   table1_countries <- as.data.frame(cbind( as.character(med.ltbir$iso3),
                                            paste0(sprintf('%.1f',med.ltbir$ltbis), " [", 
                                                   sprintf('%.1f',lb.ltbir$ltbis), "-", 
                                                   sprintf('%.1f',ub.ltbir$ltbis),"]"),
-                                           paste0(sprintf('%.1f',med.ltbir$perc_ds_kids), " [", 
-                                                  sprintf('%.1f',lb.ltbir$perc_ds_kids), "-", 
-                                                  sprintf('%.1f',ub.ltbir$perc_ds_kids),"]"),
+                                           paste0(sprintf('%.1f',med.ltbir$perc_ds_kids_all), " [", 
+                                                  sprintf('%.1f',lb.ltbir$perc_ds_kids_all), "-", 
+                                                  sprintf('%.1f',ub.ltbir$perc_ds_kids_all),"]"),
                                            paste0(sprintf('%.2f',med.ltbir$ltbis_kids), " [", 
                                                   sprintf('%.2f',lb.ltbir$ltbis_kids), "-", 
                                                   sprintf('%.2f',ub.ltbir$ltbis_kids),"]"),
                                            paste0(sprintf('%.2f',med.ltbir$ltbir), " [", 
                                                   sprintf('%.2f',lb.ltbir$ltbir), "-", 
                                                   sprintf('%.2f',ub.ltbir$ltbir),"]"),
-                                           paste0(sprintf('%.1f',med.ltbir$perc_dr_kids), " [", 
-                                                  sprintf('%.1f',lb.ltbir$perc_dr_kids), "-", 
-                                                  sprintf('%.1f',ub.ltbir$perc_dr_kids),"]"),
+                                           paste0(sprintf('%.1f',med.ltbir$perc_dr_kids_all), " [", 
+                                                  sprintf('%.1f',lb.ltbir$perc_dr_kids_all), "-", 
+                                                  sprintf('%.1f',ub.ltbir$perc_dr_kids_all),"]"),
                                            paste0(sprintf('%.2f',med.ltbir$ltbir_kids), " [", 
                                                   sprintf('%.2f',lb.ltbir$ltbir_kids), "-", 
                                                   sprintf('%.2f',ub.ltbir$ltbir_kids),"]"),
@@ -166,15 +173,15 @@ for(ii in 1:4){# Three models and best
                                         paste0(sprintf('%.1f',med.ltbir.g$ltbis), " [", 
                                                sprintf('%.1f',lb.ltbir.g$ltbis), "-", 
                                                sprintf('%.1f',ub.ltbir.g$ltbis),"]"),
-                                        paste0(sprintf('%.1f',med.ltbir.g$perc_ds_kids), " [", 
-                                               sprintf('%.1f',lb.ltbir.g$perc_ds_kids), "-", 
-                                               sprintf('%.1f',ub.ltbir.g$perc_ds_kids),"]"),
+                                        paste0(sprintf('%.1f',med.ltbir.g$perc_ds_kids_all), " [", 
+                                               sprintf('%.1f',lb.ltbir.g$perc_ds_kids_all), "-", 
+                                               sprintf('%.1f',ub.ltbir.g$perc_ds_kids_all),"]"),
                                         paste0(sprintf('%.2f',med.ltbir.g$ltbir), " [", 
                                                sprintf('%.2f',lb.ltbir.g$ltbir), "-", 
                                                sprintf('%.2f',ub.ltbir.g$ltbir),"]"),
-                                        paste0(sprintf('%.1f',med.ltbir.g$perc_dr_kids), " [", 
-                                               sprintf('%.1f',lb.ltbir.g$perc_dr_kids), "-", 
-                                               sprintf('%.1f',ub.ltbir.g$perc_dr_kids),"]"),
+                                        paste0(sprintf('%.1f',med.ltbir.g$perc_dr_kids_all), " [", 
+                                               sprintf('%.1f',lb.ltbir.g$perc_dr_kids_all), "-", 
+                                               sprintf('%.1f',ub.ltbir.g$perc_dr_kids_all),"]"),
                                         paste0(sprintf('%.1f',med.ltbir.g$perc_ltbi_mdr), " [", 
                                                sprintf('%.1f',lb.ltbir.g$perc_ltbi_mdr), "-", 
                                                sprintf('%.1f',ub.ltbir.g$perc_ltbi_mdr),"]")
@@ -184,15 +191,15 @@ for(ii in 1:4){# Three models and best
                                paste0(sprintf('%.1f',med.total$ltbis), " [", 
                                       sprintf('%.1f',lb.total$ltbis), "-", 
                                       sprintf('%.1f',ub.total$ltbis),"]"),
-                               paste0(sprintf('%.1f',med.total$perc_ds_kids), " [", 
-                                      sprintf('%.1f',lb.total$perc_ds_kids), "-", 
-                                      sprintf('%.1f',ub.total$perc_ds_kids),"]"),
+                               paste0(sprintf('%.1f',med.total$perc_ds_kids_all), " [", 
+                                      sprintf('%.1f',lb.total$perc_ds_kids_all), "-", 
+                                      sprintf('%.1f',ub.total$perc_ds_kids_all),"]"),
                                paste0(sprintf('%.2f',med.total$ltbir), " [", 
                                       sprintf('%.2f',lb.total$ltbir), "-", 
                                       sprintf('%.2f',ub.total$ltbir),"]"),
-                               paste0(sprintf('%.1f',med.total$perc_dr_kids), " [", 
-                                      sprintf('%.1f',lb.total$perc_dr_kids), "-", 
-                                      sprintf('%.1f',ub.total$perc_dr_kids),"]"),
+                               paste0(sprintf('%.1f',med.total$perc_dr_kids_all), " [", 
+                                      sprintf('%.1f',lb.total$perc_dr_kids_all), "-", 
+                                      sprintf('%.1f',ub.total$perc_dr_kids_all),"]"),
                                paste0(sprintf('%.1f',med.total$perc_ltbi_mdr), " [", 
                                       sprintf('%.1f',lb.total$perc_ltbi_mdr), "-", 
                                       sprintf('%.1f',ub.total$perc_ltbi_mdr),"]")
@@ -200,8 +207,8 @@ for(ii in 1:4){# Three models and best
   
   table1_global <- rbind(table1_global, total)
   
-  colnames(table1_global) <- c("WHO Region","Perc. with LTBIS", "Perc. of <15yos with LTBIS",
-                               "Perc. with LTBIR", "Perc. of <15yos with LTBIR","Perc. of LTBI that is MDR")
+  colnames(table1_global) <- c("WHO Region","Perc. with LTBIS", "Perc. of total LTBI in <15yos that is DS",
+                               "Perc. with LTBIR", "Perc. of total LTBI in <15yos that is MDR","Perc. of LTBI that is MDR")
   table1_global <- table1_global[c(1,2,5,3,6,4,7),]
   
   ## Store
@@ -218,6 +225,14 @@ for(ii in 1:4){# Three models and best
   
   
 }
+
+## Check perc_ltbi_mdr greater variance than what comparing
+rp <- ub.total$perc_ltbi_mdr - lb.total$perc_ltbi_mdr
+rs <- ub.total$pltbis - lb.total$pltbis
+rr <- ub.total$pltbir - lb.total$pltbir
+rp / med.total$perc_ltbi_mdr # 0.4 vs 0.3 for other two below. Correct! should have greater variance as taking into variance in both
+rs / med.total$pltbis
+rr / med.total$pltbir
 
 rs1<-round(100*(med.ltbir.g.best$ltbis - med.ltbir.g.lin$ltbis)/med.ltbir.g.best$ltbis,2)
 rr1<-round(100*(med.ltbir.g.best$ltbir - med.ltbir.g.lin$ltbir)/med.ltbir.g.best$ltbir,2)
