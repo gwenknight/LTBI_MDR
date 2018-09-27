@@ -186,7 +186,7 @@ for(i in 1:llu){
   
 }
 
-write.csv(s_level_best, paste0("../output/s_level_",nari,"best.csv"))
+write.csv(s_level_best, paste0("../output/s_level_",nari,"_best.csv"))
 
 
 #### Run plots for s_level_best
