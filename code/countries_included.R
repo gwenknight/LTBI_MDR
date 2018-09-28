@@ -111,16 +111,20 @@ intersect(s, mdr30$iso3) # include 3 in the top MDR!
 
 wm <- match(final_list,n_data$iso3, nomatch = 0)
 wm1 <- match(final_list,n_data1$iso3, nomatch = 0)
-length(which(n_data[wm,"freq"] < 2)) # 31 only have 1 datapoint - extra 5 from removing those with only sub-national
-length(which(n_data1[wm1,"freq"] < 2)) # 36 only have 1 datapoint - extra 5 from removing those with only sub-national
-setdiff( n_data1[which(n_data1[wm1,"freq"] < 2),"iso3"],n_data[which(n_data[wm,"freq"] < 2),"iso3"])
+length(which(n_data[wm,"n"] < 2)) # 31 only have 1 datapoint - extra 5 from removing those with only sub-national
+length(which(n_data1[wm1,"n"] < 2)) # 36 only have 1 datapoint - extra 5 from removing those with only sub-national
+setdiff( n_data1[which(n_data1[wm1,"n"] < 2),"iso3"],n_data[which(n_data[wm,"n"] < 2),"iso3"])
 
-rem_1_dp_m <- n_data[which(n_data$freq < 2),]
+rem_1_dp_m <- n_data[which(n_data$n < 2),]
 rem_1_dp <- pull(rem_1_dp_m, iso3)
 
 # remove these from the final_list
-final_list <- setdiff(final_list, rem_1_dp)
-length(final_list) # 107
+final_list_107 <- setdiff(final_list, rem_1_dp)
+length(final_list) # 138 # Keep 1 data point countries now
+
+# SAVE
+setwd("~/Dropbox/MDR/")
+write.csv(final_list,"138_final_list_included_countries.csv")
 
 
 ####***************************************************************************************************************************************####
@@ -136,7 +140,7 @@ w_data_subreg2 <- w_data_subreg[w_data_subreg$iso3 %in% final_list,]
 w_data_subreg2$new_mdr_prop <- w_data_subreg2$av_mdr_new_pcnt / 100
 w_data_subreg2$mhi <- w_data_subreg2$mhi # already a proportion: see who_data_drs.R
 w_data_subreg2$mlo <- w_data_subreg2$mlo # already a proportion: see who_data_drs.R
-length(unique(w_data_subreg2$iso3)) # 107
+length(unique(w_data_subreg2$iso3)) # 138 now
 
 write.csv(w_data_subreg2, "~/Dropbox/MRC SD Fellowship/RESEARCH/MDR/WHO_data/new_who_edited_sub.csv") ### NEW STANDARD DATA TO USE - only has final list of countries
 write.csv(w_data_subreg2, "~/Dropbox/MDR/new_who_edited_sub.csv") 
