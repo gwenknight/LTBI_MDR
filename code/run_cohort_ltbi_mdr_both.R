@@ -51,7 +51,7 @@ for(ii in 1:3){ # 3 models
   if(ii == 3){pp <- "quad"}
   
   # Store all? 
-  store_all <- as.data.frame(matrix(0,length(cni)*4*81*100,9))
+  store_all <- as.data.frame(matrix(0,length(cni)*4*81*100,10))
   runn <- 1
   level2014 <- c(); #breakdown proportions infected by age
   s_level <- c(); #sum proportions infected 
@@ -106,6 +106,7 @@ for(ii in 1:3){ # 3 models
         #level2014 <- rbind(level2014,combs)
         level2014 <- rbind(level2014,cbind(cc$c_2014,combs[1,c("mdr_rep","popf")],row.names = NULL))
         
+        
         # total percentage infected sums
         ltbi_dr <- sum(combs$perc_dr) # percentage infected
         ltbi_ds <- sum(combs$perc_ds)
@@ -125,7 +126,7 @@ for(ii in 1:3){ # 3 models
         uppi <- ((runn)*(dim(ssc)[1]))
         store_all[lowi:uppi,1] <- i;
         store_all[lowi:uppi,2] <- cni[cci];
-        store_all[lowi:uppi,3:9] <- ssc
+        store_all[lowi:uppi,3:10] <- ssc
         
         runn <- runn + 1
         sa <- rbind(sa,cbind(i,cni[cci], ssc)) # just for this country
@@ -135,6 +136,11 @@ for(ii in 1:3){ # 3 models
       sa <- as.data.frame(sa)
       colnames(sa) <- c(c("mdr_rep","cn"),colnames(cc$store_c)) 
       write.csv(sa, paste0("~/Dropbox/MDR/output/",cni[cci],"_sa_",nari,"_",pp,".csv"))}
+    
+    # Just recent infection 
+    w<-which(sa$year > 2012)
+    write.csv(sa[w,], paste0("~/Dropbox/MDR/output/",cni[cci],"_rec_infec_",nari,"_",pp,".csv"))}
+    
     # sa_rec <- sa[which(sa$year > 1965),] # recent
     
     # #### Plot by age
