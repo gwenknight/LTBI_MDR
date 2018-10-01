@@ -126,6 +126,8 @@ length(final_list) # 138 # Keep 1 data point countries now
 setwd("~/Dropbox/MDR/")
 write.csv(final_list,"138_final_list_included_countries.csv")
 
+# Global region of those removed
+mm <- merge(rem_1_dp,WHOkey[,c('iso3','g_whoregion')],by='iso3',all.x=TRUE) # add global region to country output
 
 ####***************************************************************************************************************************************####
 # Average MDR over multiple measures in same year - only happens if sub_group? 
