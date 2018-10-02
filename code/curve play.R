@@ -1,6 +1,6 @@
 #### Curve play
 
-
+library(ggplot2)
 x <- seq(0,34, 1)
 
 # Time when MDR > 0
@@ -43,35 +43,81 @@ ggplot(curves, aes(x=x, y = y, group = i, colour = i)) + geom_line()
 
 
 #### sequence
-tseq <- 10 #seq(0,20,1)
-bseq <- seq(0,100,1)
-cseq <- seq(0,10,1)
+tseq <- 34 #seq(5,24,5)
+bseq <- seq(0,0.05,0.01)
+rhoseq <- seq(0,1,0.1)
+
 curves <- c()
 rep <- 0
+
 for(i in 1:length(tseq)){
   for(j in 1:length(bseq)){
-    for(k in 1:length(cseq)){
+    for(k in 1:length(rhoseq)){
       
       t_mdr <- tseq[i]
       
       b <- bseq[j]
       
-      c <- cseq[k]
+      rho <- rhoseq[k]
       
-      if(c > (b-0.05)/2){
-        y <- b*(x-t_mdr) - c*(x-t_mdr)^2 
-        
+      c <- rho * b / t_mdr
+      
+      x <- matrix(0,1,45 - t_mdr)
+      x <- c(x,seq(1,t_mdr,1))
+       
+        y <- b*(x) - c*x^2 
+      
         rep = rep + 1
-        curves <- rbind(curves, cbind(rep,x, y,t_mdr,b,rho,c))
-      }
+        
+        year = seq(1970,2014,1)
+        curves <- rbind(curves, cbind(rep,x, y,t_mdr,b,rho,c,year))
+      
     }
   }
 }
 
 curves <- as.data.frame(curves)
 
-ggplot(curves, aes(x=x, y = y, group = rep, colour = rep)) + geom_line() + scale_y_continuous(lim=c(0,30))
+ggplot(curves, aes(x=x, y = y, group = rep, colour = rep)) + geom_line() 
+ggplot(curves, aes(x=year, y = y, group = rep, colour = rep)) + geom_line() 
+ggsave("~/Dropbox/MDR/output/prior_curves_34.pdf")
 
+#### sequence
+tseq <- seq(5,44,5)
+bseq <- seq(0,0.05,0.01)
+rhoseq <- seq(0,1,0.1)
 
+curves <- c()
+rep <- 0
 
+for(i in 1:length(tseq)){
+  for(j in 1:length(bseq)){
+    for(k in 1:length(rhoseq)){
+      
+      t_mdr <- tseq[i]
+      
+      b <- bseq[j]
+      
+      rho <- rhoseq[k]
+      
+      c <- rho * b / t_mdr
+      
+      x <- matrix(0,1,45 - t_mdr)
+      x <- c(x,seq(1,t_mdr,1))
+      
+      y <- b*(x) - c*x^2 
+      
+      rep = rep + 1
+      
+      year = seq(1970,2014,1)
+      curves <- rbind(curves, cbind(rep,x, y,t_mdr,b,rho,c,year))
+      
+    }
+  }
+}
 
+curves <- as.data.frame(curves)
+
+ggplot(curves, aes(x=x, y = y, group = rep, colour = rep)) + geom_line() 
+ggplot(curves, aes(x=year, y = y, group = rep, colour = rep)) + geom_line() 
+ggsave("~/Dropbox/MDR/output/prior_curves_more.pdf")
