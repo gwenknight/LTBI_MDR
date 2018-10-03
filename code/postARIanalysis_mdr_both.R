@@ -24,7 +24,7 @@ load('data/POP2050.Rdata')
 load('data/POP1997.Rdata')
 load('data/DSN2.Rdata') #INH data from Dodd,Sismanidis,Seddon
 
-final_list_cn <- read.csv("~/Dropbox/MDR/107_final_list_included_countries.csv", stringsAsFactors = FALSE)[,-1]
+final_list_cn <- read.csv("~/Dropbox/MDR/138_final_list_included_countries.csv", stringsAsFactors = FALSE)[,-1]
 All <- All[All$lr_ari!=-Inf,] 
 
 cnz <- final_list_cn #unique(as.character(All$iso3)) # included countries - accounts for too few entries 
@@ -57,7 +57,7 @@ for(i in 1:length(cnz)){ # for all the countries
 
 bdzdf <- do.call('rbind',BDZ)
 rundatar <- do.call('rbind',RUNZ)
-length(unique(rundatar$iso3)) # 107
+length(unique(rundatar$iso3)) # 138
 save(rundatar,file = "~/Dropbox/MDR/output/rundata_ari_1000.Rdata")
 
 ## ------------- analyse data -------------
