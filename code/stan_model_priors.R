@@ -4,7 +4,7 @@
 library('rstan')
 library('dplyr')
 library('ggmcmc')
-library('loo')
+library("boot")
 
 # PRINT? 
 pp <- 1
@@ -19,7 +19,7 @@ luu <- length(unique(who0$iso3)) # 138
 uu <- read.csv("~/Dropbox/MDR/138_final_list_included_countries.csv",stringsAsFactors = FALSE)[,-1]
 luu <- length(unique(who0$iso3)) # 138
 
-#luu <- 5 ##### DO JUST FOR FIRST FIVE! *******************************************************************************************
+luu <- 5 ##### DO JUST FOR FIRST FIVE! *******************************************************************************************
 
 # Add in sigma to data
 who0$mdr_new <- who0$new_mdr_prop
@@ -39,52 +39,71 @@ for(ii in 1:luu) {
   who_l <- who0 %>% filter(iso3==country) 
   who_l <- who_l[,c("year", "mdr_new", "mlo", "mhi", "sigma")]
   
-  years_to_predict <- seq(1970, 2018) - 1970
+  years_to_predict <- seq(1970, 2018)
   print(c(ii,as.character(country),nrow(who_l)))
   
   
   if(nrow(who_l) == 1){ 
-    
-    m.p <- stan(file="quadratic_priors.stan",
+    m.p <- stan(file="quadratic_priors_years.stan",
                 data = list(N=nrow(who_l), 
                             N2=length(years_to_predict), 
                             q=as.array(who_l$mdr_new),
-                            years_obs=as.array(who_l$year-1970), 
+                            years_obs=as.array(who_l$year), 
                             sigma=as.array(who_l$sigma), 
                             years=years_to_predict),
                 control = list(adapt_delta = 0.99),
                 chains=2, iter=20000, warmup=10000, thin=10)
     
   } else {
-    m.p <- stan(file="quadratic_priors.stan",
+    m.p <- stan(file="quadratic_priors_years.stan",
                 data = list(N=nrow(who_l), 
                             N2=length(years_to_predict), 
                             q=who_l$mdr_new, 
-                            years_obs=who_l$year-1970, 
+                            years_obs=who_l$year, 
                             sigma=who_l$sigma, 
                             years=years_to_predict),
+                control = list(adapt_delta = 0.99),
                 chains=2, iter=20000, warmup=10000, thin=10)
   }
   
   ## With informative Priors
-  posterior.p<-As.mcmc.list(m.p,pars=c("b", "t_m","rho"))
+   posterior.p<-As.mcmc.list(m.p,pars=c("b", "t_m","rho"))
   if(pp > 0){ggmcmc(ggs(posterior.p), file=paste0("~/Dropbox/MDR/output/",country, "_inforprior_mcmc.pdf"))}
-  samples.p <- rstan::extract(m.p, pars="p_pred")[[1]][1801:2000, ]
-  #samples.p <- inv.logit(samples.p)
   
-  mcmc.samples.p <- data.frame(samples.p) %>%
+  # 200 samples for predicted levels 
+  samples.p.p <- rstan::extract(m.p, pars="p_pred", permuted = FALSE)[801:1000,1,] # pick first chain
+
+  # # 200 samples for time mdr = 0
+  # samples.p.t <- rstan::extract(m.p, pars="t_m", permuted = FALSE)[801:1000,1,] # pick first chain
+  # 
+  # ## remove inverse logit - need to? this is what is fitted
+  # #samples.p.p <- logit(samples.p.p)
+  # samples.p.yr <- as.data.frame(matrix(years_to_predict,200,length(years_to_predict)))
+  # #for(i in 1:200){samples.p.yr[i,] <- 1970 + years_to_predict - samples.p.t[i]}
+  # samples.p.yr$t <- samples.p.t
+  
+  colnames(samples.p.p) <-NULL
+  mcmc.samples.p.p <- data.frame(samples.p.p) %>%
     tbl_df %>%
     dplyr::mutate(sample=1:n()) %>%
     gather(col, prediction, starts_with("X")) %>%
-    dplyr::mutate(year=as.integer(sub("^X", "", col)) + 1969L)
+   dplyr::mutate(year=as.integer(sub("^X", "", col)) + 1969) 
   
-  annual.p <- mcmc.samples.p %>%
+  # colnames(samples.p.yr) <-NULL
+  # mcmc.samples.p.yr <- data.frame(samples.p.yr) %>%
+  #   tbl_df %>%
+  #   dplyr::mutate(sample=1:n()) %>%
+  #   gather(col, year, starts_with("X")) 
+  # 
+  # mcmc.samples <- merge(mcmc.samples.p.p, mcmc.samples.p.yr, by = c("sample","col"))
+  # 
+  annual.p <- mcmc.samples.p.p %>%
     group_by(year) %>%
     dplyr::summarise(mean=mean(prediction), min=quantile(prediction, 0.025), max=quantile(prediction, 0.975)) %>%
     group_by(n=1:n()) %>%
     dplyr::mutate(mean=max(mean, 0), min=max(min, 0), max=max(max, 0)) %>%
     ungroup 
-  
+
   if(pp > 0){
     g <- ggplot(annual.p, aes(x=year)) +
       geom_line(aes(y=mean)) +
@@ -94,16 +113,15 @@ for(ii in 1:luu) {
       geom_vline(xintercept=2014, linetype="dashed")
     ggsave(paste0("~/Dropbox/MDR/output/",country, "_inforprior_mcmc_fit.pdf"))
     
-    g <- ggplot(mcmc.samples.p, aes(x=year, group = sample)) +
+    g <- ggplot(mcmc.samples.p.p, aes(x=year, group = sample)) +
       geom_line(aes(y=prediction)) +
       geom_point(data=who_l, aes(y=mdr_new, group = year), col = "red") +
       geom_errorbar(data=who_l, aes(ymin=mlo, ymax=mhi, group = year), col = "red") +
-      geom_vline(xintercept=2014, linetype="dashed") + 
-      scale_y_continuous(lim = c(0,round(max(who_l$mdr_new + 0.1),2)))
+      geom_vline(xintercept=2014, linetype="dashed") + scale_y_continuous(limits = c(0, NA), expand = c(0,0))
     ggsave(paste0("~/Dropbox/MDR/output/",country, "_inforprior_mcmc_fit_all_curves.pdf"))
   }
   
-  pred_samples_p[[country]] <- mcmc.samples.p %>%
+  pred_samples_p[[country]] <- mcmc.samples.p.p %>%
     mutate(country = country)
   
 }
