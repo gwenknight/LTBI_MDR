@@ -84,9 +84,9 @@ ggplot(curves, aes(x=year, y = y, group = rep, colour = rep)) + geom_line()
 ggsave("~/Dropbox/MDR/output/prior_curves_34.pdf")
 
 #### sequence
-tseq <- seq(1970,2014,5)
-bseq <- seq(0,0.05,0.01)
-rhoseq <- seq(0,1,0.1)
+tseq <- 1980 #seq(1970,2014,5)
+bseq <- 0.01 #seq(0,0.05,0.01)
+rhoseq <- seq(0,40,1)
 
 curves <- c()
 rep <- 0
@@ -107,13 +107,13 @@ for(i in 1:length(tseq)){
       x <- x - t_mdr
       
       y <- b*(x) - c*x^2
-      yi <- inv.logit(b*(x) - c*x^2) - 0.5
+      #yi <- inv.logit(b*(x) - c*x^2) - 0.5
       
       rep = rep + 1
       print(rep)
       
       year = seq(1950,2020,1)
-      curves <- rbind(curves, cbind(rep,x, y, yi, t_mdr,b,rho,c,year))
+      curves <- rbind(curves, cbind(rep,x, y, t_mdr,b,rho,c,year))
       
     }
   }
@@ -122,7 +122,6 @@ for(i in 1:length(tseq)){
 curves <- as.data.frame(curves)
 
 ggplot(curves, aes(x=x, y = y, group = rep, colour = rep)) + geom_line() 
-ggplot(curves, aes(x=year, y = y, group = rep, colour = rep)) + geom_line() 
-ggplot(curves, aes(x=year, y = yi, group = rep, colour = rep)) + geom_line() +ggtitle("INVlog")
-ggplot(curves, aes(x=x, y = yi, group = rep, colour = rep)) + geom_line() +ggtitle("INVlog")
+ggplot(curves, aes(x=year, y = y, group = rep, colour = rep)) + geom_line() + scale_y_continuous(limits = c(0,3)) + 
+  geom_vline(xintercept = 2014)
 ggsave("~/Dropbox/MDR/output/prior_curves_more.pdf")
