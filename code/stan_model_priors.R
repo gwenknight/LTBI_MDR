@@ -19,7 +19,7 @@ luu <- length(unique(who0$iso3)) # 138
 uu <- read.csv("~/Dropbox/MDR/138_final_list_included_countries.csv",stringsAsFactors = FALSE)[,-1]
 luu <- length(unique(who0$iso3)) # 138
 
-luu <- 5 ##### DO JUST FOR FIRST FIVE! *******************************************************************************************
+#luu <- 5 ##### DO JUST FOR FIRST FIVE! *******************************************************************************************
 
 # Add in sigma to data
 who0$mdr_new <- who0$new_mdr_prop
@@ -67,12 +67,26 @@ for(ii in 1:luu) {
   }
   
   ## With informative Priors
-   posterior.p<-As.mcmc.list(m.p,pars=c("b", "t_m","rho"))
+  posterior.p<-As.mcmc.list(m.p,pars=c("b", "t_m","rho"))
   if(pp > 0){ggmcmc(ggs(posterior.p), file=paste0("~/Dropbox/MDR/output/",country, "_inforprior_mcmc.pdf"))}
+  if(pp > 0){ #plot posterior against priors
+    pp <- as.data.frame(m.p,pars=c("b", "t_m","rho"))[1001:2000,]
+    nsamples <- 1000000
+    priors <- cbind(rlnorm(nsamples, meanlog = log(0.0008), sdlog = 0.8), #b
+                    rnorm(nsamples,1985,9), #t_m
+                    rnorm(nsamples,15,5)) # rho
+    colnames(priors) <- colnames(pp)
+    pp_p <- rbind(pp, priors)
+    pp_p$prior <- c(matrix(0,1000,1), matrix(1,nsamples,1))
+    pp_p <- melt(pp_p, id.vars = "prior")
+    ggplot(pp_p,aes(x=value, group = prior)) + geom_density(alpha = 0.3,aes(fill = factor(prior))) + 
+      facet_wrap(~variable, scale="free") + scale_fill_discrete("Dist",labels = c("Posterior","Prior"))
+    ggsave(paste0("~/Dropbox/MDR/output/",country, "_inforprior_post_vs_prior.pdf"),width = 20, height = 10)
+  }
   
   # 200 samples for predicted levels 
   samples.p.p <- rstan::extract(m.p, pars="p_pred", permuted = FALSE)[801:1000,1,] # pick first chain
-
+  
   # # 200 samples for time mdr = 0
   # samples.p.t <- rstan::extract(m.p, pars="t_m", permuted = FALSE)[801:1000,1,] # pick first chain
   # 
@@ -87,7 +101,7 @@ for(ii in 1:luu) {
     tbl_df %>%
     dplyr::mutate(sample=1:n()) %>%
     gather(col, prediction, starts_with("X")) %>%
-   dplyr::mutate(year=as.integer(sub("^X", "", col)) + 1969) 
+    dplyr::mutate(year=as.integer(sub("^X", "", col)) + 1969) 
   
   # colnames(samples.p.yr) <-NULL
   # mcmc.samples.p.yr <- data.frame(samples.p.yr) %>%
@@ -103,7 +117,7 @@ for(ii in 1:luu) {
     group_by(n=1:n()) %>%
     dplyr::mutate(mean=max(mean, 0), min=max(min, 0), max=max(max, 0)) %>%
     ungroup 
-
+  
   if(pp > 0){
     g <- ggplot(annual.p, aes(x=year)) +
       geom_line(aes(y=mean)) +
