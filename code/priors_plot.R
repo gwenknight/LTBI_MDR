@@ -1,23 +1,36 @@
 ### Priors_plot
 
 ####### Priors:
-### tm <- normal(1980,5)
+### tm  ****######################################################################
+# original: tm <- normal(1980,5)
 #tseq <- rnorm(100,mean = 1980, sd = 5)
+tprop <- rnorm(10000,mean = 1985, sd = 9)
+plot(density(tprop))
+quantile(tprop,probs=c(0.05, 0.95))
+
 
 tseq <- 1980
 
-### b <- uniform(0,0.05)
+### b  ****######################################################################
+# original: b <- uniform(0,0.05) 
 bseq <- runif(30,min = 0, max = 0.05)
 
 # mean = exp(mu + sd^2/2): want it at 1980 => log(1980) - sd^2 / 2 = mu
-bseq <- rlnorm(10000000, meanlog = log(0.01) - 1^2 / 2, sdlog =1)
+bseq <- rlnorm(10000000, meanlog = log(0.0008), sdlog = 0.8)
 hist(bseq)
 mean(bseq)
 plot(density(bseq))
-quantile(bseq)
+quantile(bseq) # DATA: #25-75: 0.0003 - 0.001: this is close: 0.0004 - 0.001
+quantile(bseq, prob = c(0.05, 0.95)) # DATA: #25-75: 0.0003 - 0.001: this is close: 0.0004 - 0.001
+plot(quantile(bseq)[1:4]) 
+max(bseq) # hits 0.05
 
-### rho <- uniform(0,1)
-rhoseq <- runif(30,min = 0, max = 1)
+### rho ****######################################################################
+# original: rho  <- uniform(0,1)
+rhoseq <- rnorm(100000,mean = 15, sd = 5)
+plot(density(rhoseq))
+quantile(rhoseq, prob = c(0.05, 0.95)) # DATA: #25-75: 0.0003 - 0.001: this is close: 0.0004 - 0.001
+max(rhoseq)
 
 curves <- c()
 rep <- 0
