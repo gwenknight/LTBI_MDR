@@ -40,7 +40,7 @@ llu <- length(cni)
 
 cni_rem <- c() # blank to store what else to remove
 
-nari = 3 # up to 1000
+nari = 200 # up to 200
 
 # DS and MDR data
 # Label for plots 
