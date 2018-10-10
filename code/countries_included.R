@@ -89,7 +89,7 @@ round(mtb18[wm,"perc_total"],2)
 ### Intersecting list Latent and WHO MDR
 final_list <- intersect(uu,u)
 wm <- match(final_list, mtb18$iso3, nomatch = 0)
-perc_wm <- sum(mtb18[wm,"perc_total"]) # 96.4%
+perc_wm <- sum(mtb18[wm,"perc_total"]) # 96.4% of incident MDR-TB cases 
 perc_wm
 round(mtb18[wm,"perc_total"],2) # two contribute 0.9 and 1.5% individually
 
