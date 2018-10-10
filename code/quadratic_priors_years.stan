@@ -9,10 +9,10 @@ data {
 parameters {
   real <lower=1970> t_m; // time when mdr arose
   real <lower=0> b; // slope
-  real <lower=0> rho; // dummy parameter
+  real rho; // dummy parameter
 }
 transformed parameters {
-  real <lower=0> c;
+  real c;
   vector[N] quadpred;
   vector[N] yrs_fromtm;
 
@@ -25,8 +25,8 @@ transformed parameters {
 model { 
   q ~ normal(quadpred, sigma);
   t_m ~ normal(1985, 9);
-  b ~ lognormal(log(0.0008), 0.8);
-  rho ~ normal(15,5);
+  b ~ lognormal(-5.5, 0.7);
+  rho ~ normal(5,15)T[,36]; 
 }
 generated quantities {
   vector[N2] p_pred;
