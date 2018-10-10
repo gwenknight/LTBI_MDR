@@ -5,6 +5,9 @@ library('rstan')
 library('dplyr')
 library('ggmcmc')
 library("boot")
+library("reshape")
+library("ggforce")
+theme_set(theme_bw(base_size = 24))
 
 # PRINT? 
 pp <- 1
@@ -70,13 +73,13 @@ for(ii in 1:luu) {
   posterior.p<-As.mcmc.list(m.p,pars=c("b", "t_m","rho"))
   if(pp > 0){ggmcmc(ggs(posterior.p), file=paste0("~/Dropbox/MDR/output/",country, "_inforprior_mcmc.pdf"))}
   if(pp > 0){ #plot posterior against priors
-    pp <- as.data.frame(m.p,pars=c("b", "t_m","rho"))[1001:2000,]
+    ppd <- as.data.frame(m.p,pars=c("b", "t_m","rho"))[1001:2000,]
     nsamples <- 1000000
-    priors <- cbind(rlnorm(nsamples, meanlog = log(0.0008), sdlog = 0.8), #b
+    priors <- cbind(rlnorm(nsamples, meanlog = -7, sdlog = 0.6), #b
                     rnorm(nsamples,1985,9), #t_m
-                    rnorm(nsamples,15,5)) # rho
-    colnames(priors) <- colnames(pp)
-    pp_p <- rbind(pp, priors)
+                    rtruncnorm(nsamples, a=-Inf, b = 36, mean = 5, sd = 15)) # rho
+    colnames(priors) <- colnames(ppd)
+    pp_p <- rbind(ppd, priors)
     pp_p$prior <- c(matrix(0,1000,1), matrix(1,nsamples,1))
     pp_p <- melt(pp_p, id.vars = "prior")
     ggplot(pp_p,aes(x=value, group = prior)) + geom_density(alpha = 0.3,aes(fill = factor(prior))) + 
@@ -191,5 +194,72 @@ all0$ds_ari <- all0$ari - all0$mdr_ari # ds ARI is the remainder of the ari
 save(all0,file="~/Dropbox/MDR/output/all0_p_ds_mdr.Rdata") 
 
 
+###** Plot posterior vs. final data point ***######################################################################################################################################################
+c_data_gr2014 <- c()
+post_data <- c()
+who_data <- c()
+# Cycle through all countries
+for(ii in 1:luu) {
+  # country for this fit 
+  country <- uu[ii]
+  print(c(country,ii))
+  
+  post0 <- all_samples_p %>% filter(country==uu[ii]) 
+  
+  who_l <- who0 %>% filter(iso3==country) 
+  who_l <- who_l[,c("year", "mdr_new", "mlo", "mhi", "sigma")]
+  
+  print(c(ii,as.character(country),nrow(who_l)))
+  
+  #who_l <- who_l %>% filter(year < 2015)
+  
+  if(dim(who_l)[1] > 0){ # if year can compare posterior to
+    last_year <- who_l[which.max(who_l$year),"year"]
+  
+    post <- post0 %>% filter(year==last_year)
+    post$mdr_new <- post$prediction
+    
+    # what y? 
+    h <- hist(post$mdr_new, plot=FALSE)
+    wm <- which.max(h$counts)
+    yp <- h$counts[wm]/2
+    
+    post_data <- rbind(post_data, cbind(post, country))
+    who_data <- rbind(who_data, c(country,yp,who_l[which.max(who_l$year),c("mdr_new","mlo","mhi")]))
+    
+    # ggplot(post, aes(x=mdr_new)) + geom_density() + 
+    #   geom_point(data = who_l[which.max(who_l$year),], aes(x=mdr_new, y = yp), col="red") + 
+    #   geom_errorbarh(data = who_l[which.max(who_l$year),],aes(y = yp, xmin = mlo, xmax = mhi), col = "red") +
+    #   scale_x_continuous("Proportion new TB that is MDR", lim = c(0,0.5))
+    # ggsave(paste0("~/Dropbox/MDR/output/",country, "_inforprior_post_vs_final_point.pdf"))
+  } else{
+    c_data_gr2014 <- c(c_data_gr2014, country)
+  }
+}
+
+c_data_gr2014 # which countries only had data after 2014?
+length(c_data_gr2014)
+
+who_data <- as.data.frame(who_data)
+colnames(who_data) <- c("country","yp","mdr_new","mlo","mhi")
+post_data <- as.data.frame(post_data)
+
+data <- merge(post_data, who_data, by = "country")
+data$mdr_new.y <- as.numeric(data$mdr_new.y)
+data$mlo <- as.numeric(data$mlo)
+data$mhi <- as.numeric(data$mhi)
+data$yp <- as.numeric(data$yp)
+data$yp <- 10
+
+theme_set(theme_bw(base_size = 12))
+pdf("~/Dropbox/MDR/output/inforprior_post_vs_final_point_all.pdf")
+for(i in 1:9){
+  print(ggplot(data, aes(x=mdr_new.x)) + geom_density() + 
+          geom_point(aes(x=mdr_new.y, y = yp), col="red") + 
+          geom_errorbarh(aes(y = yp, xmin = mlo, xmax = mhi), col = "red") + facet_wrap_paginate(~country, scales = "free",ncol = 4, nrow = 4, page = i) + 
+          scale_x_continuous("Proportion new TB that is MDR")
+  )
+}
+dev.off()
 
 
