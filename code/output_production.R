@@ -23,7 +23,7 @@ for(ii in 1:4){# Three models and best
   lb <- function(x)quantile(x,probs = .025, na.rm = TRUE)
   
   # level at 2014
-  s_level <- read.csv(paste0("~/Dropbox/MDR/cluster/s_level_",nari,"_",labl,".csv"))[,-1]
+  s_level <- read.csv(paste0("~/Dropbox/MDR/output/s_level_",nari,"_",labl,".csv"))[,-1]
   s_level$iso3 <- s_level$pop_name
   
   ## How many at each level?
@@ -323,7 +323,7 @@ datam <- as.data.frame(matrix(0,138*20000, 10))
 ### Gather data
 for(i in 1:138){
   cnn <- cni[i]
-  d <- read.csv(paste0("~/Dropbox/MDR/cluster/",cnn,"_level2014_200_",labl,".csv"))[,-1]
+  d <- read.csv(paste0("~/Dropbox/MDR/output/",cnn,"level2014_200_",labl,".csv"))[,-1]
   d$age <- seq(1,100,1)
   datam[(1 + (i-1)*20000):(i*20000),] <- d
 }
