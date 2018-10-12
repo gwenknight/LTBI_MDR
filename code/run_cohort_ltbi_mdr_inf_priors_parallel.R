@@ -1,4 +1,4 @@
-#### Run cohort_ltbi_mdr 
+#### Run cohort_ltbi_mdr parallel on my mac
 
 
 
@@ -11,7 +11,7 @@ run_cohort_parallel <- function(cci){
   library(cowplot)
   library(data.table)
   library(reshape2)
-  
+  library(R.devices)
   ###********** Home ************************************************************************************************#######
   home <- "~/Documents/LTBI_MDR/"
   setwd(home)
@@ -54,100 +54,98 @@ run_cohort_parallel <- function(cci){
   level2014 <- c(); #breakdown proportions infected by age
   s_level <- c(); #sum proportions infected 
   
-  print(ii)
-  
   # READ IN
   load("~/Dropbox/MDR/output/all0_p_ds_mdr.Rdata")
   
   sa <- c() # store for this country
-  print(c(cci,cni[cci]))
+  #print(c(cci,cni[cci]))
   
   ### WHO data
   d <-subset(w_data, iso3 == as.character(cni[cci]) )
   
   
   if(!file.exists(paste0("~/Dropbox/MDR/output/",cni[cci],"s_level_",nari,"_",pp,".csv"))){
-  ### ARI for both DS and mDR in all0
-  rdata <- all0[which(all0$iso3 == as.character(cni[cci])),]
-  
-  a1 <- ggplot(d, aes(x=year_new, y = new_mdr_prop),col="red",pch = 10) + # points won't plot over lines unless do points first?!
-    geom_point() + 
-    geom_line(data = rdata, aes(x=year, y = prediction, group = factor(replicate)),alpha = 0.2) + 
-    scale_y_continuous("Prop. new with MDR") + scale_x_continuous("Year") +
-    geom_point(data = d, aes(x=year_new, y = new_mdr_prop),col="red",pch = 10) + geom_errorbar(data = d, aes(ymin = mlo, ymax = mhi), col = "red")
-  save_plot(paste0("~/Dropbox/MDR/output/",cni[cci],"_mdr_trends_with_data_",pp,".pdf"), a1, base_aspect_ratio = 2 )
-  
-  a2 <- ggplot(rdata, aes(x=year, y = mdr_ari, group = factor(replicate))) + geom_line() + 
-    scale_y_continuous("MDR ARI") + scale_x_continuous("Year") 
-  save_plot(paste0("~/Dropbox/MDR/output/",cni[cci],"_mdr_ari_",pp,".pdf"), a2, base_aspect_ratio = 2 )
-  
-  for(i in 1:nari){
-    print(c(i,"ari rep"))
-    ari <- rdata[which(rdata$replicate == i),c("ds_ari","mdr_ari")]
-    colnames(ari) <- c("ds","mdr")
-    pop <- as.data.frame(POP2014[which(as.character(POP2014$iso3) == as.character(cni[cci])),"value"])
+    ### ARI for both DS and mDR in all0
+    rdata <- all0[which(all0$iso3 == as.character(cni[cci])),]
     
-    cc <- cohort_ltbi(ari, pop)
+    a1 <- ggplot(d, aes(x=year_new, y = new_mdr_prop),col="red",pch = 10) + # points won't plot over lines unless do points first?!
+      geom_point() +
+      geom_line(data = rdata, aes(x=year, y = prediction, group = factor(replicate)),alpha = 0.2) +
+      scale_y_continuous("Prop. new with MDR") + scale_x_continuous("Year") +
+      geom_point(data = d, aes(x=year_new, y = new_mdr_prop),col="red",pch = 10) + geom_errorbar(data = d, aes(ymin = mlo, ymax = mhi), col = "red")
+    R.devices::suppressGraphics(ggsave(paste0("~/Dropbox/MDR/output/",cni[cci],"_mdr_trends_with_data_",pp,".pdf"),width=13, height=11))
     
-    combs <- cc$combs
+    a2 <- ggplot(rdata, aes(x=year, y = mdr_ari, group = factor(replicate))) + geom_line() +
+      scale_y_continuous("MDR ARI") + scale_x_continuous("Year")
+    R.devices::suppressGraphics(ggsave(paste0("~/Dropbox/MDR/output/",cni[cci],"_mdr_ari_",pp,".pdf"),width=12, height=11))
     
-    # by age
-    combs$mdr_rep <- i
-    combs$age_group <- seq(1:17)
-    combs$popf <- cci
-    #level2014 <- rbind(level2014,combs)
-    level2014 <- rbind(level2014,cbind(cc$c_2014,combs[1,c("mdr_rep","popf")],row.names = NULL))
+    for(i in 1:nari){
+      #print(c(i,"ari rep"))
+      ari <- rdata[which(rdata$replicate == i),c("ds_ari","mdr_ari")]
+      colnames(ari) <- c("ds","mdr")
+      pop <- as.data.frame(POP2014[which(as.character(POP2014$iso3) == as.character(cni[cci])),"value"])
+      
+      cc <- cohort_ltbi(ari, pop)
+      
+      combs <- cc$combs
+      
+      # by age
+      combs$mdr_rep <- i
+      combs$age_group <- seq(1:17)
+      combs$popf <- cci
+      #level2014 <- rbind(level2014,combs)
+      level2014 <- rbind(level2014,cbind(cc$c_2014,combs[1,c("mdr_rep","popf")],row.names = NULL))
+      
+      
+      # total percentage infected sums
+      ltbi_dr <- sum(combs$perc_dr) # percentage infected
+      ltbi_ds <- sum(combs$perc_ds)
+      pltbi_dr <- sum(combs$size_dr) # number of people infected
+      pltbi_ds <- sum(combs$size_ds)
+      
+      ltbi_dr_kids <- sum(combs$perc_dr[1:3]) # percentage infected
+      ltbi_ds_kids <- sum(combs$perc_ds[1:3])
+      pltbi_dr_kids <- sum(combs$size_dr[1:3]) # number of people infected
+      pltbi_ds_kids <- sum(combs$size_ds[1:3])
+      
+      # Bind together.
+      s_level <- rbind(s_level,c(i,ltbi_dr,ltbi_ds,cci,pltbi_dr, pltbi_ds,ltbi_dr_kids,ltbi_ds_kids, pltbi_dr_kids, pltbi_ds_kids, sum(pop), sum(pop[1:3,1])))
+      
+      ssc <- cc$store_c
+      lowi <- ((runn-1)*(dim(ssc)[1])+1)
+      uppi <- ((runn)*(dim(ssc)[1]))
+      store_all[lowi:uppi,1] <- i;
+      store_all[lowi:uppi,2] <- cni[cci];
+      store_all[lowi:uppi,3:10] <- ssc
+      
+      runn <- runn + 1
+      sa <- rbind(sa,cbind(i,cni[cci], ssc)) # just for this country
+    }
+    
+    # store all for this country
+    sa <- as.data.frame(sa)
+    colnames(sa) <- c(c("mdr_rep","cn"),colnames(cc$store_c))
+    write.csv(sa, paste0("~/Dropbox/MDR/output/",cni[cci],"_sa_",nari,"_",pp,".csv"))
+    
+    # Just recent infection
+    w<-which(sa$year > 2012)
+    write.csv(sa[w,], paste0("~/Dropbox/MDR/output/",cni[cci],"_rec_infec_",nari,"_",pp,".csv"))
     
     
-    # total percentage infected sums
-    ltbi_dr <- sum(combs$perc_dr) # percentage infected
-    ltbi_ds <- sum(combs$perc_ds)
-    pltbi_dr <- sum(combs$size_dr) # number of people infected
-    pltbi_ds <- sum(combs$size_ds)
+    s_level <- as.data.frame(s_level)
+    colnames(s_level) <- c("rep","ltbir","ltbis","popf","pltbir", "pltbis","ltbir_kids","ltbis_kids",
+                           "pltbir_kids", "pltbis_kids","pop","pop_kids")
     
-    ltbi_dr_kids <- sum(combs$perc_dr[1:3]) # percentage infected
-    ltbi_ds_kids <- sum(combs$perc_ds[1:3])
-    pltbi_dr_kids <- sum(combs$size_dr[1:3]) # number of people infected
-    pltbi_ds_kids <- sum(combs$size_ds[1:3])
+    dim(level2014) #nari * 107
+    level2014$cn <- cni[as.numeric(level2014$popf)]
+    write.csv(level2014, paste0("~/Dropbox/MDR/output/",cni[cci],"level2014_",nari,"_",pp,".csv"))
     
-    # Bind together.
-    s_level <- rbind(s_level,c(i,ltbi_dr,ltbi_ds,cci,pltbi_dr, pltbi_ds,ltbi_dr_kids,ltbi_ds_kids, pltbi_dr_kids, pltbi_ds_kids, sum(pop), sum(pop[1:3,1])))
+    s_level0 <- s_level
+    s_level$pop_name <- cni[as.numeric(s_level0$popf)]
+    s_level <- as.data.table(s_level)
+    write.csv(s_level, paste0("~/Dropbox/MDR/output/",cni[cci],"s_level_",nari,"_",pp,".csv"))
     
-    ssc <- cc$store_c
-    lowi <- ((runn-1)*(dim(ssc)[1])+1)
-    uppi <- ((runn)*(dim(ssc)[1]))
-    store_all[lowi:uppi,1] <- i;
-    store_all[lowi:uppi,2] <- cni[cci];
-    store_all[lowi:uppi,3:10] <- ssc
     
-    runn <- runn + 1
-    sa <- rbind(sa,cbind(i,cni[cci], ssc)) # just for this country
-  }
-  
-  # store all for this country
-  sa <- as.data.frame(sa)
-  colnames(sa) <- c(c("mdr_rep","cn"),colnames(cc$store_c)) 
-  write.csv(sa, paste0("~/Dropbox/MDR/output/",cni[cci],"_sa_",nari,"_",pp,".csv"))
-  
-  # Just recent infection 
-  w<-which(sa$year > 2012)
-  write.csv(sa[w,], paste0("~/Dropbox/MDR/output/",cni[cci],"_rec_infec_",nari,"_",pp,".csv"))
-  
-  
-  s_level <- as.data.frame(s_level)
-  colnames(s_level) <- c("rep","ltbir","ltbis","popf","pltbir", "pltbis","ltbir_kids","ltbis_kids",
-                         "pltbir_kids", "pltbis_kids","pop","pop_kids")
-  
-  dim(level2014) #nari * 107
-  level2014$cn <- cni[as.numeric(level2014$popf)]
-  write.csv(level2014, paste0("~/Dropbox/MDR/output/",cni[cci],"level2014_",nari,"_",pp,".csv"))
-  
-  s_level0 <- s_level
-  s_level$pop_name <- cni[as.numeric(s_level0$popf)]
-  s_level <- as.data.table(s_level)
-  write.csv(s_level, paste0("~/Dropbox/MDR/output/",cni[cci],"s_level_",nari,"_",pp,".csv"))
-  
-  
   }
   
   ################**######################################################################################################################################################################################################
@@ -160,39 +158,39 @@ run_cohort_parallel <- function(cci){
   
   ss_mean <- c()
   
-  print(c(cci,cni[cci]))
+  #print(c(cci,cni[cci]))
   
   # Read in all data for this country
   sa <- read.csv(paste0("~/Dropbox/MDR/output/",cni[cci],"_sa_",nari,"_infor_prior.csv"))[,-1]
   
   # 2014 level
-  level2014 <- read.csv(paste0("~/Dropbox/MDR/output/level2014_",nari,"_infor_prior.csv"))[,-1]
+  level2014 <- read.csv(paste0("~/Dropbox/MDR/output/",cni[cci],"level2014_",nari,"_",pp,".csv"))[,-1]
   
   sa_rec <- sa[which(sa$year > 1965),] # recent
   
   labl = "infor_prior"
   
-  ggplot(sa_rec[which(sa_rec$mdr_rep < 5),], aes(x=year, y = pr_dr, group = age, col = age)) + 
-    geom_line() + facet_wrap(~mdr_rep, ncol = 5) + 
+  a<-ggplot(sa_rec[which(sa_rec$mdr_rep < 5),], aes(x=year, y = pr_dr, group = age, col = age)) +
+    geom_line() + facet_wrap(~mdr_rep, ncol = 5) +
     scale_colour_gradientn(limits = c(0,100),colours=c("navyblue", "darkorange1","darkgreen"))
-  ggsave(paste0("~/Dropbox/MDR/output/eg_all_age_",cni[cci],"_r_",labl,".pdf"), height = 10, width = 10)
+  R.devices::suppressGraphics(ggsave(paste0("~/Dropbox/MDR/output/eg_all_age_",cni[cci],"_r_",labl,".pdf"), height = 10, width = 10))
   
-  ggplot(sa_rec[which(sa_rec$mdr_rep < 5),], aes(x=year, y = pr_ds, group = age, col = age)) + 
-    geom_line() + facet_wrap(~mdr_rep, ncol = 5) + 
+  a<-ggplot(sa_rec[which(sa_rec$mdr_rep < 5),], aes(x=year, y = pr_ds, group = age, col = age)) +
+    geom_line() + facet_wrap(~mdr_rep, ncol = 5) +
     scale_colour_gradientn(limits = c(0,100),colours=c("navyblue", "darkmagenta", "darkgreen"))
-  ggsave(paste0("~/Dropbox/MDR/output/eg_all_age_",cni[cci],"_s_",labl,".pdf"), height = 10, width = 10)
+  R.devices::suppressGraphics(ggsave(paste0("~/Dropbox/MDR/output/eg_all_age_",cni[cci],"_s_",labl,".pdf"), height = 10, width = 10))
   
-  ggplot(sa_rec[which(sa_rec$mdr_rep < 5),], aes(year, age)) + 
-    geom_tile(aes(fill = pr_ds),colour = "white") + 
+  a<-ggplot(sa_rec[which(sa_rec$mdr_rep < 5),], aes(year, age)) +
+    geom_tile(aes(fill = pr_ds),colour = "white") +
     scale_fill_gradient(low = "white",high = "steelblue","DS-TB") +
     labs(x = "Year",y = "Age") + scale_y_continuous(lim = c(0,100)) + facet_wrap(~mdr_rep)
-  ggsave(paste0("~/Dropbox/MDR/output/eg_all_age_",cni[cci],"_map_s_",labl,".pdf"), height = 10, width = 10)
+  R.devices::suppressGraphics(ggsave(paste0("~/Dropbox/MDR/output/eg_all_age_",cni[cci],"_map_s_",labl,".pdf"), height = 10, width = 10))
   
-  ggplot(sa_rec[which(sa_rec$mdr_rep < 5),], aes(year, age)) + 
-    geom_tile(aes(fill = pr_dr),colour = "white") + 
+  a<-ggplot(sa_rec[which(sa_rec$mdr_rep < 5),], aes(year, age)) +
+    geom_tile(aes(fill = pr_dr),colour = "white") +
     scale_fill_gradient(low = "white",high = "red4","MDR-TB") +
     labs(x = "Year",y = "Age") + scale_y_continuous(lim = c(0,100)) + facet_wrap(~mdr_rep)
-  ggsave(paste0("~/Dropbox/MDR/output/eg_all_age_",cni[cci],"_map_r_",labl,".pdf"), height = 10, width = 10)
+  R.devices::suppressGraphics(ggsave(paste0("~/Dropbox/MDR/output/eg_all_age_",cni[cci],"_map_r_",labl,".pdf"), height = 10, width = 10))
   
   
   ####*********** When contributes most to latent burden? *********######################################################################################################################################################
@@ -201,19 +199,20 @@ run_cohort_parallel <- function(cci){
   
   # This countries data for each age and year
   s <- sa
-  # level at 2014 for this country
-  l14 <- level2014[which(as.character(level2014$cn) == as.character(cni[cci])),]
+  # level at 2014 for this country - read in!
+  #l14 <- level2014[which(as.character(level2014$cn) == as.character(cni[cci])),] # don't need
+  l14 <- level2014
   
   # where store?
   s_new <- c()
   
   for(k in 1:nari){# for each mdr_rep
-    print(c("mdr_rep",k))
+    # print(c("mdr_rep",k))
     # subset the yearly data
     s_k <- subset(s, mdr_rep == k)
     
     for(j in 1:100){# all ages
-      # print(c("age",j))
+      #print(c("age",j))
       
       # subset the proportion infected by mdr_rep and age group
       l14_k_j <- subset(l14, mdr_rep == k)[j,] # proportion with dr in 2014 for mdr_rep = k and age = j
@@ -234,7 +233,7 @@ run_cohort_parallel <- function(cci){
       s_temp$cumr_py <- s_temp$new_dr - s_temp$rei_rs + s_temp$rei_sr
       s_temp$cums_py <- s_temp$new_ds - s_temp$rei_sr + s_temp$rei_rs
       
-      w<-which(s_temp$year == 1934) 
+      w<-which(s_temp$year == 1934)
       if(length(w) > 0 ){s_temp[w,"cums_py"] <- 0} # remove initial infections prior to 1934}
       
       
@@ -274,7 +273,7 @@ run_cohort_parallel <- function(cci){
       s_new <- rbind(s_new,(cbind(
         s_npropr, s_nprops, # proportion of amount in 2014 that is from this cumulative change
         seq(2014,1934,-1),j,k # years, age, rep
-      ))) 
+      )))
     }
     
   }
@@ -283,7 +282,7 @@ run_cohort_parallel <- function(cci){
   s_new <- as.data.frame(s_new)
   colnames(s_new)<-c("pr_r","pr_s","year","age","mdr_rep")
   
-  ## s_new: each row has the age in 2014 the year from which some contribution may come 
+  ## s_new: each row has the age in 2014 the year from which some contribution may come
   # and the size of the contribution
   write.csv(s_new,paste0("~/Dropbox/MDR/output/s_all_",cni[cci],"_",labl,".csv"))
   #s_all <- read.csv("s_all.csv", stringsAsFactors = FALSE)[,-1]
@@ -337,17 +336,17 @@ run_cohort_parallel <- function(cci){
   setwd(output)
   ## This says: by age, when were they infected. The proportion of their % infected that can be
   # allocated to past times.
-  ggplot(ss_here[which(ss_here$mdr_rep < 5),], aes(age, pr_s, fill = factor(year))) +
+  a<-ggplot(ss_here[which(ss_here$mdr_rep < 5),], aes(age, pr_s, fill = factor(year))) +
     geom_bar(position = "fill", stat = "identity") +
     scale_y_continuous() + facet_wrap(~mdr_rep) + ggtitle(paste0("DS-TB, ",cni[cci])) +
     scale_fill_hue("clarity")
-  ggsave(paste0("~/Dropbox/MDR/output/eg_DS_age_",cni[cci],"_ltbis_when_",labl,".pdf"), height = 10, width = 10)
+  R.devices::suppressGraphics(ggsave(paste0("~/Dropbox/MDR/output/eg_DS_age_",cni[cci],"_ltbis_when_",labl,".pdf"), height = 10, width = 10))
   
-  ggplot(ss_here[which(ss_here$mdr_rep < 5),], aes(age, pr_r, fill = factor(year))) +
+  a<-ggplot(ss_here[which(ss_here$mdr_rep < 5),], aes(age, pr_r, fill = factor(year))) +
     geom_bar(position = "fill", stat = "identity") +
     scale_y_continuous() + facet_wrap(~mdr_rep) + ggtitle(paste0("MDR-TB, ",cni[cci])) +
     scale_fill_hue("clarity")
-  ggsave(paste0("~/Dropbox/MDR/output/eg_DR_age_",cni[cci],"_ltbir_when_",labl,".pdf"), height = 10, width = 10)
+  R.devices::suppressGraphics(ggsave(paste0("~/Dropbox/MDR/output/eg_DR_age_",cni[cci],"_ltbir_when_",labl,".pdf"), height = 10, width = 10))
   
   
   ## This says: by mdr_rep, when is the time window that contributes most
@@ -357,24 +356,24 @@ run_cohort_parallel <- function(cci){
   #ss_here[w,"extra_label_fill"] <- 1
   #scale_colour_manual( values = c( "1"="black","0" = "white"), guide = FALSE )
   
-  ggplot(ss_here, aes(mdr_rep, pr_ltbis, fill = factor(yearcat))) +
+  a<-ggplot(ss_here, aes(mdr_rep, pr_ltbis, fill = factor(yearcat))) +
     geom_bar(position = "fill", stat = "identity") +
-    scale_y_continuous("Percentage of LTBI DS\nfrom this 5 year time interval") + 
+    scale_y_continuous("Percentage of LTBI DS\nfrom this 5 year time interval") +
     ggtitle("DS-TB") +
     scale_fill_hue("Year")
-  ggsave(paste0("~/Dropbox/MDR/output/DS_",cni[cci],"_ltbis_when_",labl,".pdf"), height = 10, width = 20)
+  R.devices::suppressGraphics(ggsave(paste0("~/Dropbox/MDR/output/DS_",cni[cci],"_ltbis_when_",labl,".pdf"), height = 10, width = 20))
   
-  ggplot(ss_here,aes(mdr_rep, pr_ltbir, fill = factor(yearcat))) +
+  a<-ggplot(ss_here,aes(mdr_rep, pr_ltbir, fill = factor(yearcat))) +
     geom_bar(position = "fill", stat = "identity") +
-    scale_y_continuous("Percentage of LTBI MDR\nfrom this 5 year time interval") + 
-    ggtitle("MDR-TB") + 
+    scale_y_continuous("Percentage of LTBI MDR\nfrom this 5 year time interval") +
+    ggtitle("MDR-TB") +
     scale_fill_hue("Year")
-  ggsave(paste0("~/Dropbox/MDR/output/DR_",cni[cci],"_ltbir_when_",labl,".pdf"), height = 10, width = 20)
+  R.devices::suppressGraphics(ggsave(paste0("~/Dropbox/MDR/output/DR_",cni[cci],"_ltbir_when_",labl,".pdf"), height = 10, width = 20))
   
   # Average over yearcat
   meanv <- ss_here %>% group_by(yearcat,mdr_rep) %>%
-    dplyr::summarise(sum_prltbir = sum(pr_ltbir), sum_prltbis = sum(pr_ltbis)) 
-  
+    dplyr::summarise(sum_prltbir = sum(pr_ltbir), sum_prltbis = sum(pr_ltbis))
+
   write.csv(meanv, paste0("~/Dropbox/MDR/output/",cni[cci],"_props_ltbi_when_",labl,".csv"))
   
   # Average over all reps
@@ -394,18 +393,14 @@ run_cohort_parallel <- function(cci){
   meanr$type <- 1
   mean_both <- rbind(means,meanr)
   
-  ggplot(mean_both, aes(x= yearcat, y= mean, fill = factor(type) )) + 
-    geom_bar(stat = "identity", position = "dodge") + geom_errorbar(aes(ymin = min, ymax = max), position = "dodge") + 
-    scale_fill_discrete("TB type",labels = c("DS","MDR")) + theme(axis.text.x = element_text(angle = 90, hjust = 1)) + 
+  a<-ggplot(mean_both, aes(x= yearcat, y= mean, fill = factor(type) )) +
+    geom_bar(stat = "identity", position = "dodge") + geom_errorbar(aes(ymin = min, ymax = max), position = "dodge") +
+    scale_fill_discrete("TB type",labels = c("DS","MDR")) + theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
     scale_x_discrete("Year grouping") + scale_y_continuous("Contribution of this year\nto LTBI burden")
-  ggsave(paste0("~/Dropbox/MDR/output/DR_mean_",cni[cci],"_ltbir_when_",labl,".pdf"), height = 10, width = 20)
+  R.devices::suppressGraphics(ggsave(paste0("~/Dropbox/MDR/output/DR_mean_",cni[cci],"_ltbir_when_",labl,".pdf"), height = 10, width = 20))
   
-  ss_mean <- rbind(ss_mean, cbind(mean_both,cni[cci],ii))
+  ss_mean <- rbind(ss_mean, cbind(mean_both,cni[cci]))
   
-  write.csv(paste0("~/Dropbox/MDR/output/",cni[cci],"_ss_mean_",nari,"_",labl,".csv"))[,-1]
+  write.csv(ss_mean, paste0("~/Dropbox/MDR/output/",cni[cci],"_ss_mean_",nari,"_",labl,".csv"))
   
 }
-
-
-
-
