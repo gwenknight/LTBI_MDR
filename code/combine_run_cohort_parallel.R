@@ -12,6 +12,7 @@ library(reshape2)
 ###********** Home ************************************************************************************************#######
 
 ###********** Load code and data ************************************************************************************************#######
+setwd("~/Documents/LTBI_MDR/code")
 ## Population size 2014
 load('../data/POP2014.Rdata')  
 
@@ -68,9 +69,9 @@ a2s<-ggplot(s_level, aes(x=pop_name, y = ltbis, col=factor(rep) )) + geom_point(
 a2s
 save_plot(paste0("~/Dropbox/MDR/output/ltbi_all_countries_s",nari,"_",labl,".pdf"), a2s, base_aspect_ratio = 1.5 )
 
-s_level_mean <- s_level %>%
+s_level_median <- s_level %>%
   group_by(pop_name) %>% 
-  summarise_at(c("ltbir","ltbis","pltbir","pltbis"),funs(mean)) 
+  summarise_at(c("ltbir","ltbis","pltbir","pltbis"),funs(median)) 
 
 ub <- function(x)quantile(x,probs = .975)
 lb <- function(x)quantile(x,probs = .025)
@@ -85,11 +86,11 @@ s_level_hi <- s_level %>%
   summarise_at(c("ltbir","ltbis","pltbir","pltbis"),funs(ub))
 colnames(s_level_hi) <- c("pop_name","ltbir.hi","ltbis.hi","pltbir.hi","pltbis.hi")
 
-s_level_mean <- merge(s_level_mean, s_level_lo, by = "pop_name")
-s_level_mean <- merge(s_level_mean, s_level_hi, by = "pop_name")
+s_level_median <- merge(s_level_median, s_level_lo, by = "pop_name")
+s_level_median <- merge(s_level_median, s_level_hi, by = "pop_name")
 
 
-a2r<-ggplot(s_level_mean, aes(x=pop_name, y = ltbir )) + geom_point() + 
+a2r<-ggplot(s_level_median, aes(x=pop_name, y = ltbir )) + geom_point() + 
   scale_x_discrete("") + scale_y_continuous("") + #LTBI-MDR\n(% population infected)") +
   theme(axis.text.y = element_text(size = 6)) + 
   coord_flip() + aes(x=reorder(pop_name,ltbir),y=ltbir) +
@@ -97,7 +98,7 @@ a2r<-ggplot(s_level_mean, aes(x=pop_name, y = ltbir )) + geom_point() +
 a2r
 save_plot(paste0("~/Dropbox/MDR/output/ltbi_all_countries_r_mean",nari,"_",labl,".pdf"), a2r, base_aspect_ratio = 0.8)
 
-a2s<-ggplot(s_level_mean, aes(x=pop_name, y = ltbis )) + geom_point() +  
+a2s<-ggplot(s_level_median, aes(x=pop_name, y = ltbis )) + geom_point() +  
   scale_x_discrete("Country") + scale_y_continuous("LTBI-DS\n(% population infected)") +
   theme(axis.text.y = element_text(size = 6)) + 
   coord_flip() + aes(x=reorder(pop_name,ltbis),y=ltbis)  +
@@ -105,19 +106,29 @@ a2s<-ggplot(s_level_mean, aes(x=pop_name, y = ltbis )) + geom_point() +
 a2s
 save_plot(paste0("~/Dropbox/MDR/output/ltbi_all_countries_s_mean",nari,"_",labl,".pdf"), a2s, base_aspect_ratio = 1.5 )
 
+w<-which(s_level_median$pltbir > 324)
+a2r<-ggplot(s_level_median[w,], aes(x=pop_name, y = pltbir)) + geom_point(aes(col=ltbir)) + 
+  scale_y_continuous("Number with MDR-LTBI (thousands)") + #LTBI-MDR\n(% population infected)") +
+  theme(axis.text.y = element_text(size = 12)) + 
+  coord_flip() + aes(x=reorder(pop_name,pltbir),y=pltbir) +
+  geom_linerange(aes(min = pltbir.lo, max = pltbir.hi,col=ltbir)) + 
+  scale_x_discrete("Country iso3 code") + scale_color_continuous("LTBIR\n(%)")
+a2r
+ggsave(paste0("~/Dropbox/MDR/output/ltbi_all_countries_numb_r_mean",nari,"_",labl,".pdf"), width = 10, height = 13)
+
 #### *** MAP **** ###
 library(maps)
 # define color buckets
 cols = c("#F1EEF6", "#D4B9DA", "#C994C7", "#DF65B0", "#DD1C77", "#980043","grey")
-s_level_mean$ltbis_c <- as.numeric(cut(s_level_mean$ltbis, c(0, 10, 20, 30, 40, 50,100)))
-s_level_mean$ltbis_r <- as.numeric(cut(s_level_mean$ltbis, c(0, 1, 2, 3, 4, 5, 6)))
+#s_level_median$ltbis_c <- as.numeric(cut(s_level_median$ltbis, c(0, 10, 20, 30, 40, 50,100)))
+#s_level_median$ltbis_r <- as.numeric(cut(s_level_median$ltbis, c(0, 1, 2, 3, 4, 5, 6)))
 
 library(ggplot2)
 library(rworldmap)
 library(RColorBrewer)
 
 
-mapped_data <- joinCountryData2Map(s_level_mean, joinCode = "ISO3", nameJoinColumn = "pop_name")
+mapped_data <- joinCountryData2Map(s_level_median, joinCode = "ISO3", nameJoinColumn = "pop_name")
 par(mai=c(0,0,0.2,0),xaxs="i",yaxs="i")
 cols <- colorRampPalette(brewer.pal(11,"Reds"), bias = 2)(13)
 
@@ -133,7 +144,7 @@ do.call( addMapLegend, c( mapParams
 dev.off()
 
 pdf(paste0("~/Dropbox/MDR/output/map_ltbir_",nari,"_",labl,".pdf"))
-mapParams <- mapCountryData(mapped_data, nameColumnToPlot = "ltbir", catMethod = seq(0,3,0.25),
+mapParams <- mapCountryData(mapped_data, nameColumnToPlot = "ltbir", catMethod = seq(0,4,0.25),
                             colourPalette = cols,
                             addLegend = FALSE)
 do.call( addMapLegend, c( mapParams
