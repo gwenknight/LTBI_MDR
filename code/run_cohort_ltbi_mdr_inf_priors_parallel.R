@@ -71,13 +71,13 @@ run_cohort_parallel <- function(cci){
     a1 <- ggplot(d, aes(x=year_new, y = new_mdr_prop),col="red",pch = 10) + # points won't plot over lines unless do points first?!
       geom_point() +
       geom_line(data = rdata, aes(x=year, y = prediction, group = factor(replicate)),alpha = 0.2) +
-      scale_y_continuous("Prop. new with MDR") + scale_x_continuous("Year") +
+      scale_y_continuous("Prop. new with MDR") + scale_x_continuous("Year",lim=c(1970,2015)) +
       geom_point(data = d, aes(x=year_new, y = new_mdr_prop),col="red",pch = 10) + geom_errorbar(data = d, aes(ymin = mlo, ymax = mhi), col = "red")
-    R.devices::suppressGraphics(ggsave(paste0("~/Dropbox/MDR/output/",cni[cci],"_mdr_trends_with_data_",pp,".pdf"),width=13, height=11))
+    R.devices::suppressGraphics(ggsave(paste0("~/Dropbox/MDR/output/",cni[cci],"_mdr_trends_with_data_",pp,".pdf"),width=11, height=11))
     
-    a2 <- ggplot(rdata, aes(x=year, y = mdr_ari, group = factor(replicate))) + geom_line() +
-      scale_y_continuous("MDR ARI") + scale_x_continuous("Year")
-    R.devices::suppressGraphics(ggsave(paste0("~/Dropbox/MDR/output/",cni[cci],"_mdr_ari_",pp,".pdf"),width=12, height=11))
+    a2 <- ggplot(rdata, aes(x=year, y = mdr_ari, group = factor(replicate))) + geom_line(alpha = 0.2) +
+      scale_y_continuous("MDR ARI") + scale_x_continuous("Year",lim=c(1970,2015))
+    R.devices::suppressGraphics(ggsave(paste0("~/Dropbox/MDR/output/",cni[cci],"_mdr_ari_",pp,".pdf"),width=11, height=11))
     
     for(i in 1:nari){
       #print(c(i,"ari rep"))
