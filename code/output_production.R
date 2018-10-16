@@ -4,6 +4,8 @@ library(plyr)
 library(xtable)
 library(magrittr)
 library(dplyr)
+library("ggforce")
+
 # Load in required data
 load('~/Documents/LTBI_MDR/data/whokey.Rdata') # WHOkey has global region and iso3 codes
 
@@ -204,21 +206,21 @@ table1_global <- table1_global[c(1,2,5,3,6,4,7),]
 
 ##Global: NUMBER
 table1_global_numb <- as.data.frame(cbind( as.character(med.ltbir.g$Group.1),
-                                      paste0(prettyNum(signif(med.ltbir.g$pltbis,3),big.mark=","), " [", 
-                                             prettyNum(signif(lb.ltbir.g$pltbis,3),big.mark=","), "-", 
-                                             prettyNum(signif(ub.ltbir.g$pltbis,3),big.mark=","),"]"),
-                                      paste0(prettyNum(signif(med.ltbir.g$pltbir,3),big.mark=","), " [", 
-                                             prettyNum(signif(lb.ltbir.g$pltbir,3),big.mark=","), "-", 
-                                             prettyNum(signif(ub.ltbir.g$pltbir,3),big.mark=","),"]")
+                                           paste0(prettyNum(signif(med.ltbir.g$pltbis,3),big.mark=","), " [", 
+                                                  prettyNum(signif(lb.ltbir.g$pltbis,3),big.mark=","), "-", 
+                                                  prettyNum(signif(ub.ltbir.g$pltbis,3),big.mark=","),"]"),
+                                           paste0(prettyNum(signif(med.ltbir.g$pltbir,3),big.mark=","), " [", 
+                                                  prettyNum(signif(lb.ltbir.g$pltbir,3),big.mark=","), "-", 
+                                                  prettyNum(signif(ub.ltbir.g$pltbir,3),big.mark=","),"]")
 ))
 ## Total
 total_numb <- as.data.frame(cbind("GLOBAL",
-                             paste0(prettyNum(signif(med.total$pltbis,3),big.mark=","), " [", 
-                                    prettyNum(signif(lb.total$pltbis,3),big.mark=","), "-", 
-                                    prettyNum(signif(ub.total$pltbis,3),big.mark=","),"]"),
-                             paste0(prettyNum(signif(med.total$pltbir,3),big.mark=","), " [", 
-                                    prettyNum(signif(lb.total$pltbir,3),big.mark=","), "-", 
-                                    prettyNum(signif(ub.total$pltbir,3),big.mark=","),"]")
+                                  paste0(prettyNum(signif(med.total$pltbis,3),big.mark=","), " [", 
+                                         prettyNum(signif(lb.total$pltbis,3),big.mark=","), "-", 
+                                         prettyNum(signif(ub.total$pltbis,3),big.mark=","),"]"),
+                                  paste0(prettyNum(signif(med.total$pltbir,3),big.mark=","), " [", 
+                                         prettyNum(signif(lb.total$pltbir,3),big.mark=","), "-", 
+                                         prettyNum(signif(ub.total$pltbir,3),big.mark=","),"]")
 ))
 
 table1_global_numb <- rbind(table1_global_numb, total_numb)
@@ -312,7 +314,7 @@ colnames(datam) <- colnames(d)
 # 2035 population
 N2035 <- sum(POP2035[,"value"])
 POP2035$acatn <- 0:16
-POP2035$acat <- POP2035$acatn-4
+POP2035$acat <- POP2035$acatn-4 # 20 yrs earlier these were acat ... 
 POP2035 <- subset(POP2035, POP2035$acat>=0)
 POP2035$pop35 = POP2035$value
 POP2035 <- POP2035[,c("iso3","acat","pop35")]
@@ -320,7 +322,7 @@ POP2035 <- POP2035[,c("iso3","acat","pop35")]
 # 2050 population 
 N2050 <- sum(POP2050[,"value"])
 POP2050$acatn <- 0:16
-POP2050$acat <- POP2050$acatn-7
+POP2050$acat <- POP2050$acatn-7 # 35 year earlier 
 POP2050 <- subset(POP2050, POP2050$acat>=0)
 POP2050$pop50 = POP2050$value
 POP2050 <- POP2050[,c("iso3","acat","pop50")]
@@ -332,7 +334,7 @@ datam$acat <- c(rep(seq(0,15,1), each = 5), rep(16,20))
 new_data <- datam[,c("pr_dr","pr_ds","mdr_rep","acat","popf")] %>% 
   group_by(mdr_rep,acat,popf) %>% 
   summarise_at(c("pr_dr","pr_ds"),funs(mean)) 
-dim(new_data) # 107*200*17 = 363800
+dim(new_data) # 138*200*17 = 469200
 new_data$iso3 <- cni[new_data$popf]
 
 new_data2 <- merge(new_data,WHOkey[,c('iso3','g_whoregion')],by='iso3',all.x=TRUE)
@@ -343,89 +345,146 @@ fruns <- merge(new_data2[,c("iso3","mdr_rep","acat","pr_dr","pr_ds","g_whoregion
                POP2035,by=c('iso3','acat'),all=TRUE)
 fruns <- fruns[!is.na(fruns$mdr_rep),]     # ditch those countries not in the 138
 fruns <- fruns[!is.na(fruns$pop35),]       # ditch the dead - only acat to 12 included
+dim(fruns) ## 200*138*13 = 358800
 
-fruns$pLTBIR <- 1000*fruns$pop35 * fruns$pr_dr # each number in POP2035 is the actual number divided by 1,000
-fruns$pLTBIS <- 1000*fruns$pop35 * fruns$pr_ds
-
-dim(fruns) ## 200*107*13 = 278200
+fruns$pLTBIR <- fruns$pop35 * fruns$pr_dr 
+fruns$pLTBIS <- fruns$pop35 * fruns$pr_ds
 
 # fac*tmp[,list(mid=median(nLTBI)/N2035,lo=lb(nLTBI)/N2035,hi=ub(nLTBI)/N2035)]
 
+# each number in POP2035 is the actual number divided by 1,000
 fruns.total.35 <- aggregate(fruns[,c("pLTBIR","pLTBIS")], 
                             list(fruns$mdr_rep), sum)
-med.fruns.total.35 <- colwise(median)(fruns.total) / 1e6 # per million
-ub.fruns.total.35 <- colwise(ub)(fruns.total) / 1e6
-lb.fruns.total.35 <- colwise(lb)(fruns.total) / 1e6
+med.fruns.total.35 <- colwise(median)(fruns.total.35) 
+ub.fruns.total.35 <- colwise(ub)(fruns.total.35) 
+lb.fruns.total.35 <- colwise(lb)(fruns.total.35) 
 
-print(c(paste0(sprintf('%.1f',med.fruns.total.35$pLTBIR)," [",
-               sprintf('%.1f',lb.fruns.total.35$pLTBIR),", ",
-               sprintf('%.1f',ub.fruns.total.35$pLTBIR),"]")))
-print(c(paste0(sprintf('%.1f',med.fruns.total.35$pLTBIS)," [",
-               sprintf('%.1f',lb.fruns.total.35$pLTBIS),", ",
-               sprintf('%.1f',ub.fruns.total.35$pLTBIS),"]")))
+# each number in POP2035 is the actual number divided by 1,000
+print(c(paste0(sprintf('%.1f',1e3*med.fruns.total.35$pLTBIR)," [",
+               sprintf('%.1f',1e3*lb.fruns.total.35$pLTBIR),", ",
+               sprintf('%.1f',1e3*ub.fruns.total.35$pLTBIR),"]")))
+print(c(paste0(sprintf('%.1f',1e3*med.fruns.total.35$pLTBIS)," [",
+               sprintf('%.1f',1e3*lb.fruns.total.35$pLTBIS),", ",
+               sprintf('%.1f',1e3*ub.fruns.total.35$pLTBIS),"]")))
 
 
-med.rate.35 <- (0.15*0.01) * med.fruns.total.35 * 1e6/1e5 # 0.15% reactivation x total in millions per 100,000
-ub.rate.35 <- (0.15*0.01) * ub.fruns.total.35 * 1e6/1e5 # 0.15% reactivation x total in millions per 100,000
-lb.rate.35 <- (0.15*0.01) * lb.fruns.total.35 * 1e6/1e5 # 0.15% reactivation x total in millions per 100,000
+med.rate.35 <- (0.15*0.01) * med.fruns.total.35/N2035 * 1e5 # 0.15% reactivation x total  / total population x 100,000
+ub.rate.35 <- (0.15*0.01) * ub.fruns.total.35/N2035 * 1e5 
+lb.rate.35 <- (0.15*0.01) * lb.fruns.total.35/N2035 * 1e5 
 
-print(c(paste0(sprintf('%.1f',med.rate.35$pLTBIR)," [",
-               sprintf('%.1f',lb.rate.35$pLTBIR),", ",
-               sprintf('%.1f',ub.rate.35$pLTBIR),"]")))
+print(c(paste0(sprintf('%.2f',med.rate.35$pLTBIR)," [",
+               sprintf('%.2f',lb.rate.35$pLTBIR),", ",
+               sprintf('%.2f',ub.rate.35$pLTBIR),"]")))
 print(c(paste0(sprintf('%.1f',med.rate.35$pLTBIS)," [",
                sprintf('%.1f',lb.rate.35$pLTBIS),", ",
                sprintf('%.1f',ub.rate.35$pLTBIS),"]")))
 
+100*med.fruns.total.35/N2035
+
+100*med.fruns.total.35$pLTBIR/(med.fruns.total.35$pLTBIR+med.fruns.total.35$pLTBIS)
 
 ## 2050
 # need iso, replicate, act, prev, g_whoregion 
 fruns <- merge(new_data2[,c("iso3","mdr_rep","acat","pr_dr","pr_ds","g_whoregion")],
                POP2050,by=c('iso3','acat'),all=TRUE)
-fruns <- fruns[!is.na(fruns$mdr_rep),]     # ditch those countries not in the 107
+fruns <- fruns[!is.na(fruns$mdr_rep),]     # ditch those countries not in the 138
 fruns <- fruns[!is.na(fruns$pop50),]       # ditch the dead - only acat to 12 included
+dim(fruns) ## 200*138*13 = 358800
 
-fruns$pLTBIR <- 1000*fruns$pop50 * fruns$pr_dr # each number in POP2050 is the actual number divided by 1,000
-fruns$pLTBIS <- 1000*fruns$pop50 * fruns$pr_ds
-
-dim(fruns) ## 200*107*13 = 278200
+fruns$pLTBIR <- fruns$pop50 * fruns$pr_dr 
+fruns$pLTBIS <- fruns$pop50 * fruns$pr_ds
 
 # fac*tmp[,list(mid=median(nLTBI)/N2050,lo=lb(nLTBI)/N2050,hi=ub(nLTBI)/N2050)]
 
+# each number in POP2050 is the actual number divided by 1,000
 fruns.total.50 <- aggregate(fruns[,c("pLTBIR","pLTBIS")], 
                             list(fruns$mdr_rep), sum)
-med.fruns.total.50 <- colwise(median)(fruns.total) / 1e6 # per million
-ub.fruns.total.50 <- colwise(ub)(fruns.total) / 1e6
-lb.fruns.total.50 <- colwise(lb)(fruns.total) / 1e6
+med.fruns.total.50 <- colwise(median)(fruns.total.50) 
+ub.fruns.total.50 <- colwise(ub)(fruns.total.50) 
+lb.fruns.total.50 <- colwise(lb)(fruns.total.50) 
 
-print(c(paste0(sprintf('%.1f',med.fruns.total.50$pLTBIR)," [",
-               sprintf('%.1f',lb.fruns.total.50$pLTBIR),", ",
-               sprintf('%.1f',ub.fruns.total.50$pLTBIR),"]")))
-print(c(paste0(sprintf('%.1f',med.fruns.total.50$pLTBIS)," [",
-               sprintf('%.1f',lb.fruns.total.50$pLTBIS),", ",
-               sprintf('%.1f',ub.fruns.total.50$pLTBIS),"]")))
+# each number in POP2050 is the actual number divided by 1,000
+print(c(paste0(sprintf('%.1f',1e3*med.fruns.total.50$pLTBIR)," [",
+               sprintf('%.1f',1e3*lb.fruns.total.50$pLTBIR),", ",
+               sprintf('%.1f',1e3*ub.fruns.total.50$pLTBIR),"]")))
+print(c(paste0(sprintf('%.1f',1e3*med.fruns.total.50$pLTBIS)," [",
+               sprintf('%.1f',1e3*lb.fruns.total.50$pLTBIS),", ",
+               sprintf('%.1f',1e3*ub.fruns.total.50$pLTBIS),"]")))
 
+100*med.fruns.total.50/N2050
 
-med.rate.50 <- (0.15*0.01) * med.fruns.total.50 * 1e6/1e5 # 0.15% reactivation x total in millions per 100,000
-ub.rate.50 <- (0.15*0.01) * ub.fruns.total.50 * 1e6/1e5 # 0.15% reactivation x total in millions per 100,000
-lb.rate.50 <- (0.15*0.01) * lb.fruns.total.50 * 1e6/1e5 # 0.15% reactivation x total in millions per 100,000
+100*med.fruns.total.50$pLTBIR/(med.fruns.total.50$pLTBIR+med.fruns.total.50$pLTBIS)
 
-print(c(paste0(sprintf('%.1f',med.rate.50$pLTBIR)," [",
-               sprintf('%.1f',lb.rate.50$pLTBIR),", ",
-               sprintf('%.1f',ub.rate.50$pLTBIR),"]")))
+med.rate.50 <- (0.15*0.01) * med.fruns.total.50/N2050 * 1e5 # 0.15% reactivation x total  / total population x 100,000
+ub.rate.50 <- (0.15*0.01) * ub.fruns.total.50/N2050 * 1e5 
+lb.rate.50 <- (0.15*0.01) * lb.fruns.total.50/N2050 * 1e5 
+
+print(c(paste0(sprintf('%.2f',med.rate.50$pLTBIR)," [",
+               sprintf('%.2f',lb.rate.50$pLTBIR),", ",
+               sprintf('%.2f',ub.rate.50$pLTBIR),"]")))
 print(c(paste0(sprintf('%.1f',med.rate.50$pLTBIS)," [",
                sprintf('%.1f',lb.rate.50$pLTBIS),", ",
                sprintf('%.1f',ub.rate.50$pLTBIS),"]")))
 
-#### UP TO HERE
+med.num.50 <- (0.15*0.01) * 1e3 * med.fruns.total.50
+ub.num.50 <- (0.15*0.01) * 1e3 * ub.fruns.total.50
+lb.num.50 <- (0.15*0.01) * 1e3 * lb.fruns.total.50
+
+print(c(paste0(sprintf('%.2f',med.num.50$pLTBIR)," [",
+               sprintf('%.2f',lb.num.50$pLTBIR),", ",
+               sprintf('%.2f',ub.num.50$pLTBIR),"]")))
+
+print(c(paste0(sprintf('%.2f',med.num.50$pLTBIS)," [",
+               sprintf('%.2f',lb.num.50$pLTBIS),", ",
+               sprintf('%.2f',ub.num.50$pLTBIS),"]")))
 
 
-## 2050
-fruns <- merge(rundatar[,list(iso3,replicate,acat,P,g_whoregion)],
-               POP2050,by=c('iso3','acat'),all=TRUE)
-fruns <- fruns[!is.na(pop50),]       #ditch the dead
-tmp <- fruns[,list(nLTBI=sum(pop50*P)),by=replicate]
-tmp <- tmp[!is.na(replicate)]
-tmp[,list(mid=1e3*median(nLTBI),lo=1e3*lb(nLTBI),hi=1e3*ub(nLTBI))]
+####**** Group trend figures *****######
 
-fac*tmp[,list(mid=median(nLTBI)/N2050,lo=lb(nLTBI)/N2050,hi=ub(nLTBI)/N2050)]
+## WHO data
+w_data <- read.csv("~/Dropbox/MDR/new_who_edited_sub.csv")[,-1]
 
+nari = 200 # up to 200
+
+# DS and MDR data
+# Label for plots 
+pp <- "infor_prior"
+
+# READ IN
+load("~/Dropbox/MDR/output/all0_p_ds_mdr.Rdata")
+
+for(cci in 1:length(cni)){
+  print(cni[cci])
+  ### WHO data
+  d <-subset(w_data, iso3 == as.character(cni[cci]) )
+    
+  ### ARI for both DS and mDR in all0
+    rdata <- all0[which(all0$iso3 == as.character(cni[cci])),]
+    
+    a1 <- ggplot(w_data, aes(x=year_new, y = new_mdr_prop),col="red",pch = 10) + # points won't plot over lines unless do points first?!
+      geom_point() + facet_wrap(~iso3) +
+      geom_line(data = all0, aes(x=year, y = prediction, group = factor(replicate)),alpha = 0.2) +
+      scale_y_continuous("Prop. new with MDR") + scale_x_continuous("Year",lim=c(1970,2015)) +
+      geom_point(data = d, aes(x=year_new, y = new_mdr_prop),col="red",pch = 10) + geom_errorbar(data = d, aes(ymin = mlo, ymax = mhi), col = "red")
+    ggsave(paste0("~/Dropbox/MDR/output/",cni[cci],"_mdr_trends_with_data_",pp,".pdf"),width=11, height=11)
+    
+    a2 <- ggplot(rdata, aes(x=year, y = mdr_ari, group = factor(replicate))) + geom_line(alpha = 0.2) +
+      scale_y_continuous("MDR ARI") + scale_x_continuous("Year",lim=c(1970,2015))
+    ggsave(paste0("~/Dropbox/MDR/output/",cni[cci],"_mdr_ari_",pp,".pdf"),width=11, height=11)
+    
+}    
+
+
+theme_set(theme_bw(base_size = 10))
+pdf("~/Dropbox/MDR/output/trends_all.pdf")
+for(i in 1:9){
+  print(ggplot(w_data, aes(x=year_new, y = new_mdr_prop),col="red",pch = 10) + # points won't plot over lines unless do points first?!
+          geom_point() + 
+          geom_line(data = all0, aes(x=year, y = prediction, group = factor(replicate)),alpha = 0.2) +
+          scale_y_continuous("Prop. new with MDR") + scale_x_continuous("Year",lim=c(1970,2015)) +
+          geom_point(data = w_data, aes(x=year_new, y = new_mdr_prop),col="red",pch = 10) + 
+          geom_errorbar(data = w_data, aes(ymin = mlo, ymax = mhi), col = "red") +
+          facet_wrap_paginate(~iso3, scales = "free",ncol = 4, nrow = 4, page = i)
+        )
+}
+dev.off()
