@@ -4,7 +4,9 @@ library(plyr)
 library(xtable)
 library(magrittr)
 library(dplyr)
+library(ggplot2)
 library("ggforce")
+library(reshape)
 
 # Load in required data
 load('~/Documents/LTBI_MDR/data/whokey.Rdata') # WHOkey has global region and iso3 codes
@@ -300,13 +302,14 @@ cni <- read.csv("~/Dropbox/MDR/138_final_list_included_countries.csv", stringsAs
 
 labl = "infor_prior"
 
-datam <- as.data.frame(matrix(0,138*20000, 10))
+datam <- as.data.frame(matrix(0,138*20000, 11))
 
 ### Gather data
 for(i in 1:138){
   cnn <- cni[i]
   d <- read.csv(paste0("~/Dropbox/MDR/output/",cnn,"level2014_200_",labl,".csv"))[,-1]
   d$age <- seq(1,100,1)
+  d$iso3 <- cnn
   datam[(1 + (i-1)*20000):(i*20000),] <- d
 }
 colnames(datam) <- colnames(d)
@@ -331,11 +334,10 @@ POP2050 <- POP2050[,c("iso3","acat","pop50")]
 
 # Group by age categories
 datam$acat <- c(rep(seq(0,15,1), each = 5), rep(16,20))
-new_data <- datam[,c("pr_dr","pr_ds","mdr_rep","acat","popf")] %>% 
-  group_by(mdr_rep,acat,popf) %>% 
+new_data <- datam[,c("pr_dr","pr_ds","mdr_rep","acat","popf","iso3")] %>% 
+  group_by(mdr_rep,acat,popf,iso3) %>% 
   summarise_at(c("pr_dr","pr_ds"),funs(mean)) 
 dim(new_data) # 138*200*17 = 469200
-new_data$iso3 <- cni[new_data$popf]
 
 new_data2 <- merge(new_data,WHOkey[,c('iso3','g_whoregion')],by='iso3',all.x=TRUE)
 
@@ -353,8 +355,7 @@ fruns$pLTBIS <- fruns$pop35 * fruns$pr_ds
 # fac*tmp[,list(mid=median(nLTBI)/N2035,lo=lb(nLTBI)/N2035,hi=ub(nLTBI)/N2035)]
 
 # each number in POP2035 is the actual number divided by 1,000
-fruns.total.35 <- aggregate(fruns[,c("pLTBIR","pLTBIS")], 
-                            list(fruns$mdr_rep), sum)
+fruns.total.35 <- aggregate(fruns[,c("pLTBIR","pLTBIS")], list(fruns$mdr_rep), sum)
 med.fruns.total.35 <- colwise(median)(fruns.total.35) 
 ub.fruns.total.35 <- colwise(ub)(fruns.total.35) 
 lb.fruns.total.35 <- colwise(lb)(fruns.total.35) 
@@ -452,39 +453,120 @@ pp <- "infor_prior"
 
 # READ IN
 load("~/Dropbox/MDR/output/all0_p_ds_mdr.Rdata")
-
+theme_set(theme_bw(base_size = 24))
 for(cci in 1:length(cni)){
   print(cni[cci])
   ### WHO data
   d <-subset(w_data, iso3 == as.character(cni[cci]) )
-    
+  
   ### ARI for both DS and mDR in all0
-    rdata <- all0[which(all0$iso3 == as.character(cni[cci])),]
-    
-    a1 <- ggplot(w_data, aes(x=year_new, y = new_mdr_prop),col="red",pch = 10) + # points won't plot over lines unless do points first?!
-      geom_point() + facet_wrap(~iso3) +
-      geom_line(data = all0, aes(x=year, y = prediction, group = factor(replicate)),alpha = 0.2) +
-      scale_y_continuous("Prop. new with MDR") + scale_x_continuous("Year",lim=c(1970,2015)) +
-      geom_point(data = d, aes(x=year_new, y = new_mdr_prop),col="red",pch = 10) + geom_errorbar(data = d, aes(ymin = mlo, ymax = mhi), col = "red")
-    ggsave(paste0("~/Dropbox/MDR/output/",cni[cci],"_mdr_trends_with_data_",pp,".pdf"),width=11, height=11)
-    
-    a2 <- ggplot(rdata, aes(x=year, y = mdr_ari, group = factor(replicate))) + geom_line(alpha = 0.2) +
-      scale_y_continuous("MDR ARI") + scale_x_continuous("Year",lim=c(1970,2015))
-    ggsave(paste0("~/Dropbox/MDR/output/",cni[cci],"_mdr_ari_",pp,".pdf"),width=11, height=11)
-    
+  rdata <- all0[which(all0$iso3 == as.character(cni[cci])),]
+  
+  a1 <- ggplot(d, aes(x=year_new, y = new_mdr_prop),col="red",pch = 10) + # points won't plot over lines unless do points first?!
+    geom_point() +
+    geom_line(data = rdata, aes(x=year, y = prediction, group = factor(replicate)),alpha = 0.2) +
+    scale_y_continuous("Prop. new with MDR") + scale_x_continuous("Year",lim=c(1970,2016)) +
+    geom_point(data = d, aes(x=year_new, y = new_mdr_prop),col="red",pch = 10, size = 3) + geom_errorbar(data = d, aes(ymin = mlo, ymax = mhi), col = "red")
+  ggsave(paste0("~/Dropbox/MDR/output/",cni[cci],"_mdr_trends_with_data_",pp,".pdf"),width=11, height=11)
+  
+  a2 <- ggplot(rdata, aes(x=year, y = mdr_ari, group = factor(replicate))) + geom_line(alpha = 0.2) +
+    scale_y_continuous("MDR ARI") + scale_x_continuous("Year",lim=c(1970,2015))
+  ggsave(paste0("~/Dropbox/MDR/output/",cni[cci],"_mdr_ari_",pp,".pdf"),width=11, height=11)
+  
 }    
 
-
+## All trends
 theme_set(theme_bw(base_size = 10))
 pdf("~/Dropbox/MDR/output/trends_all.pdf")
 for(i in 1:9){
   print(ggplot(w_data, aes(x=year_new, y = new_mdr_prop),col="red",pch = 10) + # points won't plot over lines unless do points first?!
           geom_point() + 
           geom_line(data = all0, aes(x=year, y = prediction, group = factor(replicate)),alpha = 0.2) +
-          scale_y_continuous("Prop. new with MDR") + scale_x_continuous("Year",lim=c(1970,2015)) +
+          scale_y_continuous("Prop. new with MDR") + scale_x_continuous("Year",lim=c(1970,2020)) +
           geom_point(data = w_data, aes(x=year_new, y = new_mdr_prop),col="red",pch = 10) + 
           geom_errorbar(data = w_data, aes(ymin = mlo, ymax = mhi), col = "red") +
           facet_wrap_paginate(~iso3, scales = "free",ncol = 4, nrow = 4, page = i)
-        )
+  )
 }
 dev.off()
+
+## All ARI trends
+theme_set(theme_bw(base_size = 10))
+pdf("~/Dropbox/MDR/output/trends_ari_all.pdf")
+for(i in 1:9){
+  print(ggplot(all0, aes(x=year, y = mdr_ari, group = factor(replicate))) + geom_line(alpha = 0.2) +
+          scale_y_continuous("MDR ARI") + scale_x_continuous("Year",lim=c(1970,2015)) + 
+          facet_wrap_paginate(~iso3, scales = "free",ncol = 4, nrow = 4, page = i)
+  )
+}
+dev.off()
+
+
+
+
+### By region
+wwm <- merge(w_data, WHOkey, by = "iso3")
+wwr <- merge(all0, WHOkey, by = "iso3")
+
+ggplot(wwm[which(wwm$g_whoregion == "SEA"),], aes(x=year_new, y = new_mdr_prop),col="red",pch = 10) + # points won't plot over lines unless do points first?!
+  geom_point() + facet_wrap(~country, scales = "free") + 
+  theme(strip.text.x = element_text(size = 10)) + 
+  geom_line(data = wwr[which(wwr$g_whoregion == "SEA"),], aes(x=year, y = prediction, group = factor(replicate)),alpha = 0.2) +
+  scale_y_continuous("Prop. new with MDR") + scale_x_continuous("Year",lim=c(1970,2020), breaks = c(1970, 1990, 2010)) +
+  geom_point(data = wwm[which(wwm$g_whoregion == "SEA"),], aes(x=year_new, y = new_mdr_prop),col="red",pch = 10, size = 3) + 
+  geom_errorbar(data = wwm[which(wwm$g_whoregion == "SEA"),], aes(ymin = mlo, ymax = mhi), col = "red")
+ggsave(paste0("~/Dropbox/MDR/output/SEA_mdr_trends_with_data_",pp,".pdf"),width=13, height=11)
+
+
+
+### By age
+## All ARI trends
+theme_set(theme_bw(base_size = 24))
+## 2014
+# need iso, replicate, act, prev, g_whoregion 
+POP2014$acat <- 0:16
+fruns <- merge(new_data2[,c("iso3","mdr_rep","acat","pr_dr","pr_ds","g_whoregion")],
+               POP2014,by=c('iso3','acat'),all=TRUE)
+fruns <- fruns[!is.na(fruns$mdr_rep),]     # ditch those countries not in the 138
+dim(fruns) ## 200*138*17 = 469200
+
+fruns$pLTBIR <- fruns$value * fruns$pr_dr 
+fruns$pLTBIS <- fruns$value * fruns$pr_ds
+
+fruns.total.14 <- aggregate(fruns[,c("pLTBIR","pLTBIS")], list(fruns$mdr_rep,fruns$g_whoregion,fruns$age), sum)
+dim(fruns.total.14) ## 200 * 6 * 17 = 20400
+colnames(fruns.total.14) <- c("mdr_rep","g_whoregion","age","pLTBIR","pLTBIS")
+med.fruns.total.14 <- aggregate(fruns.total.14[,c("pLTBIR","pLTBIS")], list(fruns.total.14$g_whoregion,fruns.total.14$age), median)
+colnames(med.fruns.total.14) <- c("g_who","age","r","s")
+mmed <- melt(med.fruns.total.14,  id.vars = c("g_who","age"))
+ub.fruns.total.14 <-  aggregate(fruns.total.14[,c("pLTBIR","pLTBIS")], list(fruns.total.14$g_whoregion,fruns.total.14$age), ub)
+colnames(ub.fruns.total.14) <- c("g_who","age","r","s")
+mub <- melt(ub.fruns.total.14,  id.vars = c("g_who","age"))
+lb.fruns.total.14 <-  aggregate(fruns.total.14[,c("pLTBIR","pLTBIS")], list(fruns.total.14$g_whoregion,fruns.total.14$age),lb)
+colnames(lb.fruns.total.14) <- c("g_who","age","r","s")
+mlb <- melt(lb.fruns.total.14,  id.vars = c("g_who","age"))
+
+plot.14 <- merge(mmed, mub, by = c('g_who', 'age','variable'))
+plot.14 <- merge(plot.14, mlb,by = c('g_who', 'age','variable'))
+
+total_by_region_age <- aggregate(fruns[,c("value")], list(fruns$g_whoregion,fruns$age), sum)
+colnames(total_by_region_age) <- c("g_who","age","pop_size")# /200 as 200 mdr runs in fruns and summed over all of these
+total_by_region_age$pop_size <- total_by_region_age$pop_size / 200
+
+mplot14 <- merge(plot.14, total_by_region_age, by = c('g_who', 'age'))
+mplot14$med.perc <- 100*mplot14$value.x / (mplot14$pop_size) 
+mplot14$ub.perc <- 100*mplot14$value.y / (mplot14$pop_size)
+mplot14$lb.perc <- 100*mplot14$value / (mplot14$pop_size)
+
+ggplot(mplot14, aes(x=age, y = med.perc/100)) + geom_bar(aes(fill = variable),stat='identity', pos = "dodge") + 
+  facet_wrap(~g_who) + scale_fill_discrete("LTBI",labels = c("MDR-","DS-")) + theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
+  geom_errorbar(aes(ymin = lb.perc/100, ymax = ub.perc/100)) +
+  scale_y_continuous("Percentage infected",labels = scales::percent_format(accuracy = 1)) 
+ggsave(paste0("~/Dropbox/MDR/output/LTBI_by_ds_mdr_region_",pp,".pdf"),width=14, height=11)
+
+mplot14r <- mplot14[which(mplot14$variable == "r"),]
+ggplot(mplot14r, aes(x=age, y = med.perc/100)) + geom_bar(aes(fill = variable),stat='identity') + 
+  geom_errorbar(aes(ymin = lb.perc/100, ymax = ub.perc/100)) + 
+  facet_wrap(~g_who)  + theme(axis.text.x = element_text(angle = 90, hjust = 1)) + guides(fill=FALSE) + 
+  scale_y_continuous("Percentage infected",labels = scales::percent_format(accuracy = .1)) 
+ggsave(paste0("~/Dropbox/MDR/output/LTBI_mdr_region_",pp,".pdf"),width=14, height=11)
