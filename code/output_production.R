@@ -517,6 +517,13 @@ ggplot(wwm[which(wwm$g_whoregion == "SEA"),], aes(x=year_new, y = new_mdr_prop),
   geom_errorbar(data = wwm[which(wwm$g_whoregion == "SEA"),], aes(ymin = mlo, ymax = mhi), col = "red")
 ggsave(paste0("~/Dropbox/MDR/output/SEA_mdr_trends_with_data_",pp,".pdf"),width=13, height=11)
 
+ggplot(wwr[which(wwr$g_whoregion == "SEA"),], aes(x=year, y = mdr_ari, group = replicate)) + # points won't plot over lines unless do points first?!
+  geom_line(alpha = 0.2) + facet_wrap(~country, scales = "free") + 
+  theme(strip.text.x = element_text(size = 10)) + 
+  scale_y_continuous("ARI with MDR-M.tb") + 
+  scale_x_continuous("Year",lim=c(1970,2020), breaks = c(1970, 1990, 2010)) 
+ggsave(paste0("~/Dropbox/MDR/output/SEA_ari_trends_",pp,".pdf"),width=13, height=11)
+
 
 
 ### By age
@@ -570,3 +577,28 @@ ggplot(mplot14r, aes(x=age, y = med.perc/100)) + geom_bar(aes(fill = variable),s
   facet_wrap(~g_who)  + theme(axis.text.x = element_text(angle = 90, hjust = 1)) + guides(fill=FALSE) + 
   scale_y_continuous("Percentage infected",labels = scales::percent_format(accuracy = .1)) 
 ggsave(paste0("~/Dropbox/MDR/output/LTBI_mdr_region_",pp,".pdf"),width=14, height=11)
+
+
+### ARI by region
+arim <- merge(all0, WHOkey, by = "iso3")
+arimm <- aggregate(arim[,c("mdr_ari")], list(arim$g_whoregion,arim$year,arim$replicate), median)
+colnames(arimm) <- c("g_reg","year","mdr_rep","mdr_ari")
+
+arim2 <- aggregate(arim[,c("mdr_ari")], list(arim$g_whoregion,arim$year), median)
+arim2_ub <- aggregate(arim[,c("mdr_ari")], list(arim$g_whoregion,arim$year), ub)
+arim2_lb <- aggregate(arim[,c("mdr_ari")], list(arim$g_whoregion,arim$year), lb)
+colnames(arim2) <- c("g_reg","year","mdr_ari")
+colnames(arim2_lb) <- c("g_reg","year","mdr_ari_lb")
+colnames(arim2_ub) <- c("g_reg","year","mdr_ari_ub")
+
+arimplot <- merge(arim2, arim2_lb)
+arimplot <- merge(arimplot, arim2_ub)
+
+ggplot(arimplot, aes(x=year)) + geom_line(aes(y = mdr_ari)) + 
+  geom_ribbon(aes(ymin=mdr_ari_lb, ymax=mdr_ari_ub), alpha=0.3, fill = "red") +
+  facet_wrap(~g_reg, scales = "free") + 
+  scale_y_continuous("ARI with MDR M.tb") + scale_x_continuous(lim = c(1960, 2020))
+
+ggplot(arimm, aes(x=year)) + geom_line(aes(y = mdr_ari, group = mdr_rep), alpha = 0.2) +
+  facet_wrap(~g_reg, scales = "free") + scale_x_continuous(lim = c(1960, 2020))
+ggsave(paste0("~/Dropbox/MDR/output/ARI_region_",pp,".pdf"),width=14, height=11)
