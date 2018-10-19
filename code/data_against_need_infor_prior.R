@@ -107,7 +107,7 @@ colnames(store_metric) <- c("mdr_rep","sum_metric","cnn","model")
 write.csv(store_metric, paste0("~/Dropbox/MDR/output/store_metric_",nari,".csv"))
 
 # READ in if need
-#store_metric <- read.csv(paste0("~/Dropbox/MDR/output/store_metric_",nari,".csv"))[,-1]
+store_metric <- read.csv(paste0("~/Dropbox/MDR/output/store_metric_",nari,".csv"))[,-1]
 
 ggplot(store_metric, aes(x=mdr_rep, y = sum_metric)) + geom_point() + 
   facet_wrap(~cnn, ncol = 18) + scale_y_continuous("Proportion of LTBI identifiable") + 
@@ -119,6 +119,19 @@ ggplot(store_metric, aes(x=cnn, y = sum_metric )) + geom_boxplot() +
   theme(axis.text.y = element_text(size = 6)) + 
   coord_flip() + aes(x=reorder(cnn,sum_metric),y=sum_metric) 
 ggsave(paste0("~/Dropbox/MDR/output/MDR_metric_data_against_need_",nari,"_",labl,".pdf"), width = 14, height = 14)
+
+
+## Single country
+w<- which(store_metric$cnn == "BWA")
+median(store_metric[w,"sum_metric"])
+ub <- function(x)quantile(x,probs = .975, na.rm = TRUE)
+lb <- function(x)quantile(x,probs = .025, na.rm = TRUE)
+ub(store_metric[w,"sum_metric"])
+lb(store_metric[w,"sum_metric"])
+
+paste0(prettyNum(signif(median(store_metric[w,"sum_metric"]),3),big.mark=","), " [", 
+       prettyNum(signif(lb(store_metric[w,"sum_metric"]),3),big.mark=","), "-", 
+       prettyNum(signif(ub(store_metric[w,"sum_metric"]),4),big.mark=","),"]")
 
 
 #### *** MAP **** ###
