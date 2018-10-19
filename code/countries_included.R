@@ -97,6 +97,9 @@ round(mtb18[wm,"perc_total"],2) # two contribute 0.9 and 1.5% individually
 w<-which(mdr30$iso3 == "AGO")
 100*mdr30[w,"mdr_inc_num"]/totalmtb14
 
+w<-which(mdr30$iso3 == "COD")
+100*mdr30[w,"mdr_inc_num"]/totalmtb14
+
 ### Some only have data for sub-regions. 
 w<-which(w_data$all_areas_covered_new < 1)
 length(w) # 226
