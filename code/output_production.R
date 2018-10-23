@@ -238,6 +238,9 @@ print(xtable(table1_global_numb), include.rownames=FALSE)
 write.csv(table1_countries, paste0("~/Dropbox/MDR/paper_output/table1_countries_",labl,".csv"))
 write.csv(table1_countries_numb, paste0("~/Dropbox/MDR/paper_output/table1_countries_number_",labl,".csv"))
 write.csv(table1_global, paste0("~/Dropbox/MDR/paper_output/table1_global_",labl,".csv"))
+write.csv(table1_global_numb, paste0("~/Dropbox/MDR/paper_output/table1_global_numb_",labl,".csv"))
+
+
 
 ## Check perc_ltbi_mdr greater variance than what comparing
 rp <- ub.total$perc_ltbi_mdr - lb.total$perc_ltbi_mdr
@@ -516,6 +519,28 @@ ggplot(wwm[which(wwm$g_whoregion == "SEA"),], aes(x=year_new, y = new_mdr_prop),
   geom_point(data = wwm[which(wwm$g_whoregion == "SEA"),], aes(x=year_new, y = new_mdr_prop),col="red",pch = 10, size = 3) + 
   geom_errorbar(data = wwm[which(wwm$g_whoregion == "SEA"),], aes(ymin = mlo, ymax = mhi), col = "red")
 ggsave(paste0("~/Dropbox/MDR/output/SEA_mdr_trends_with_data_",pp,".pdf"),width=13, height=11)
+
+# ribbon effect
+sea.med  <- aggregate(wwr[which(wwr$g_whoregion == "SEA"),"prediction"], list(wwr[which(wwr$g_whoregion == "SEA"),"year"],wwr[which(wwr$g_whoregion == "SEA"),"country"]), median)
+colnames(sea.med) <- c("year","country","med")
+sea.ub  <- aggregate(wwr[which(wwr$g_whoregion == "SEA"),"prediction"], list(wwr[which(wwr$g_whoregion == "SEA"),"year"],wwr[which(wwr$g_whoregion == "SEA"),"country"]), ub)
+colnames(sea.ub) <- c("year","country","ub")
+sea.lb  <- aggregate(wwr[which(wwr$g_whoregion == "SEA"),"prediction"], list(wwr[which(wwr$g_whoregion == "SEA"),"year"],wwr[which(wwr$g_whoregion == "SEA"),"country"]), lb)
+colnames(sea.lb) <- c("year","country","lb")
+
+sea.rib <- merge(sea.ub, sea.lb, by = c("year","country"))
+sea.rib <- merge(sea.rib, sea.med, by = c("year","country"))
+
+ggplot(wwm[which(wwm$g_whoregion == "SEA"),], aes(x=year_new)) + # points won't plot over lines unless do points first?!
+  geom_point( aes(x=year_new, y = new_mdr_prop),col="red",pch = 10, size = 3) + 
+  facet_wrap(~country, scales = "free") + 
+  theme(strip.text.x = element_text(size = 10)) + 
+  geom_line(data = sea.rib, aes(x=year, y = med)) +
+  scale_y_continuous("Prop. new with MDR") + scale_x_continuous("Year",lim=c(1970,2020), breaks = c(1970, 1990, 2010)) +
+  geom_errorbar(data = wwm[which(wwm$g_whoregion == "SEA"),], aes(ymin = mlo, ymax = mhi), col = "red") + 
+  geom_ribbon(data = sea.rib, aes(x = year, ymin = lb, ymax = ub), alpha = 0.3, fill = "blue")
+ggsave(paste0("~/Dropbox/MDR/output/SEA_mdr_trends_with_data_ribbon_",pp,".pdf"),width=13, height=11)
+
 
 
 
