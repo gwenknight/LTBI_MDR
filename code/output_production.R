@@ -624,6 +624,7 @@ ggplot(arimplot, aes(x=year)) + geom_line(aes(y = mdr_ari)) +
   geom_ribbon(aes(ymin=mdr_ari_lb, ymax=mdr_ari_ub), alpha=0.3, fill = "red") +
   facet_wrap(~g_reg, scales = "free") + 
   scale_y_continuous("ARI with MDR M.tb") + scale_x_continuous(lim = c(1960, 2020))
+ggsave(paste0("~/Dropbox/MDR/output/ARI_region_ribbon_",pp,".pdf"),width=14, height=11)
 
 ggplot(arimm, aes(x=year)) + geom_line(aes(y = mdr_ari, group = mdr_rep), alpha = 0.2) +
   facet_wrap(~g_reg, scales = "free") + scale_x_continuous(lim = c(1960, 2020))
