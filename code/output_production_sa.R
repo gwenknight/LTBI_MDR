@@ -1,4 +1,5 @@
 ### Combine results to give output
+## FOR SA: reduced reactivation for MDR
 
 library(plyr)
 library(xtable)
@@ -22,7 +23,7 @@ ub <- function(x)quantile(x,probs = .975, na.rm = TRUE)
 lb <- function(x)quantile(x,probs = .025, na.rm = TRUE)
 
 # level at 2014
-s_level <- read.csv(paste0("~/Dropbox/MDR/output/s_level_",nari,"_",labl,".csv"))[,-1]
+s_level <- read.csv(paste0("~/Dropbox/MDR/cluster/sa1/s_level_",nari,"_",labl,"_sa.csv"))[,-1]
 s_level$iso3 <- s_level$pop_name
 
 ### ADDITIONAL CALCULATIONS
@@ -111,7 +112,7 @@ paste0(round(median(ltbi_total$rr),2), " [",round(lb(ltbi_total$rr),2),"-",round
 
 
 
-rr.med.g <- aggregate(ltbi_total[,"rr"],median)
+rr.med.g <- aggregate(ltbi_total[,"rr"],list(ltbi_total$Group.1),median)
 rr.ub.g <- aggregate(ltbi_total[,"rr"],list(ltbi_total$Group.1),ub)
 rr.lb.g <- aggregate(ltbi_total[,"rr"],list(ltbi_total$Group.1),lb)
 
@@ -254,17 +255,17 @@ print(xtable(table1_countries), include.rownames=FALSE)
 print(xtable(table1_global), include.rownames=FALSE)
 print(xtable(table1_global_numb), include.rownames=FALSE)
 
-write.csv(table1_countries, paste0("~/Dropbox/MDR/paper_output/table1_countries_",labl,".csv"))
-write.csv(table1_countries_numb, paste0("~/Dropbox/MDR/paper_output/table1_countries_number_",labl,".csv"))
-write.csv(table1_global, paste0("~/Dropbox/MDR/paper_output/table1_global_",labl,".csv"))
-write.csv(table1_global_numb, paste0("~/Dropbox/MDR/paper_output/table1_global_numb_",labl,".csv"))
+write.csv(table1_countries, paste0("~/Dropbox/MDR/output/output_sa/table1_countries_",labl,".csv"))
+write.csv(table1_countries_numb, paste0("~/Dropbox/MDR/output/output_sa/table1_countries_number_",labl,".csv"))
+write.csv(table1_global, paste0("~/Dropbox/MDR/output/output_sa/table1_global_",labl,".csv"))
+write.csv(table1_global_numb, paste0("~/Dropbox/MDR/output/output_sa/table1_global_numb_",labl,".csv"))
 
 ### Plot these levels
 plot.g <- merge(med.ltbir.g[,c("Group.1","ltbir")], ub.ltbir.g[,c("Group.1","ltbir")], by = "Group.1")
 plot.g <- merge(plot.g, lb.ltbir.g[,c("Group.1","ltbir")], by = "Group.1")
 ggplot(plot.g, aes(x=Group.1, y = ltbir.x)) + geom_point() + 
   geom_errorbar(aes(x=Group.1, ymin = ltbir, ymax = ltbir.y)) + scale_y_continuous("MDR-LTBI prevalence") + scale_x_discrete("WHO region")
-ggsave(paste0("~/Dropbox/MDR/output/global_levels_ltbir_",pp,".pdf"),width=13, height=8)
+ggsave(paste0("~/Dropbox/MDR/output/output_sa/global_levels_ltbir_",pp,".pdf"),width=13, height=8)
 
 
 ## Check perc_ltbi_mdr greater variance than what comparing
@@ -294,7 +295,7 @@ cols <- colorRampPalette(brewer.pal(11,"Reds"), bias = 2)(13)
 
 mapped_data <- joinCountryData2Map(med.ltbir, joinCode = "ISO3", nameJoinColumn = "Group.1")
 
-pdf(paste0("~/Dropbox/MDR/output/map_ltbis_kids_",nari,"_infor_prior.pdf"))
+pdf(paste0("~/Dropbox/MDR/output/output_sa/map_ltbis_kids_",nari,"_infor_prior.pdf"))
 mapParams <- mapCountryData(mapped_data, nameColumnToPlot = "ltbis_kids", catMethod = seq(0,10,0.25),
                             colourPalette = cols,
                             addLegend = FALSE,missingCountryCol = gray(.8))
@@ -303,7 +304,7 @@ do.call( addMapLegend, c( mapParams
                           , legendWidth=0.5))
 dev.off()
 
-pdf(paste0("~/Dropbox/MDR/output/map_ltbir_kids_",nari,"_infor_prior.pdf"))
+pdf(paste0("~/Dropbox/MDR/output/output_sa/map_ltbir_kids_",nari,"_infor_prior.pdf"))
 mapParams <- mapCountryData(mapped_data, nameColumnToPlot = "ltbir_kids", catMethod = seq(0,10,0.25),
                             colourPalette = cols,
                             addLegend = FALSE,missingCountryCol = gray(.8))
@@ -312,7 +313,7 @@ do.call( addMapLegend, c( mapParams
                           , legendWidth=0.5))
 dev.off()
 
-pdf(paste0("~/Dropbox/MDR/output/map_ltbir_",nari,"_infor_prior.pdf"))
+pdf(paste0("~/Dropbox/MDR/output/output_sa/map_ltbir_",nari,"_infor_prior.pdf"))
 mapParams <- mapCountryData(mapped_data, nameColumnToPlot = "ltbir", catMethod = seq(0,4,0.25),
                             colourPalette = cols,
                             addLegend = FALSE,missingCountryCol = gray(.8))
@@ -335,7 +336,7 @@ datam <- as.data.frame(matrix(0,138*20000, 11))
 ### Gather data
 for(i in 1:138){
   cnn <- cni[i]
-  d <- read.csv(paste0("~/Dropbox/MDR/output/",cnn,"level2014_200_",labl,".csv"))[,-1]
+  d <- read.csv(paste0("~/Dropbox/MDR/cluster/sa1/",cnn,"level2014_200_",labl,".csv"))[,-1]
   d$age <- seq(1,100,1)
   d$iso3 <- cnn
   datam[(1 + (i-1)*20000):(i*20000),] <- d
@@ -495,17 +496,17 @@ for(cci in 1:length(cni)){
     geom_line(data = rdata, aes(x=year, y = prediction, group = factor(replicate)),alpha = 0.2) +
     scale_y_continuous("Prop. new with MDR") + scale_x_continuous("Year",lim=c(1970,2016)) +
     geom_point(data = d, aes(x=year_new, y = new_mdr_prop),col="red",pch = 10, size = 3) + geom_errorbar(data = d, aes(ymin = mlo, ymax = mhi), col = "red")
-  ggsave(paste0("~/Dropbox/MDR/output/",cni[cci],"_mdr_trends_with_data_",pp,".pdf"),width=11, height=11)
+  ggsave(paste0("~/Dropbox/MDR/output/output_sa/",cni[cci],"_mdr_trends_with_data_",pp,".pdf"),width=11, height=11)
   
   a2 <- ggplot(rdata, aes(x=year, y = mdr_ari, group = factor(replicate))) + geom_line(alpha = 0.2) +
     scale_y_continuous("MDR ARI") + scale_x_continuous("Year",lim=c(1970,2015))
-  ggsave(paste0("~/Dropbox/MDR/output/",cni[cci],"_mdr_ari_",pp,".pdf"),width=11, height=11)
+  ggsave(paste0("~/Dropbox/MDR/output/output_sa/",cni[cci],"_mdr_ari_",pp,".pdf"),width=11, height=11)
   
 }    
 
 ## All trends
 theme_set(theme_bw(base_size = 10))
-pdf("~/Dropbox/MDR/output/trends_all.pdf")
+pdf("~/Dropbox/MDR/output/output_sa/trends_all.pdf")
 for(i in 1:9){
   print(ggplot(w_data, aes(x=year_new, y = new_mdr_prop),col="red",pch = 10) + # points won't plot over lines unless do points first?!
           geom_point() + 
@@ -520,7 +521,7 @@ dev.off()
 
 ## All ARI trends
 theme_set(theme_bw(base_size = 10))
-pdf("~/Dropbox/MDR/output/trends_ari_all.pdf")
+pdf("~/Dropbox/MDR/output/output_sa/trends_ari_all.pdf")
 for(i in 1:9){
   print(ggplot(all0, aes(x=year, y = mdr_ari, group = factor(replicate))) + geom_line(alpha = 0.2) +
           scale_y_continuous("MDR ARI") + scale_x_continuous("Year",lim=c(1970,2015)) + 
@@ -543,7 +544,7 @@ ggplot(wwm[which(wwm$g_whoregion == "SEA"),], aes(x=year_new, y = new_mdr_prop),
   scale_y_continuous("Prop. new with MDR") + scale_x_continuous("Year",lim=c(1970,2020), breaks = c(1970, 1990, 2010)) +
   geom_point(data = wwm[which(wwm$g_whoregion == "SEA"),], aes(x=year_new, y = new_mdr_prop),col="red",pch = 10, size = 3) + 
   geom_errorbar(data = wwm[which(wwm$g_whoregion == "SEA"),], aes(ymin = mlo, ymax = mhi), col = "red")
-ggsave(paste0("~/Dropbox/MDR/output/SEA_mdr_trends_with_data_",pp,".pdf"),width=13, height=11)
+ggsave(paste0("~/Dropbox/MDR/output/output_sa/SEA_mdr_trends_with_data_",pp,".pdf"),width=13, height=11)
 
 
 # ribbon effect
@@ -565,14 +566,14 @@ ggplot(wwm[which(wwm$g_whoregion == "SEA"),], aes(x=year_new)) + # points won't 
   scale_y_continuous("Prop. new with MDR") + scale_x_continuous("Year",lim=c(1970,2020), breaks = c(1970, 1990, 2010)) +
   geom_errorbar(data = wwm[which(wwm$g_whoregion == "SEA"),], aes(ymin = mlo, ymax = mhi), col = "red") + 
   geom_ribbon(data = sea.rib, aes(x = year, ymin = lb, ymax = ub), alpha = 0.3, fill = "blue")
-ggsave(paste0("~/Dropbox/MDR/output/SEA_mdr_trends_with_data_ribbon_",pp,".pdf"),width=13, height=11)
+ggsave(paste0("~/Dropbox/MDR/output/output_sa/SEA_mdr_trends_with_data_ribbon_",pp,".pdf"),width=13, height=11)
 
 ggplot(wwr[which(wwr$g_whoregion == "SEA"),], aes(x=year, y = mdr_ari, group = replicate)) + # points won't plot over lines unless do points first?!
   geom_line(alpha = 0.2) + facet_wrap(~country, scales = "free") + 
   theme(strip.text.x = element_text(size = 10)) + 
   scale_y_continuous("ARI with MDR-M.tb") + 
   scale_x_continuous("Year",lim=c(1970,2020), breaks = c(1970, 1990, 2010)) 
-ggsave(paste0("~/Dropbox/MDR/output/SEA_ari_trends_",pp,".pdf"),width=13, height=11)
+ggsave(paste0("~/Dropbox/MDR/output/output_sa/SEA_ari_trends_",pp,".pdf"),width=13, height=11)
 
 
 
@@ -621,7 +622,7 @@ ggplot(mplot14, aes(x=age, y = med.perc/100)) + geom_bar(aes(fill = variable),st
   geom_errorbar(aes(ymin = lb.perc/100, ymax = ub.perc/100)) +
   scale_y_continuous("Percentage infected",labels = scales::percent_format(accuracy = 1)) +
   scale_x_discrete("Age")
-ggsave(paste0("~/Dropbox/MDR/output/LTBI_by_ds_mdr_region_",pp,".pdf"),width=14, height=11)
+ggsave(paste0("~/Dropbox/MDR/output/output_sa/LTBI_by_ds_mdr_region_",pp,".pdf"),width=14, height=11)
 
 mplot14r <- mplot14[which(mplot14$variable == "r"),]
 ggplot(mplot14r, aes(x=age, y = med.perc/100)) + geom_bar(aes(fill = variable),stat='identity') + 
@@ -629,7 +630,7 @@ ggplot(mplot14r, aes(x=age, y = med.perc/100)) + geom_bar(aes(fill = variable),s
   facet_wrap(~g_who)  + theme(axis.text.x = element_text(angle = 90, hjust = 1)) + guides(fill=FALSE) + 
   scale_y_continuous("Percentage infected",labels = scales::percent_format(accuracy = .1)) +
   scale_x_discrete("Age")
-ggsave(paste0("~/Dropbox/MDR/output/LTBI_mdr_region_",pp,".pdf"),width=14, height=11)
+ggsave(paste0("~/Dropbox/MDR/output/output_sa/LTBI_mdr_region_",pp,".pdf"),width=14, height=11)
 
 
 ### ARI by region
@@ -651,8 +652,8 @@ ggplot(arimplot, aes(x=year)) + geom_line(aes(y = mdr_ari)) +
   geom_ribbon(aes(ymin=mdr_ari_lb, ymax=mdr_ari_ub), alpha=0.3, fill = "red") +
   facet_wrap(~g_reg, scales = "free") + 
   scale_y_continuous("ARI with MDR M.tb") + scale_x_continuous(lim = c(1960, 2020))
-ggsave(paste0("~/Dropbox/MDR/output/ARI_region_ribbon_",pp,".pdf"),width=14, height=11)
+ggsave(paste0("~/Dropbox/MDR/output/output_sa/ARI_region_ribbon_",pp,".pdf"),width=14, height=11)
 
 ggplot(arimm, aes(x=year)) + geom_line(aes(y = mdr_ari, group = mdr_rep), alpha = 0.2) +
   facet_wrap(~g_reg, scales = "free") + scale_x_continuous(lim = c(1960, 2020))
-ggsave(paste0("~/Dropbox/MDR/output/ARI_region_",pp,".pdf"),width=14, height=11)
+ggsave(paste0("~/Dropbox/MDR/output/output_sa/ARI_region_",pp,".pdf"),width=14, height=11)

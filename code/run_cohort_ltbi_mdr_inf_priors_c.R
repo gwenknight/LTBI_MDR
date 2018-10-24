@@ -54,7 +54,7 @@ s_level <- c(); #sum proportions infected
 print(ii)
 
 # READ IN
-load("../data/all0_p_ds_mdr.Rdata")
+load("~/Dropbox/MDR/output/all0_p_ds_mdr.Rdata")
 
 # Run for all countries
 for(cci in 1:llu){

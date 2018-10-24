@@ -79,7 +79,7 @@ totalmtb18 <- sum(mtb18$mdr_inc_num) # 493804 = similar to 2017 GTB report
 mtb18$perc_total <- 100*mtb18$mdr_inc_num / totalmtb18
 
 # what MDRTB contribution are the countries in latent but not WHO MDR
-totalmtb14 <- 490 # GLOBAL TB report 2017
+totalmtb14 <- 458 # GLOBAL TB report 2018 PAGE 27
 
 wm <- match(inlnw, mtb18$iso3, nomatch = 0)
 perc_wm <- sum(mtb18[wm,"perc_total"]) # 3.6% 
@@ -105,7 +105,7 @@ w<-which(w_data$all_areas_covered_new < 1)
 length(w) # 226
 length(unique(w_data$iso3))
 
-### Remove those with only 1 MDR datapoint
+### Remove those with only 1 MDR datapoint - not any more
 n_data <- w_data %>% group_by(iso3) %>% count("iso3")
 n_data1 <- w_data[-w,] %>% group_by(iso3) %>% count("iso3")
 s <- setdiff(n_data$iso3, n_data1$iso3) # 8 removed by this
