@@ -7,7 +7,7 @@ library(dplyr)
 ## 2012 - 2014 
 cni <- read.csv("~/Dropbox/MDR/138_final_list_included_countries.csv",stringsAsFactors = FALSE)[,-1]
 length(cni) # 138 now
-llu <- length(cni)
+llu <- 5#length(cni)
 nari = 200
 
 # functions
@@ -43,9 +43,23 @@ for(i in 1:llu){
       c_dr_age <- colwise(mean)(as.data.frame(matrix(sn[which(sn$mdr_rep == ii),"new_inf_r"], 5)))
       dr_age <- as.numeric(c(c_dr_age[1:16], mean(as.numeric(c_dr_age[17:20]))))
       
+      c_ds_age1 <- colwise(mean)(as.data.frame(matrix(sn[which(sn$mdr_rep == ii),"new_ds"], 5)))
+      ds_age1 <- as.numeric(c(c_ds_age1[1:16], mean(as.numeric(c_ds_age1[17:20]))))
+      c_dr_age1 <- colwise(mean)(as.data.frame(matrix(sn[which(sn$mdr_rep == ii),"new_dr"], 5)))
+      dr_age1 <- as.numeric(c(c_dr_age1[1:16], mean(as.numeric(c_dr_age1[17:20]))))
+      
+      c_ds_age2 <- colwise(mean)(as.data.frame(matrix(sn[which(sn$mdr_rep == ii),"rei_sr"], 5)))
+      ds_age2 <- as.numeric(c(c_ds_age2[1:16], mean(as.numeric(c_ds_age2[17:20]))))
+      c_dr_age2 <- colwise(mean)(as.data.frame(matrix(sn[which(sn$mdr_rep == ii),"rei_rs"], 5)))
+      dr_age2 <- as.numeric(c(c_dr_age2[1:16], mean(as.numeric(c_dr_age2[17:20]))))
+      
       # size of the population infected
       size_ds <- pop * ds_age
       size_dr <- pop * dr_age
+      size_ds_n <- pop * ds_age1
+      size_dr_n <- pop * dr_age1
+      size_ds_re <- pop * ds_age2
+      size_dr_re <- pop * dr_age2
       
       # percentage of the population
       #perc_ds <- 100*size_ds / sum(pop, na.rm = TRUE)
@@ -56,11 +70,19 @@ for(i in 1:llu){
       #ltbi_ds <- sum(perc_ds, na.rm = TRUE)
       pltbi_dr <- sum(size_dr, na.rm = TRUE) # number of people infected
       pltbi_ds <- sum(size_ds, na.rm = TRUE)
+      pltbi_dr_n <- sum(size_dr_n, na.rm = TRUE) # number of people infected
+      pltbi_ds_n <- sum(size_ds_n, na.rm = TRUE)
+      pltbi_dr_re <- sum(size_dr_re, na.rm = TRUE) # number of people infected
+      pltbi_ds_re <- sum(size_ds_re, na.rm = TRUE)
       
       #ltbi_dr_kids <- sum(perc_dr[1:3,1], na.rm = TRUE) # percentage infected
       #ltbi_ds_kids <- sum(perc_ds[1:3,1], na.rm = TRUE)
       pltbi_dr_kids <- sum(size_dr[1:3,1], na.rm = TRUE) # number of people infected
       pltbi_ds_kids <- sum(size_ds[1:3,1], na.rm = TRUE)
+      pltbi_dr_kids_n <- sum(size_dr_n[1:3,1], na.rm = TRUE) # number of people infected
+      pltbi_ds_kids_n <- sum(size_ds_n[1:3,1], na.rm = TRUE)
+      pltbi_dr_kids_re <- sum(size_dr_re[1:3,1], na.rm = TRUE) # number of people infected
+      pltbi_ds_kids_re <- sum(size_ds_re[1:3,1], na.rm = TRUE)
       
       # Bind together
       ## store
@@ -70,7 +92,11 @@ for(i in 1:llu){
                                pltbi_dr, pltbi_ds,
                                #ltbi_dr_kids,ltbi_ds_kids, 
                                pltbi_dr_kids, pltbi_ds_kids, 
-                               sum(pop, na.rm = TRUE), sum(pop[1:3,1], na.rm = TRUE)))
+                               sum(pop, na.rm = TRUE), sum(pop[1:3,1], na.rm = TRUE),
+                               pltbi_dr_n, pltbi_ds_n,
+                               pltbi_dr_kids_n, pltbi_ds_kids_n, 
+                               pltbi_dr_re, pltbi_ds_re,
+                               pltbi_dr_kids_re, pltbi_ds_kids_re))
       
     }
   }
@@ -81,37 +107,89 @@ colnames(recinf) <- c("year","cn","mdr_rep",#"ltbir","ltbis",
                       "pltbir","pltbis",
                       #"ltbir_kids","ltbis_kids",
                       "pltbir_kids","pltbis_kids",
-                      "pop","pop_kids")
+                      "pop","pop_kids",
+                      "pltbi_dr_n", "pltbi_ds_n",
+                      "pltbi_dr_kids_n", "pltbi_ds_kids_n", 
+                      "pltbi_dr_re", "pltbi_ds_re",
+                      "pltbi_dr_kids_re", "pltbi_ds_kids_re")
 recinf$iso3 <- cni[recinf$cn] 
 
 # sum over years. Population size assumed same for both years. 
 rr <- recinf %>% group_by(iso3, mdr_rep,pop,pop_kids) %>% 
-  summarise_at(c("pltbir","pltbis","pltbir_kids","pltbis_kids"),funs(sum))
+  summarise_at(c("pltbir","pltbis","pltbir_kids","pltbis_kids",
+                 "pltbi_dr_n", "pltbi_ds_n",
+                 "pltbi_dr_kids_n", "pltbi_ds_kids_n", 
+                 "pltbi_dr_re", "pltbi_ds_re",
+                 "pltbi_dr_kids_re", "pltbi_ds_kids_re"),funs(sum))
 
 # country levels
-med.rr <- aggregate(rr[,c("pltbir","pltbis","pltbir_kids","pltbis_kids")],
+med.rr <- aggregate(rr[,c("pltbir","pltbis","pltbir_kids","pltbis_kids",
+                          "pltbi_dr_n", "pltbi_ds_n",
+                          "pltbi_dr_kids_n", "pltbi_ds_kids_n", 
+                          "pltbi_dr_re", "pltbi_ds_re",
+                          "pltbi_dr_kids_re", "pltbi_ds_kids_re")],
                     list(rr$iso3), median, na.rm = TRUE)
-lb.rr <- aggregate(rr[,c("pltbir","pltbis","pltbir_kids","pltbis_kids")],list(rr$iso3), lb)
-ub.rr <- aggregate(rr[,c("pltbir","pltbis","pltbir_kids","pltbis_kids")],list(rr$iso3), ub)
+lb.rr <- aggregate(rr[,c("pltbir","pltbis","pltbir_kids","pltbis_kids",
+                         "pltbi_dr_n", "pltbi_ds_n",
+                         "pltbi_dr_kids_n", "pltbi_ds_kids_n", 
+                         "pltbi_dr_re", "pltbi_ds_re",
+                         "pltbi_dr_kids_re", "pltbi_ds_kids_re")],list(rr$iso3), lb)
+ub.rr <- aggregate(rr[,c("pltbir","pltbis","pltbir_kids","pltbis_kids",
+                         "pltbi_dr_n", "pltbi_ds_n",
+                         "pltbi_dr_kids_n", "pltbi_ds_kids_n", 
+                         "pltbi_dr_re", "pltbi_ds_re",
+                         "pltbi_dr_kids_re", "pltbi_ds_kids_re")],list(rr$iso3), ub)
 
 ## WHO levels
 load('~/Documents/LTBI_MDR/data/whokey.Rdata') # WHOkey has global region and iso3 codes
 rr.g <- merge(rr,WHOkey[,c('iso3','g_whoregion')],by='iso3',all.x=TRUE)
 # sum up country level to g_whoregon by mdr_rep
 rr.g <- rr.g %>% group_by(g_whoregion, mdr_rep) %>% 
-  summarise_at(c("pop","pop_kids","pltbir","pltbis","pltbir_kids","pltbis_kids"),funs(sum))
+  summarise_at(c("pop","pop_kids","pltbir","pltbis","pltbir_kids","pltbis_kids",
+                 "pltbi_dr_n", "pltbi_ds_n",
+                 "pltbi_dr_kids_n", "pltbi_ds_kids_n", 
+                 "pltbi_dr_re", "pltbi_ds_re",
+                 "pltbi_dr_kids_re", "pltbi_ds_kids_re"),funs(sum))
 
 # region levels
-med.rr.g <- aggregate(rr.g[,c("pop","pop_kids","pltbir","pltbis","pltbir_kids","pltbis_kids")],
+med.rr.g <- aggregate(rr.g[,c("pop","pop_kids","pltbir","pltbis","pltbir_kids","pltbis_kids",
+                              "pltbi_dr_n", "pltbi_ds_n",
+                              "pltbi_dr_kids_n", "pltbi_ds_kids_n", 
+                              "pltbi_dr_re", "pltbi_ds_re",
+                              "pltbi_dr_kids_re", "pltbi_ds_kids_re")],
                       list(rr.g$g_whoregion), median, na.rm = TRUE)
-lb.rr.g <- aggregate(rr.g[,c("pop","pop_kids","pltbir","pltbis","pltbir_kids","pltbis_kids")],list(rr.g$g_whoregion), lb)
-ub.rr.g <- aggregate(rr.g[,c("pop","pop_kids","pltbir","pltbis","pltbir_kids","pltbis_kids")],list(rr.g$g_whoregion), ub)
+lb.rr.g <- aggregate(rr.g[,c("pop","pop_kids","pltbir","pltbis","pltbir_kids","pltbis_kids",
+                             "pltbi_dr_n", "pltbi_ds_n",
+                             "pltbi_dr_kids_n", "pltbi_ds_kids_n", 
+                             "pltbi_dr_re", "pltbi_ds_re",
+                             "pltbi_dr_kids_re", "pltbi_ds_kids_re")],list(rr.g$g_whoregion), lb)
+ub.rr.g <- aggregate(rr.g[,c("pop","pop_kids","pltbir","pltbis","pltbir_kids","pltbis_kids",
+                             "pltbi_dr_n", "pltbi_ds_n",
+                             "pltbi_dr_kids_n", "pltbi_ds_kids_n", 
+                             "pltbi_dr_re", "pltbi_ds_re",
+                             "pltbi_dr_kids_re", "pltbi_ds_kids_re")],list(rr.g$g_whoregion), ub)
 
 ## Total
-rr_total <-aggregate(rr.g[,c("pltbir","pltbis","pltbir_kids","pltbis_kids")],list(rr.g$mdr_rep), sum)
-med.rr.total<-colwise(median)(rr_total[,c("pltbir","pltbis","pltbir_kids","pltbis_kids")])
-lb.rr.total<-colwise(lb)(rr_total[,c("pltbir","pltbis","pltbir_kids","pltbis_kids")])
-ub.rr.total<-colwise(ub)(rr_total[,c("pltbir","pltbis","pltbir_kids","pltbis_kids")])
+rr_total <-aggregate(rr.g[,c("pltbir","pltbis","pltbir_kids","pltbis_kids",
+                             "pltbi_dr_n", "pltbi_ds_n",
+                             "pltbi_dr_kids_n", "pltbi_ds_kids_n", 
+                             "pltbi_dr_re", "pltbi_ds_re",
+                             "pltbi_dr_kids_re", "pltbi_ds_kids_re")],list(rr.g$mdr_rep), sum)
+med.rr.total<-colwise(median)(rr_total[,c("pltbir","pltbis","pltbir_kids","pltbis_kids",
+                                          "pltbi_dr_n", "pltbi_ds_n",
+                                          "pltbi_dr_kids_n", "pltbi_ds_kids_n", 
+                                          "pltbi_dr_re", "pltbi_ds_re",
+                                          "pltbi_dr_kids_re", "pltbi_ds_kids_re")])
+lb.rr.total<-colwise(lb)(rr_total[,c("pltbir","pltbis","pltbir_kids","pltbis_kids",
+                                     "pltbi_dr_n", "pltbi_ds_n",
+                                     "pltbi_dr_kids_n", "pltbi_ds_kids_n", 
+                                     "pltbi_dr_re", "pltbi_ds_re",
+                                     "pltbi_dr_kids_re", "pltbi_ds_kids_re")])
+ub.rr.total<-colwise(ub)(rr_total[,c("pltbir","pltbis","pltbir_kids","pltbis_kids",
+                                     "pltbi_dr_n", "pltbi_ds_n",
+                                     "pltbi_dr_kids_n", "pltbi_ds_kids_n", 
+                                     "pltbi_dr_re", "pltbi_ds_re",
+                                     "pltbi_dr_kids_re", "pltbi_ds_kids_re")])
 
 ### Percentage of global burden with recent LTBI
 global_pop <- sum(rr$pop)/200 # 6893893 thousand # makes sense
@@ -162,6 +240,12 @@ paste0(signif(med.rr.total$pltbir,2), " [",
 paste0(sprintf('%.2f',100 * med.rr.total$pltbir / global_pop), " [", 
        sprintf('%.2f',100 * lb.rr.total$pltbir / global_pop), "-", 
        sprintf('%.2f',100 * ub.rr.total$pltbir / global_pop),"]")
+
+paste0(sprintf('%.2f',100 * med.rr.total$pltbir_n / global_pop), " [", 
+       sprintf('%.2f',100 * lb.rr.total$pltbir_n / global_pop), "-", 
+       sprintf('%.2f',100 * ub.rr.total$pltbir_n / global_pop),"]")
+
+
 
 # PERCENTAGE OF RECENT INFECTIONS WITH MDR
 paste0(sprintf('%.3f',100 * med.rr.total$pltbir / (med.rr.total$pltbir + med.rr.total$pltbis)), " [", 
