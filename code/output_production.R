@@ -222,6 +222,7 @@ total <- as.data.frame(cbind("GLOBAL",
 
 table1_global <- rbind(table1_global, total)
 
+
 colnames(table1_global) <- c("WHO Region","Perc. with LTBIS", "Perc. with LTBIR", "Perc. of LTBI that is MDR", "Perc. of LTBI in <15yos that is MDR")
 table1_global <- table1_global[c(1,2,5,3,6,4,7),]
 
@@ -245,6 +246,11 @@ total_numb <- as.data.frame(cbind("GLOBAL",
 ))
 
 table1_global_numb <- rbind(table1_global_numb, total_numb)
+
+# percentage in each
+med.ltbir.g$pop_r_each <- med.ltbir.g$pltbir / med.total$pltbir
+med.ltbir.g$pop_each <- med.ltbir.g$pop / med.total$pop
+
 
 colnames(table1_global_numb) <- c("WHO Region","# with LTBIS", "# with LTBIR")
 table1_global_numb <- table1_global_numb[c(1,2,5,3,6,4,7),]
@@ -323,8 +329,8 @@ dev.off()
 
 
 #### *** LEVEL in 2035 / 2050 **** ###
-load('data/POP2035.Rdata')
-load('data/POP2050.Rdata')
+load('~/Documents/LTBI_MDR/data/POP2035.Rdata')
+load('~/Documents/LTBI_MDR/data/POP2050.Rdata')
 
 cni <- read.csv("~/Dropbox/MDR/138_final_list_included_countries.csv", stringsAsFactors = FALSE)[,-1]
 
@@ -389,12 +395,12 @@ ub.fruns.total.35 <- colwise(ub)(fruns.total.35)
 lb.fruns.total.35 <- colwise(lb)(fruns.total.35) 
 
 # each number in POP2035 is the actual number divided by 1,000
-print(c(paste0(sprintf('%.1f',1e3*med.fruns.total.35$pLTBIR)," [",
-               sprintf('%.1f',1e3*lb.fruns.total.35$pLTBIR),", ",
-               sprintf('%.1f',1e3*ub.fruns.total.35$pLTBIR),"]")))
-print(c(paste0(sprintf('%.1f',1e3*med.fruns.total.35$pLTBIS)," [",
-               sprintf('%.1f',1e3*lb.fruns.total.35$pLTBIS),", ",
-               sprintf('%.1f',1e3*ub.fruns.total.35$pLTBIS),"]")))
+print(c(paste0(signif(1e3*med.fruns.total.35$pLTBIR,2)," [",
+               signif(1e3*lb.fruns.total.35$pLTBIR,2),", ",
+               signif(1e3*ub.fruns.total.35$pLTBIR,2),"]")))
+print(c(paste0(signif(1e3*med.fruns.total.35$pLTBIS,2)," [",
+               signif(1e3*lb.fruns.total.35$pLTBIS,2),", ",
+               signif(1e3*ub.fruns.total.35$pLTBIS,2),"]")))
 
 
 med.rate.35 <- (0.15*0.01) * med.fruns.total.35/N2035 * 1e5 # 0.15% reactivation x total  / total population x 100,000
@@ -433,12 +439,12 @@ ub.fruns.total.50 <- colwise(ub)(fruns.total.50)
 lb.fruns.total.50 <- colwise(lb)(fruns.total.50) 
 
 # each number in POP2050 is the actual number divided by 1,000
-print(c(paste0(sprintf('%.1f',1e3*med.fruns.total.50$pLTBIR)," [",
-               sprintf('%.1f',1e3*lb.fruns.total.50$pLTBIR),", ",
-               sprintf('%.1f',1e3*ub.fruns.total.50$pLTBIR),"]")))
-print(c(paste0(sprintf('%.1f',1e3*med.fruns.total.50$pLTBIS)," [",
-               sprintf('%.1f',1e3*lb.fruns.total.50$pLTBIS),", ",
-               sprintf('%.1f',1e3*ub.fruns.total.50$pLTBIS),"]")))
+print(c(paste0(signif(1e3*med.fruns.total.50$pLTBIR,2)," [",
+               signif(1e3*lb.fruns.total.50$pLTBIR,2),", ",
+               signif(1e3*ub.fruns.total.50$pLTBIR,2),"]")))
+print(c(paste0(signif(1e3*med.fruns.total.50$pLTBIS,2)," [",
+               signif(1e3*lb.fruns.total.50$pLTBIS,2),", ",
+               signif(1e3*ub.fruns.total.50$pLTBIS,2),"]")))
 
 100*med.fruns.total.50/N2050
 
@@ -466,6 +472,27 @@ print(c(paste0(sprintf('%.2f',med.num.50$pLTBIR)," [",
 print(c(paste0(sprintf('%.2f',med.num.50$pLTBIS)," [",
                sprintf('%.2f',lb.num.50$pLTBIS),", ",
                sprintf('%.2f',ub.num.50$pLTBIS),"]")))
+
+#### SENSITIVITY ANALYSIS: lower reactivation
+### 
+react <- 0.15*0.6
+
+med.rate.35 <- (react*0.01) * med.fruns.total.35/N2035 * 1e5 # 0.15% reactivation x total  / total population x 100,000
+ub.rate.35 <- (react*0.01) * ub.fruns.total.35/N2035 * 1e5 
+lb.rate.35 <- (react*0.01) * lb.fruns.total.35/N2035 * 1e5 
+
+print(c(paste0(sprintf('%.2f',med.rate.35$pLTBIR)," [",
+               sprintf('%.2f',lb.rate.35$pLTBIR),", ",
+               sprintf('%.2f',ub.rate.35$pLTBIR),"]")))
+
+
+med.rate.50 <- (react*0.01) * med.fruns.total.50/N2050 * 1e5 # 0.15% reactivation x total  / total population x 100,000
+ub.rate.50 <- (react*0.01) * ub.fruns.total.50/N2050 * 1e5 
+lb.rate.50 <- (react*0.01) * lb.fruns.total.50/N2050 * 1e5 
+
+print(c(paste0(sprintf('%.2f',med.rate.50$pLTBIR)," [",
+               sprintf('%.2f',lb.rate.50$pLTBIR),", ",
+               sprintf('%.2f',ub.rate.50$pLTBIR),"]")))
 
 
 ####**** Group trend figures *****######
@@ -504,30 +531,30 @@ for(cci in 1:length(cni)){
 }    
 
 ## All trends
-theme_set(theme_bw(base_size = 10))
-pdf("~/Dropbox/MDR/output/trends_all.pdf")
-for(i in 1:9){
-  print(ggplot(w_data, aes(x=year_new, y = new_mdr_prop),col="red",pch = 10) + # points won't plot over lines unless do points first?!
-          geom_point() + 
-          geom_line(data = all0, aes(x=year, y = prediction, group = factor(replicate)),alpha = 0.2) +
-          scale_y_continuous("Prop. new with MDR") + scale_x_continuous("Year",lim=c(1970,2020)) +
-          geom_point(data = w_data, aes(x=year_new, y = new_mdr_prop),col="red",pch = 10) + 
-          geom_errorbar(data = w_data, aes(ymin = mlo, ymax = mhi), col = "red") +
-          facet_wrap_paginate(~iso3, scales = "free",ncol = 4, nrow = 4, page = i)
-  )
-}
-dev.off()
+# theme_set(theme_bw(base_size = 10))
+# pdf("~/Dropbox/MDR/output/trends_all.pdf")
+# for(i in 1:9){
+#   print(ggplot(w_data, aes(x=year_new, y = new_mdr_prop),col="red",pch = 10) + # points won't plot over lines unless do points first?!
+#           geom_point() + 
+#           geom_line(data = all0, aes(x=year, y = prediction, group = factor(replicate)),alpha = 0.2) +
+#           scale_y_continuous("Prop. new with MDR") + scale_x_continuous("Year",lim=c(1970,2020)) +
+#           geom_point(data = w_data, aes(x=year_new, y = new_mdr_prop),col="red",pch = 10) + 
+#           geom_errorbar(data = w_data, aes(ymin = mlo, ymax = mhi), col = "red") +
+#           facet_wrap_paginate(~iso3, scales = "free",ncol = 4, nrow = 4, page = i)
+#   )
+# }
+# dev.off()
 
 ## All ARI trends
-theme_set(theme_bw(base_size = 10))
-pdf("~/Dropbox/MDR/output/trends_ari_all.pdf")
-for(i in 1:9){
-  print(ggplot(all0, aes(x=year, y = mdr_ari, group = factor(replicate))) + geom_line(alpha = 0.2) +
-          scale_y_continuous("MDR ARI") + scale_x_continuous("Year",lim=c(1970,2015)) + 
-          facet_wrap_paginate(~iso3, scales = "free",ncol = 4, nrow = 4, page = i)
-  )
-}
-dev.off()
+# theme_set(theme_bw(base_size = 10))
+# pdf("~/Dropbox/MDR/output/trends_ari_all.pdf")
+# for(i in 1:9){
+#   print(ggplot(all0, aes(x=year, y = mdr_ari, group = factor(replicate))) + geom_line(alpha = 0.2) +
+#           scale_y_continuous("MDR ARI") + scale_x_continuous("Year",lim=c(1970,2015)) + 
+#           facet_wrap_paginate(~iso3, scales = "free",ncol = 4, nrow = 4, page = i)
+#   )
+# }
+# dev.off()
 
 
 
@@ -654,5 +681,5 @@ ggplot(arimplot, aes(x=year)) + geom_line(aes(y = mdr_ari)) +
 ggsave(paste0("~/Dropbox/MDR/output/ARI_region_ribbon_",pp,".pdf"),width=14, height=11)
 
 ggplot(arimm, aes(x=year)) + geom_line(aes(y = mdr_ari, group = mdr_rep), alpha = 0.2) +
-  facet_wrap(~g_reg, scales = "free") + scale_x_continuous(lim = c(1960, 2020))
+  facet_wrap(~g_reg) + scale_x_continuous(lim = c(1960, 2020))
 ggsave(paste0("~/Dropbox/MDR/output/ARI_region_",pp,".pdf"),width=14, height=11)

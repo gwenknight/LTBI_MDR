@@ -181,8 +181,8 @@ ggsave(paste0("~/Dropbox/MDR/output/MDR_metric_data_against_need_",nari,"_",labl
 w<-c()
 for(i in 1:30){w<-c(w,which(as.character(mm$cnn) == as.character(mdr30[i,"iso3"])))}
 
-ggplot(mm[w,], aes(x=cnn, y = sum_metric )) + geom_boxplot() + 
+ggplot(mm[w,], aes(x=cnn, y = sum_metric )) + geom_boxplot(outlier.shape = NA) + 
   scale_x_discrete("Country") + scale_y_continuous("Proportion of LTBI identifiable") +
-  theme(axis.text.y = element_text(size = 6)) + 
+  theme(axis.text.y = element_text(size = 10)) + 
   coord_flip() + aes(x=reorder(cnn,ltbir),y=sum_metric) 
 ggsave(paste0("~/Dropbox/MDR/output/MDR_metric_data_against_need_",nari,"_",labl,"order_by_ltbir_top30.pdf"), width = 14, height = 14)

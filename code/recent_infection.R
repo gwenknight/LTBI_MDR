@@ -7,7 +7,7 @@ library(dplyr)
 ## 2012 - 2014 
 cni <- read.csv("~/Dropbox/MDR/138_final_list_included_countries.csv",stringsAsFactors = FALSE)[,-1]
 length(cni) # 138 now
-llu <- 5#length(cni)
+llu <- length(cni)
 nari = 200
 
 # functions
@@ -241,9 +241,15 @@ paste0(sprintf('%.2f',100 * med.rr.total$pltbir / global_pop), " [",
        sprintf('%.2f',100 * lb.rr.total$pltbir / global_pop), "-", 
        sprintf('%.2f',100 * ub.rr.total$pltbir / global_pop),"]")
 
-paste0(sprintf('%.2f',100 * med.rr.total$pltbir_n / global_pop), " [", 
-       sprintf('%.2f',100 * lb.rr.total$pltbir_n / global_pop), "-", 
-       sprintf('%.2f',100 * ub.rr.total$pltbir_n / global_pop),"]")
+paste0(sprintf('%.2f',100 * med.rr.total$pltbi_dr_n / global_pop), " [", 
+       sprintf('%.2f',100 * lb.rr.total$pltbi_dr_n / global_pop), "-", 
+       sprintf('%.2f',100 * ub.rr.total$pltbi_dr_n / global_pop),"]")
+
+100*med.rr.total$pltbi_dr_n / med.rr.total$pltbir
+
+paste0(sprintf('%.5f',100 * med.rr.total$pltbi_dr_re / global_pop), " [", 
+       sprintf('%.5f',100 * lb.rr.total$pltbi_dr_re / global_pop), "-", 
+       sprintf('%.5f',100 * ub.rr.total$pltbi_dr_re / global_pop),"]")
 
 
 
@@ -252,10 +258,20 @@ paste0(sprintf('%.3f',100 * med.rr.total$pltbir / (med.rr.total$pltbir + med.rr.
        sprintf('%.3f',100 * lb.rr.total$pltbir  / (med.rr.total$pltbir + med.rr.total$pltbis)), "-", 
        sprintf('%.3f',100 * ub.rr.total$pltbir  / (med.rr.total$pltbir + med.rr.total$pltbis)),"]")
 
+paste0(sprintf('%.3f',100 * med.rr.total$pltbi_dr_n / (med.rr.total$pltbi_dr_n + med.rr.total$pltbi_ds_n)), " [", 
+       sprintf('%.3f',100 * lb.rr.total$pltbi_dr_n  / (med.rr.total$pltbi_dr_n + med.rr.total$pltbi_ds_n)), "-", 
+       sprintf('%.3f',100 * ub.rr.total$pltbi_dr_n  / (med.rr.total$pltbi_dr_n + med.rr.total$pltbi_ds_n)),"]")
+
 # PERCENTAGE OF RECENT INFECTIONS WITH MDR IN KIDS
 paste0(sprintf('%.3f',100 * med.rr.total$pltbir_kids / (med.rr.total$pltbir_kids + med.rr.total$pltbis_kids)), " [", 
        sprintf('%.3f',100 * lb.rr.total$pltbir_kids  / (med.rr.total$pltbir_kids + med.rr.total$pltbis_kids)), "-", 
        sprintf('%.3f',100 * ub.rr.total$pltbir_kids  / (med.rr.total$pltbir_kids + med.rr.total$pltbis_kids)),"]")
+
+paste0(sprintf('%.3f',100 * med.rr.total$pltbi_dr_kids_n / (med.rr.total$pltbi_dr_kids_n + med.rr.total$pltbi_ds_kids_n)), " [", 
+       sprintf('%.3f',100 * lb.rr.total$pltbi_dr_kids_n  / (med.rr.total$pltbi_dr_kids_n + med.rr.total$pltbi_ds_kids_n)), "-", 
+       sprintf('%.3f',100 * ub.rr.total$pltbi_dr_kids_n  / (med.rr.total$pltbi_dr_kids_n + med.rr.total$pltbi_ds_kids_n)),"]")
+
+100*med.rr.total$pltbi_dr_kids_n / med.rr.total$pltbir_kids
 
 # NUMBER WITH MDR RECENT INFECTION GLOBALLY
 paste0(signif(med.rr.total$pltbir_kids,2), " [", 
