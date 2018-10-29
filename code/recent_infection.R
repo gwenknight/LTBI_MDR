@@ -19,11 +19,12 @@ recinf <- c()
 
 for(i in 1:llu){
   print(i)
-  s <- read.csv(paste0("~/Dropbox/MDR/output/",cni[i],"_rec_infec_",nari,"_infor_prior.csv"))[,-1]
+  #s <- read.csv(paste0("~/Dropbox/MDR/output/",cni[i],"_rec_infec_",nari,"_infor_prior.csv"))[,-1]
+  s <- read.csv(paste0("~/Dropbox/MDR/cluster/",cni[i],"_rec_infec_",nari,"_infor_prior.csv"))[,-1]
   
   ### Age groups
-  s$new_inf_s <- s$new_ds + s$rei_rs
-  s$new_inf_r <- s$new_dr + s$rei_sr
+  s$new_inf_s <- s$new_ds + s$rei_rs + s$rei_ss
+  s$new_inf_r <- s$new_dr + s$rei_sr + s$rei_rr
   
   s$prop_new_inf_r <- s$new_inf_r / (s$new_inf_r + s$new_inf_s)
   w<-which(s$age < 15)
@@ -254,18 +255,18 @@ paste0(sprintf('%.5f',100 * med.rr.total$pltbi_dr_re / global_pop), " [",
 
 
 # PERCENTAGE OF RECENT INFECTIONS WITH MDR
-paste0(sprintf('%.3f',100 * med.rr.total$pltbir / (med.rr.total$pltbir + med.rr.total$pltbis)), " [", 
-       sprintf('%.3f',100 * lb.rr.total$pltbir  / (med.rr.total$pltbir + med.rr.total$pltbis)), "-", 
-       sprintf('%.3f',100 * ub.rr.total$pltbir  / (med.rr.total$pltbir + med.rr.total$pltbis)),"]")
+paste0(sprintf('%.1f',100 * med.rr.total$pltbir / (med.rr.total$pltbir + med.rr.total$pltbis)), " [", 
+       sprintf('%.1f',100 * lb.rr.total$pltbir  / (med.rr.total$pltbir + med.rr.total$pltbis)), "-", 
+       sprintf('%.1f',100 * ub.rr.total$pltbir  / (med.rr.total$pltbir + med.rr.total$pltbis)),"]")
 
 paste0(sprintf('%.3f',100 * med.rr.total$pltbi_dr_n / (med.rr.total$pltbi_dr_n + med.rr.total$pltbi_ds_n)), " [", 
        sprintf('%.3f',100 * lb.rr.total$pltbi_dr_n  / (med.rr.total$pltbi_dr_n + med.rr.total$pltbi_ds_n)), "-", 
        sprintf('%.3f',100 * ub.rr.total$pltbi_dr_n  / (med.rr.total$pltbi_dr_n + med.rr.total$pltbi_ds_n)),"]")
 
 # PERCENTAGE OF RECENT INFECTIONS WITH MDR IN KIDS
-paste0(sprintf('%.3f',100 * med.rr.total$pltbir_kids / (med.rr.total$pltbir_kids + med.rr.total$pltbis_kids)), " [", 
-       sprintf('%.3f',100 * lb.rr.total$pltbir_kids  / (med.rr.total$pltbir_kids + med.rr.total$pltbis_kids)), "-", 
-       sprintf('%.3f',100 * ub.rr.total$pltbir_kids  / (med.rr.total$pltbir_kids + med.rr.total$pltbis_kids)),"]")
+paste0(sprintf('%.1f',100 * med.rr.total$pltbir_kids / (med.rr.total$pltbir_kids + med.rr.total$pltbis_kids)), " [", 
+       sprintf('%.1f',100 * lb.rr.total$pltbir_kids  / (med.rr.total$pltbir_kids + med.rr.total$pltbis_kids)), "-", 
+       sprintf('%.1f',100 * ub.rr.total$pltbir_kids  / (med.rr.total$pltbir_kids + med.rr.total$pltbis_kids)),"]")
 
 paste0(sprintf('%.3f',100 * med.rr.total$pltbi_dr_kids_n / (med.rr.total$pltbi_dr_kids_n + med.rr.total$pltbi_ds_kids_n)), " [", 
        sprintf('%.3f',100 * lb.rr.total$pltbi_dr_kids_n  / (med.rr.total$pltbi_dr_kids_n + med.rr.total$pltbi_ds_kids_n)), "-", 
