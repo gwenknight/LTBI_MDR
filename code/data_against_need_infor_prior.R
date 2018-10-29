@@ -123,13 +123,20 @@ ggsave(paste0("~/Dropbox/MDR/output/MDR_metric_data_against_need_",nari,"_",labl
 
 ## Top 30 HBC MDR
 mdr30 <- read.csv("~/Dropbox/MRC SD Fellowship/Research/MDR/WHO_data/top30_mdr_countries.csv")
+
+# add in mean
+store_metric$mean_s <- 0
+for(i in 1:138){w<-which(as.character(store_metric$cnn) == as.character(countries[i]));
+mean_s <- median(store_metric[w,"sum_metric"])
+store_metric[w,"mean_s"] <- mean_s}
+
 w<-c()
 for(i in 1:30){w<-c(w,which(as.character(store_metric$cnn) == as.character(mdr30[i,"iso3"])))}
 
 ggplot(store_metric[w,], aes(x=cnn, y = sum_metric )) + geom_boxplot(outlier.shape = NA) + 
-  scale_x_discrete("Country") + scale_y_continuous("Metric for MDR data coverage") +
-  theme(axis.text.y = element_text(size = 6)) + 
-  coord_flip() + aes(x=reorder(cnn,sum_metric),y=sum_metric) 
+  scale_x_discrete("Country") + scale_y_continuous("Metric for MDR-LTBI data coverage") +
+  theme(axis.text.y = element_text(size = 10)) + 
+  coord_flip() + aes(x=reorder(cnn,mean_s),y=sum_metric) 
 ggsave(paste0("~/Dropbox/MDR/output/MDR_metric_data_against_need_",nari,"_",labl,"_top30.pdf"), width = 14, height = 14)
 
 ## Single country
