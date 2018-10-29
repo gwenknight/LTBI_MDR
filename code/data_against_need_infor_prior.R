@@ -110,8 +110,9 @@ write.csv(store_metric, paste0("~/Dropbox/MDR/output/store_metric_",nari,".csv")
 store_metric <- read.csv(paste0("~/Dropbox/MDR/output/store_metric_",nari,".csv"))[,-1]
 
 ggplot(store_metric, aes(x=mdr_rep, y = sum_metric)) + geom_point() + 
-  facet_wrap(~cnn, ncol = 18) + scale_y_continuous("Proportion of LTBI identifiable") + 
-  scale_x_continuous("MDR-ARI trend")
+  facet_wrap(~cnn, ncol = 18) + scale_y_continuous("Metric for MDR-LTBI data coverage") + 
+  scale_x_continuous("MDR-ARI trend") + 
+  theme(axis.text.x=element_blank(),axis.ticks.x=element_blank())
 ggsave(paste0("~/Dropbox/MDR/output/MDR_metric_data_against_need_by_country_",nari,"_",labl,".pdf"), width = 14, height = 14)
 
 ggplot(store_metric, aes(x=cnn, y = sum_metric )) + geom_boxplot() + 
@@ -126,7 +127,7 @@ w<-c()
 for(i in 1:30){w<-c(w,which(as.character(store_metric$cnn) == as.character(mdr30[i,"iso3"])))}
 
 ggplot(store_metric[w,], aes(x=cnn, y = sum_metric )) + geom_boxplot(outlier.shape = NA) + 
-  scale_x_discrete("Country") + scale_y_continuous("Proportion of LTBI identifiable") +
+  scale_x_discrete("Country") + scale_y_continuous("Metric for MDR data coverage") +
   theme(axis.text.y = element_text(size = 6)) + 
   coord_flip() + aes(x=reorder(cnn,sum_metric),y=sum_metric) 
 ggsave(paste0("~/Dropbox/MDR/output/MDR_metric_data_against_need_",nari,"_",labl,"_top30.pdf"), width = 14, height = 14)
