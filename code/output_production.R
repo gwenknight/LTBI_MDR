@@ -545,16 +545,16 @@ for(cci in 1:length(cni)){
 # }
 # dev.off()
 
-## All ARI trends
-# theme_set(theme_bw(base_size = 10))
-# pdf("~/Dropbox/MDR/output/trends_ari_all.pdf")
-# for(i in 1:9){
-#   print(ggplot(all0, aes(x=year, y = mdr_ari, group = factor(replicate))) + geom_line(alpha = 0.2) +
-#           scale_y_continuous("MDR ARI") + scale_x_continuous("Year",lim=c(1970,2015)) + 
-#           facet_wrap_paginate(~iso3, scales = "free",ncol = 4, nrow = 4, page = i)
-#   )
-# }
-# dev.off()
+# All ARI trends
+theme_set(theme_bw(base_size = 10))
+pdf("~/Dropbox/MDR/output/trends_ari_all.pdf")
+for(i in 1:9){
+  print(ggplot(all0, aes(x=year, y = mdr_ari, group = factor(replicate))) + geom_line(alpha = 0.2) +
+          scale_y_continuous("ARI with MDR-Mtb") + scale_x_continuous("Year",lim=c(1970,2015)) +
+          facet_wrap_paginate(~iso3, scales = "free",ncol = 4, nrow = 4, page = i)
+  )
+}
+dev.off()
 
 
 
@@ -664,6 +664,9 @@ arim <- merge(all0, WHOkey, by = "iso3")
 arimm <- aggregate(arim[,c("mdr_ari")], list(arim$g_whoregion,arim$year,arim$replicate), median)
 colnames(arimm) <- c("g_reg","year","mdr_rep","mdr_ari")
 
+# functions
+ub <- function(x)quantile(x,probs = .975, na.rm = TRUE)
+lb <- function(x)quantile(x,probs = .025, na.rm = TRUE)
 arim2 <- aggregate(arim[,c("mdr_ari")], list(arim$g_whoregion,arim$year), median)
 arim2_ub <- aggregate(arim[,c("mdr_ari")], list(arim$g_whoregion,arim$year), ub)
 arim2_lb <- aggregate(arim[,c("mdr_ari")], list(arim$g_whoregion,arim$year), lb)
@@ -679,6 +682,24 @@ ggplot(arimplot, aes(x=year)) + geom_line(aes(y = mdr_ari)) +
   facet_wrap(~g_reg, scales = "free") + 
   scale_y_continuous("ARI with MDR M.tb") + scale_x_continuous(lim = c(1960, 2020))
 ggsave(paste0("~/Dropbox/MDR/output/ARI_region_ribbon_",pp,".pdf"),width=14, height=11)
+
+# functions - 50% range
+ub7 <- function(x)quantile(x,probs = .75, na.rm = TRUE)
+lb7 <- function(x)quantile(x,probs = .25, na.rm = TRUE)
+arim2_ub7 <- aggregate(arim[,c("mdr_ari")], list(arim$g_whoregion,arim$year), ub7)
+arim2_lb7 <- aggregate(arim[,c("mdr_ari")], list(arim$g_whoregion,arim$year), lb7)
+colnames(arim2_lb7) <- c("g_reg","year","mdr_ari_lb")
+colnames(arim2_ub7) <- c("g_reg","year","mdr_ari_ub")
+
+arimplot7 <- merge(arim2, arim2_lb7)
+arimplot7 <- merge(arimplot7, arim2_ub7)
+
+ggplot(arimplot7, aes(x=year)) + geom_line(aes(y = mdr_ari)) + 
+  geom_ribbon(aes(ymin=mdr_ari_lb, ymax=mdr_ari_ub), alpha=0.3, fill = "red") +
+  facet_wrap(~g_reg, scales = "free") + 
+  scale_y_continuous("ARI with MDR M.tb") + scale_x_continuous(lim = c(1960, 2020))
+ggsave(paste0("~/Dropbox/MDR/output/ARI_region_ribbon_50_",pp,".pdf"),width=14, height=11)
+
 
 ggplot(arimm, aes(x=year)) + geom_line(aes(y = mdr_ari, group = mdr_rep), alpha = 0.2) +
   facet_wrap(~g_reg) + scale_x_continuous(lim = c(1960, 2020))
