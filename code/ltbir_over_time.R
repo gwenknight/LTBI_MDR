@@ -409,6 +409,7 @@ for(i in 1:length(years_n)){
 ### All data
 ppg0 <- as.data.frame(ppg)
 colnames(ppg0) <- c("region","med","max","min","year")
+write.csv(ppg0, "~/Dropbox/MDR/output/ltbi_over_time.csv")
 
 ggplot(ppg0, aes(x=year, y = med, group = region)) + geom_point() + facet_wrap(~region) + 
   geom_errorbar(aes(x=year, ymin = min, ymax = max)) + scale_y_continuous("MDR-LTBI prevalence") + scale_x_continuous("Year")
@@ -417,5 +418,5 @@ ggsave(paste0("~/Dropbox/MDR/output/region_levels_ltbir_over_time.pdf"),width=13
 ggplot(ppg0, aes(x=year)) + geom_line(aes(y = med)) + 
   geom_ribbon(aes(ymin=min, ymax=max), alpha=0.3, fill = "red") +
   facet_wrap(~region) + 
-  scale_y_continuous("MDR-LTBI prevalence") + scale_x_continuous("Year")
+  scale_y_continuous("MDR-LTBI prevalence (%)") + scale_x_continuous("Year")
 ggsave(paste0("~/Dropbox/MDR/output/region_levels_ltbir_over_time_ribbon.pdf"),width=13, height=8)
