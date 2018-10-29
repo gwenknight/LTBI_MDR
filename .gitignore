@@ -16,3 +16,6 @@ ne_50m_admin_0_countries.geojson
 .DS_Store
 ~$code_links.pptx
 code_links.pptx
+code_final/
+data_final/
+output_final/
