@@ -41,7 +41,7 @@ tseq <- 1980
 bseq <- runif(30,min = 0, max = 0.05)
 
 # mean = exp(mu + sd^2/2): want it at 1980 => log(1980) - sd^2 / 2 = mu
-bseq <- rlnorm(10000000, meanlog = -7, sdlog = 0.6)
+bseq <- rlnorm(10000000, meanlog = -5.5, sdlog = 0.7)
 hist(bseq)
 mean(bseq)
 plot(density(bseq))
@@ -224,13 +224,14 @@ ggsave("~/Dropbox/MDR/output/priors_examples_rhotrunc5_1975.pdf")
 
 ###**** different t = 1985 **##################################################################################################################################
 tseq <- 1985
-mm$years <- years - tseq
+mm$years <- mm$year - tseq
 
 rhoseq <- rtruncnorm(nsamples, a=-Inf, b=36, mean = 5, sd = 25) #rnorm(nsamples,mean = 5, sd = 15)
 bseq <- rlnorm(nsamples,-6.5, 0.6);
 
-mm <- cbind(rep(rhoseq, each = ny),rep(bseq, each = ny))
-colnames(mm)<- c("r","b")
+mm$r <- rep(rhoseq, each = ny)
+mm$b <- rep(bseq, each = ny)
+
 mm$c <- mm$r*mm$b / tseq
 mm$y <- mm$b * mm$years - mm$c * mm$years * mm$years
 
