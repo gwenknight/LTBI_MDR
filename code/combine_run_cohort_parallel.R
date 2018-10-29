@@ -53,6 +53,10 @@ write.csv(s_level, paste0("~/Dropbox/MDR/output/s_level_",nari,"_",labl,".csv"))
 write.csv(level2014, paste0("~/Dropbox/MDR/output/level2014_",nari,"_",labl,".csv"))
 
 ###********** PLOTS *****************************************************************#####
+nari = 200
+labl = "infor_prior"
+s_level <- read.csv(paste0("~/Dropbox/MDR/output/s_level_",nari,"_",labl,".csv"))[,-1]
+
 a2r<-ggplot(s_level, aes(x=pop_name, y = ltbir, col=factor(rep) )) + geom_point() + 
   guides(colour=FALSE) + 
   scale_x_discrete("Country") + scale_y_continuous("LTBI-MDR\n(% population infected)") +
@@ -111,7 +115,7 @@ a2r<-ggplot(s_level_median[w,], aes(x=pop_name, y = pltbir)) + geom_point(aes(co
   scale_y_continuous("Number with MDR-LTBI (thousands)") + #LTBI-MDR\n(% population infected)") +
   theme(axis.text.y = element_text(size = 12)) + 
   coord_flip() + aes(x=reorder(pop_name,pltbir),y=pltbir) +
-  geom_linerange(aes(min = pltbir.lo, max = pltbir.hi,col=ltbir)) + 
+  geom_linerange(aes(min = pltbir.lo, max = pltbir.hi,col=ltbir),lwd = 1.3) + 
   scale_x_discrete("Country iso3 code") + scale_color_continuous("LTBIR\n(%)")
 a2r
 ggsave(paste0("~/Dropbox/MDR/output/ltbi_all_countries_numb_r_mean",nari,"_",labl,".pdf"), width = 10, height = 13)
