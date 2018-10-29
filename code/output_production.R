@@ -175,15 +175,15 @@ colnames(table1_countries) <- c("iso3","WHO region", "Perc. with LTBIS", "Perc. 
 ## All countries: NUMBER
 table1_countries_numb <- as.data.frame(cbind( as.character(med.ltbir$iso3),
                                               as.character(med.ltbir$g_whoregion),
-                                              paste0(sprintf('%.1f',1000 * med.ltbir$pltbis), " [", 
-                                                     sprintf('%.1f',1000 * lb.ltbir$pltbis), "-", 
-                                                     sprintf('%.1f',1000 * ub.ltbir$pltbis),"]"),
-                                              paste0(sprintf('%.1f',1000 * med.ltbir$pltbir), " [", 
-                                                     sprintf('%.1f',1000 * lb.ltbir$pltbir), "-", 
-                                                     sprintf('%.1f',1000 * ub.ltbir$pltbir),"]"),
-                                              paste0(sprintf('%.1f',1000 * (med.ltbir$pltbir+med.ltbir$pltbis)), " [", 
-                                                     sprintf('%.1f',1000 * (lb.ltbir$pltbir+lb.ltbir$pltbis)), "-", 
-                                                     sprintf('%.1f',1000 * (ub.ltbir$pltbir+ub.ltbir$pltbis)),"]")
+                                              paste0(prettyNum(signif(1000 * med.ltbir$pltbis,3),big.mark=","), " [", 
+                                                     prettyNum(signif(1000 * lb.ltbir$pltbis,3),big.mark=","), "-", 
+                                                     prettyNum(signif(1000 * ub.ltbir$pltbis,3),big.mark=","),"]"),
+                                              paste0(prettyNum(signif(1000 * med.ltbir$pltbir,3),big.mark=","), " [", 
+                                                     prettyNum(signif(1000 * lb.ltbir$pltbir,3),big.mark=","), "-", 
+                                                     prettyNum(signif(1000 * ub.ltbir$pltbir,3),big.mark=","),"]"),
+                                              paste0(prettyNum(signif(1000 * (med.ltbir$pltbir+med.ltbir$pltbis),3),big.mark=","), " [", 
+                                                               prettyNum(signif(1000 * (lb.ltbir$pltbir+lb.ltbir$pltbis),3),big.mark=","), "-", 
+                                                                         prettyNum(signif(1000 * (ub.ltbir$pltbir+ub.ltbir$pltbis),3),big.mark=","),"]")
 ))
 
 colnames(table1_countries_numb) <- c("iso3","WHO region", "Number with LTBIS","Number with LTBIR", "Total with LTBI")
@@ -265,6 +265,9 @@ write.csv(table1_countries_numb, paste0("~/Dropbox/MDR/paper_output/table1_count
 write.csv(table1_global, paste0("~/Dropbox/MDR/paper_output/table1_global_",labl,".csv"))
 write.csv(table1_global_numb, paste0("~/Dropbox/MDR/paper_output/table1_global_numb_",labl,".csv"))
 
+table1_paper <- merge(table1_countries, table1_countries_numb, by = c("iso3","WHO region"))
+write.csv(table1_paper, paste0("~/Dropbox/MDR/paper_output/S3_results.csv"))
+
 ### Plot these levels
 plot.g <- merge(med.ltbir.g[,c("Group.1","ltbir")], ub.ltbir.g[,c("Group.1","ltbir")], by = "Group.1")
 plot.g <- merge(plot.g, lb.ltbir.g[,c("Group.1","ltbir")], by = "Group.1")
@@ -284,6 +287,50 @@ rr / med.total$pltbir
 ## Which country biggest burden? 
 ww <- which.max(med.ltbir$perc_ltbi_mdr)
 med.ltbir[ww,]
+
+## Top 30 countries? 
+indexp <- which(med.ltbir$perc_ltbi_mdr >= sort(med.ltbir$perc_ltbi_mdr, decreasing=T)[30], arr.ind=TRUE)
+indexn <- which(med.ltbir$pltbir >= sort(med.ltbir$pltbir, decreasing=T)[30], arr.ind=TRUE)
+
+# WHO top 30
+mdr30 <- read.csv("~/Dropbox/MRC SD Fellowship/Research/MDR/WHO_data/top30_mdr_countries.csv")
+setdiff(mdr30$iso3,med.ltbir[indexn,"iso3"])
+length(setdiff(mdr30$iso3,med.ltbir[indexn,"iso3"])) # 5 missing
+
+# AGO: not in analysis
+# COD: not in analysis
+# KEN: 55th
+# PNG: 50th
+# ZWE: 44th
+
+setdiff(med.ltbir[indexn,"iso3"],mdr30$iso3)
+length(setdiff(med.ltbir[indexn,"iso3"],mdr30$iso3)) # 5 missing
+
+# Brazil: in top TB : 6th smallest pltbir burden
+# CIV: Côte d'Ivoire " 9th smallest
+# DOM: Dominican Republic : smallest
+# ROU: Romania : next smallest
+# TZA: Tanzania : in top TB : 10th smallest
+
+ggplot(med.ltbir, aes(x=iso3, y = pltbir)) + geom_point() + 
+  theme(axis.text.y = element_text(size = 6)) + 
+  coord_flip() + aes(x=reorder(iso3,pltbir),y=pltbir) 
+
+
+# in top xx
+topn <- 50
+indexn <- which(med.ltbir$pltbir >= sort(med.ltbir$pltbir, decreasing=T)[topn], arr.ind=TRUE)
+setdiff(mdr30$iso3,med.ltbir[indexn,"iso3"])
+# 3 in WHO top 30 not in top 50 MDR-LTBI burden
+# AGO: Angola: not in the analysis
+# COD: Congo: not in the analysis
+# KEN: Kenya: in top 55
+
+mm <- merge(med.ltbir, mdr30, by = "iso3")
+
+ggplot(mm, aes(x=pltbir, y = mdr_inc_num)) + geom_point() + 
+  scale_x_continuous(lim= c(0,6000)) +
+  geom_text(aes(label=iso3),hjust=-0.2, vjust=0)
 
 #### *** MAP **** ###
 ### Map of kids ltbi prevalence
