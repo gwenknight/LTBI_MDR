@@ -7,6 +7,7 @@ library('ggmcmc')
 library("boot")
 library("reshape")
 library("ggforce")
+library("ggplot")
 theme_set(theme_bw(base_size = 24))
 
 # PRINT? 
@@ -148,6 +149,7 @@ all_samples_p <- pred_samples_p[] %>% bind_rows
 write.csv(pred_samples_p,"~/Dropbox/MDR/output/pred_samples_p.csv")
 write.csv(all_samples_p,"~/Dropbox/MDR/output/all_samples_p.csv")
 
+all_samples_p <- read.csv("~/Dropbox/MDR/output/all_samples_p.csv")[,-1]
 
 ##### make correct for adding to other data
 # and merge
@@ -242,14 +244,19 @@ length(c_data_gr2014)
 
 who_data <- as.data.frame(who_data)
 colnames(who_data) <- c("country","yp","mdr_new","mlo","mhi")
-post_data <- as.data.frame(post_data)
+post_data <- as.data.frame(post_data[,1:6])
 
 data <- merge(post_data, who_data, by = "country")
 data$mdr_new.y <- as.numeric(data$mdr_new.y)
 data$mlo <- as.numeric(data$mlo)
 data$mhi <- as.numeric(data$mhi)
 data$yp <- as.numeric(data$yp)
-data$yp <- 10
+data$yp <- rep(1:138, each = 200)
+data$ypd <- rep(0.1 + 1:138, each = 200)
+
+ggplot(data, aes(x=mdr_new.x)) + geom_point(aes(y = ypd)) + #facet_wrap(~country) + theme(strip.text.x = element_text(size = 8)) + 
+  geom_point(aes(x=mdr_new.y, y = yp), col ="red") + geom_errorbarh(aes(y = yp, xmin = mlo, xmax = mhi), col = "red") + geom_text(aes(label = country, y =yp), position = "dodge")
+
 
 theme_set(theme_bw(base_size = 12))
 pdf("~/Dropbox/MDR/output/inforprior_post_vs_final_point_all.pdf")

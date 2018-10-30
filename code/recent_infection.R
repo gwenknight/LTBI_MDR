@@ -114,6 +114,9 @@ colnames(recinf) <- c("year","cn","mdr_rep",#"ltbir","ltbis",
                       "pltbi_dr_re", "pltbi_ds_re",
                       "pltbi_dr_kids_re", "pltbi_ds_kids_re")
 recinf$iso3 <- cni[recinf$cn] 
+write.csv(recinf, paste0("~/Dropbox/MDR/output/rec_infec_",nari,"_infor_prior.csv"))
+
+
 
 # sum over years. Population size assumed same for both years. 
 rr <- recinf %>% group_by(iso3, mdr_rep,pop,pop_kids) %>% 
@@ -123,23 +126,29 @@ rr <- recinf %>% group_by(iso3, mdr_rep,pop,pop_kids) %>%
                  "pltbi_dr_re", "pltbi_ds_re",
                  "pltbi_dr_kids_re", "pltbi_ds_kids_re"),funs(sum))
 
+rr$perc_rec_mdr <- rr$pltbir / (rr$pltbir + rr$pltbis)
+rr$perc_rec_mdr_kids <- rr$pltbir_kids / (rr$pltbir_kids + rr$pltbis_kids)
+
 # country levels
 med.rr <- aggregate(rr[,c("pltbir","pltbis","pltbir_kids","pltbis_kids",
                           "pltbi_dr_n", "pltbi_ds_n",
                           "pltbi_dr_kids_n", "pltbi_ds_kids_n", 
                           "pltbi_dr_re", "pltbi_ds_re",
-                          "pltbi_dr_kids_re", "pltbi_ds_kids_re")],
+                          "pltbi_dr_kids_re", "pltbi_ds_kids_re",
+                          "perc_rec_mdr","perc_rec_mdr_kids")],
                     list(rr$iso3), median, na.rm = TRUE)
 lb.rr <- aggregate(rr[,c("pltbir","pltbis","pltbir_kids","pltbis_kids",
                          "pltbi_dr_n", "pltbi_ds_n",
                          "pltbi_dr_kids_n", "pltbi_ds_kids_n", 
                          "pltbi_dr_re", "pltbi_ds_re",
-                         "pltbi_dr_kids_re", "pltbi_ds_kids_re")],list(rr$iso3), lb)
+                         "pltbi_dr_kids_re", "pltbi_ds_kids_re",
+                         "perc_rec_mdr","perc_rec_mdr_kids")],list(rr$iso3), lb)
 ub.rr <- aggregate(rr[,c("pltbir","pltbis","pltbir_kids","pltbis_kids",
                          "pltbi_dr_n", "pltbi_ds_n",
                          "pltbi_dr_kids_n", "pltbi_ds_kids_n", 
                          "pltbi_dr_re", "pltbi_ds_re",
-                         "pltbi_dr_kids_re", "pltbi_ds_kids_re")],list(rr$iso3), ub)
+                         "pltbi_dr_kids_re", "pltbi_ds_kids_re",
+                         "perc_rec_mdr","perc_rec_mdr_kids")],list(rr$iso3), ub)
 
 ## WHO levels
 load('~/Documents/LTBI_MDR/data/whokey.Rdata') # WHOkey has global region and iso3 codes
@@ -152,23 +161,30 @@ rr.g <- rr.g %>% group_by(g_whoregion, mdr_rep) %>%
                  "pltbi_dr_re", "pltbi_ds_re",
                  "pltbi_dr_kids_re", "pltbi_ds_kids_re"),funs(sum))
 
+rr.g$perc_rec_mdr <- rr.g$pltbir / (rr.g$pltbir + rr.g$pltbis)
+rr.g$perc_rec_mdr_kids <- rr.g$pltbir_kids / (rr.g$pltbir_kids + rr.g$pltbis_kids)
+
+
 # region levels
 med.rr.g <- aggregate(rr.g[,c("pop","pop_kids","pltbir","pltbis","pltbir_kids","pltbis_kids",
                               "pltbi_dr_n", "pltbi_ds_n",
                               "pltbi_dr_kids_n", "pltbi_ds_kids_n", 
                               "pltbi_dr_re", "pltbi_ds_re",
-                              "pltbi_dr_kids_re", "pltbi_ds_kids_re")],
+                              "pltbi_dr_kids_re", "pltbi_ds_kids_re",
+                              "perc_rec_mdr","perc_rec_mdr_kids")],
                       list(rr.g$g_whoregion), median, na.rm = TRUE)
 lb.rr.g <- aggregate(rr.g[,c("pop","pop_kids","pltbir","pltbis","pltbir_kids","pltbis_kids",
                              "pltbi_dr_n", "pltbi_ds_n",
                              "pltbi_dr_kids_n", "pltbi_ds_kids_n", 
                              "pltbi_dr_re", "pltbi_ds_re",
-                             "pltbi_dr_kids_re", "pltbi_ds_kids_re")],list(rr.g$g_whoregion), lb)
+                             "pltbi_dr_kids_re", "pltbi_ds_kids_re",
+                             "perc_rec_mdr","perc_rec_mdr_kids")],list(rr.g$g_whoregion), lb)
 ub.rr.g <- aggregate(rr.g[,c("pop","pop_kids","pltbir","pltbis","pltbir_kids","pltbis_kids",
                              "pltbi_dr_n", "pltbi_ds_n",
                              "pltbi_dr_kids_n", "pltbi_ds_kids_n", 
                              "pltbi_dr_re", "pltbi_ds_re",
-                             "pltbi_dr_kids_re", "pltbi_ds_kids_re")],list(rr.g$g_whoregion), ub)
+                             "pltbi_dr_kids_re", "pltbi_ds_kids_re",
+                             "perc_rec_mdr","perc_rec_mdr_kids")],list(rr.g$g_whoregion), ub)
 
 ## Total
 rr_total <-aggregate(rr.g[,c("pltbir","pltbis","pltbir_kids","pltbis_kids",
@@ -176,21 +192,28 @@ rr_total <-aggregate(rr.g[,c("pltbir","pltbis","pltbir_kids","pltbis_kids",
                              "pltbi_dr_kids_n", "pltbi_ds_kids_n", 
                              "pltbi_dr_re", "pltbi_ds_re",
                              "pltbi_dr_kids_re", "pltbi_ds_kids_re")],list(rr.g$mdr_rep), sum)
+
+rr_total$perc_rec_mdr <- rr_total$pltbir / (rr_total$pltbir + rr_total$pltbis)
+rr_total$perc_rec_mdr_kids <- rr_total$pltbir_kids / (rr_total$pltbir_kids + rr_total$pltbis_kids)
+
 med.rr.total<-colwise(median)(rr_total[,c("pltbir","pltbis","pltbir_kids","pltbis_kids",
                                           "pltbi_dr_n", "pltbi_ds_n",
                                           "pltbi_dr_kids_n", "pltbi_ds_kids_n", 
                                           "pltbi_dr_re", "pltbi_ds_re",
-                                          "pltbi_dr_kids_re", "pltbi_ds_kids_re")])
+                                          "pltbi_dr_kids_re", "pltbi_ds_kids_re",
+                                          "perc_rec_mdr","perc_rec_mdr_kids")])
 lb.rr.total<-colwise(lb)(rr_total[,c("pltbir","pltbis","pltbir_kids","pltbis_kids",
                                      "pltbi_dr_n", "pltbi_ds_n",
                                      "pltbi_dr_kids_n", "pltbi_ds_kids_n", 
                                      "pltbi_dr_re", "pltbi_ds_re",
-                                     "pltbi_dr_kids_re", "pltbi_ds_kids_re")])
+                                     "pltbi_dr_kids_re", "pltbi_ds_kids_re",
+                                     "perc_rec_mdr","perc_rec_mdr_kids")])
 ub.rr.total<-colwise(ub)(rr_total[,c("pltbir","pltbis","pltbir_kids","pltbis_kids",
                                      "pltbi_dr_n", "pltbi_ds_n",
                                      "pltbi_dr_kids_n", "pltbi_ds_kids_n", 
                                      "pltbi_dr_re", "pltbi_ds_re",
-                                     "pltbi_dr_kids_re", "pltbi_ds_kids_re")])
+                                     "pltbi_dr_kids_re", "pltbi_ds_kids_re",
+                                     "perc_rec_mdr","perc_rec_mdr_kids")])
 
 ### Percentage of global burden with recent LTBI
 global_pop <- sum(rr$pop)/200 # 6893893 thousand # makes sense
@@ -237,6 +260,7 @@ paste0(signif(med.rr.total$pltbir + med.rr.total$pltbis,2), " [",
 paste0(signif(med.rr.total$pltbir,2), " [", 
        signif(lb.rr.total$pltbir,2), "-", 
        signif(ub.rr.total$pltbir,2),"]")
+
 # PERCENTAGE GLOBAL POPULATION WITH RECENT MDR INFECTION
 paste0(sprintf('%.2f',100 * med.rr.total$pltbir / global_pop), " [", 
        sprintf('%.2f',100 * lb.rr.total$pltbir / global_pop), "-", 
@@ -253,24 +277,24 @@ paste0(sprintf('%.5f',100 * med.rr.total$pltbi_dr_re / global_pop), " [",
        sprintf('%.5f',100 * ub.rr.total$pltbi_dr_re / global_pop),"]")
 
 
+# PREVALENCE OF RECENT INFECTION IN KIDS AND ADULTS
+100*med.rr.total$pltbir / global_pop
+100*med.rr.total$pltbir_kids / global_pop_kids
+
 
 # PERCENTAGE OF RECENT INFECTIONS WITH MDR
-paste0(sprintf('%.1f',100 * med.rr.total$pltbir / (med.rr.total$pltbir + med.rr.total$pltbis)), " [", 
-       sprintf('%.1f',100 * lb.rr.total$pltbir  / (med.rr.total$pltbir + med.rr.total$pltbis)), "-", 
-       sprintf('%.1f',100 * ub.rr.total$pltbir  / (med.rr.total$pltbir + med.rr.total$pltbis)),"]")
+paste0(sprintf('%.1f',100 * med.rr.total$perc_rec_mdr), " [", 
+       sprintf('%.1f',100 * lb.rr.total$perc_rec_mdr), "-", 
+       sprintf('%.1f',100 * ub.rr.total$perc_rec_mdr),"]")
 
-paste0(sprintf('%.3f',100 * med.rr.total$pltbi_dr_n / (med.rr.total$pltbi_dr_n + med.rr.total$pltbi_ds_n)), " [", 
-       sprintf('%.3f',100 * lb.rr.total$pltbi_dr_n  / (med.rr.total$pltbi_dr_n + med.rr.total$pltbi_ds_n)), "-", 
-       sprintf('%.3f',100 * ub.rr.total$pltbi_dr_n  / (med.rr.total$pltbi_dr_n + med.rr.total$pltbi_ds_n)),"]")
+100*med.rr.total$pltbi_dr_n/ med.rr.total$pltbir
 
 # PERCENTAGE OF RECENT INFECTIONS WITH MDR IN KIDS
-paste0(sprintf('%.1f',100 * med.rr.total$pltbir_kids / (med.rr.total$pltbir_kids + med.rr.total$pltbis_kids)), " [", 
-       sprintf('%.1f',100 * lb.rr.total$pltbir_kids  / (med.rr.total$pltbir_kids + med.rr.total$pltbis_kids)), "-", 
-       sprintf('%.1f',100 * ub.rr.total$pltbir_kids  / (med.rr.total$pltbir_kids + med.rr.total$pltbis_kids)),"]")
+paste0(sprintf('%.1f',100 * med.rr.total$perc_rec_mdr_kids), " [", 
+       sprintf('%.1f',100 * lb.rr.total$perc_rec_mdr_kids), "-", 
+       sprintf('%.1f',100 * ub.rr.total$perc_rec_mdr_kids),"]")
 
-paste0(sprintf('%.3f',100 * med.rr.total$pltbi_dr_kids_n / (med.rr.total$pltbi_dr_kids_n + med.rr.total$pltbi_ds_kids_n)), " [", 
-       sprintf('%.3f',100 * lb.rr.total$pltbi_dr_kids_n  / (med.rr.total$pltbi_dr_kids_n + med.rr.total$pltbi_ds_kids_n)), "-", 
-       sprintf('%.3f',100 * ub.rr.total$pltbi_dr_kids_n  / (med.rr.total$pltbi_dr_kids_n + med.rr.total$pltbi_ds_kids_n)),"]")
+med.rr.total$pltbi_dr_kids_n / (med.rr.total$pltbi_dr_kids_n + med.rr.total$pltbi_ds_kids_n)
 
 100*med.rr.total$pltbi_dr_kids_n / med.rr.total$pltbir_kids
 
