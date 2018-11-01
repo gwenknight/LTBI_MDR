@@ -116,6 +116,8 @@ colnames(recinf) <- c("year","cn","mdr_rep",#"ltbir","ltbis",
 recinf$iso3 <- cni[recinf$cn] 
 write.csv(recinf, paste0("~/Dropbox/MDR/output/rec_infec_",nari,"_infor_prior.csv"))
 
+## read in
+recinf <- read.csv(paste0("~/Dropbox/MDR/output/rec_infec_",nari,"_infor_prior.csv"))[,-1]
 
 
 # sum over years. Population size assumed same for both years. 
@@ -164,34 +166,36 @@ rr.g <- rr.g %>% group_by(g_whoregion, mdr_rep) %>%
 rr.g$perc_rec_mdr <- rr.g$pltbir / (rr.g$pltbir + rr.g$pltbis)
 rr.g$perc_rec_mdr_kids <- rr.g$pltbir_kids / (rr.g$pltbir_kids + rr.g$pltbis_kids)
 
-
 # region levels
-med.rr.g <- aggregate(rr.g[,c("pop","pop_kids","pltbir","pltbis","pltbir_kids","pltbis_kids",
-                              "pltbi_dr_n", "pltbi_ds_n",
-                              "pltbi_dr_kids_n", "pltbi_ds_kids_n", 
-                              "pltbi_dr_re", "pltbi_ds_re",
-                              "pltbi_dr_kids_re", "pltbi_ds_kids_re",
-                              "perc_rec_mdr","perc_rec_mdr_kids")],
-                      list(rr.g$g_whoregion), median, na.rm = TRUE)
-lb.rr.g <- aggregate(rr.g[,c("pop","pop_kids","pltbir","pltbis","pltbir_kids","pltbis_kids",
-                             "pltbi_dr_n", "pltbi_ds_n",
-                             "pltbi_dr_kids_n", "pltbi_ds_kids_n", 
-                             "pltbi_dr_re", "pltbi_ds_re",
-                             "pltbi_dr_kids_re", "pltbi_ds_kids_re",
-                             "perc_rec_mdr","perc_rec_mdr_kids")],list(rr.g$g_whoregion), lb)
-ub.rr.g <- aggregate(rr.g[,c("pop","pop_kids","pltbir","pltbis","pltbir_kids","pltbis_kids",
-                             "pltbi_dr_n", "pltbi_ds_n",
-                             "pltbi_dr_kids_n", "pltbi_ds_kids_n", 
-                             "pltbi_dr_re", "pltbi_ds_re",
-                             "pltbi_dr_kids_re", "pltbi_ds_kids_re",
-                             "perc_rec_mdr","perc_rec_mdr_kids")],list(rr.g$g_whoregion), ub)
+med.rr.g <- rr.g %>% group_by(g_whoregion) %>% 
+  summarise_at(c("pop","pop_kids","pltbir","pltbis","pltbir_kids","pltbis_kids",
+                 "pltbi_dr_n", "pltbi_ds_n",
+                 "pltbi_dr_kids_n", "pltbi_ds_kids_n", 
+                 "pltbi_dr_re", "pltbi_ds_re",
+                 "pltbi_dr_kids_re", "pltbi_ds_kids_re",
+                 "perc_rec_mdr","perc_rec_mdr_kids"),funs(median))
+lb.rr.g <- rr.g %>% group_by(g_whoregion) %>% 
+  summarise_at(c("pop","pop_kids","pltbir","pltbis","pltbir_kids","pltbis_kids",
+                 "pltbi_dr_n", "pltbi_ds_n",
+                 "pltbi_dr_kids_n", "pltbi_ds_kids_n", 
+                 "pltbi_dr_re", "pltbi_ds_re",
+                 "pltbi_dr_kids_re", "pltbi_ds_kids_re",
+                 "perc_rec_mdr","perc_rec_mdr_kids"),funs(lb))
+ub.rr.g <- rr.g %>% group_by(g_whoregion) %>% 
+  summarise_at(c("pop","pop_kids","pltbir","pltbis","pltbir_kids","pltbis_kids",
+                 "pltbi_dr_n", "pltbi_ds_n",
+                 "pltbi_dr_kids_n", "pltbi_ds_kids_n", 
+                 "pltbi_dr_re", "pltbi_ds_re",
+                 "pltbi_dr_kids_re", "pltbi_ds_kids_re",
+                 "perc_rec_mdr","perc_rec_mdr_kids"),funs(ub))
 
 ## Total
-rr_total <-aggregate(rr.g[,c("pltbir","pltbis","pltbir_kids","pltbis_kids",
-                             "pltbi_dr_n", "pltbi_ds_n",
-                             "pltbi_dr_kids_n", "pltbi_ds_kids_n", 
-                             "pltbi_dr_re", "pltbi_ds_re",
-                             "pltbi_dr_kids_re", "pltbi_ds_kids_re")],list(rr.g$mdr_rep), sum)
+rr_total <-rr %>% group_by(mdr_rep) %>% 
+  summarise_at(c("pltbir","pltbis","pltbir_kids","pltbis_kids",
+                 "pltbi_dr_n", "pltbi_ds_n",
+                 "pltbi_dr_kids_n", "pltbi_ds_kids_n", 
+                 "pltbi_dr_re", "pltbi_ds_re",
+                 "pltbi_dr_kids_re", "pltbi_ds_kids_re"),funs(sum))
 
 rr_total$perc_rec_mdr <- rr_total$pltbir / (rr_total$pltbir + rr_total$pltbis)
 rr_total$perc_rec_mdr_kids <- rr_total$pltbir_kids / (rr_total$pltbir_kids + rr_total$pltbis_kids)
@@ -304,8 +308,17 @@ paste0(signif(med.rr.total$pltbir_kids,2), " [",
        signif(ub.rr.total$pltbir_kids,2),"]")
 
 
+# at country level more in adults ~ 0.3% max
+ggplot(med.rr, aes(x=Group.1, y = 100*(perc_rec_mdr - perc_rec_mdr_kids)/perc_rec_mdr)) + geom_point()
 
+# at region level: more in kids ~ 6% max
+ggplot(med.rr.g, aes(x=g_whoregion, y = 100*(perc_rec_mdr - perc_rec_mdr_kids)/perc_rec_mdr)) + geom_point()
 
+# by mdr_rep: more in adults up to 15%
+ggplot(rr_total, aes(x=mdr_rep, y = 100*(perc_rec_mdr - perc_rec_mdr_kids)/perc_rec_mdr)) + geom_point()
+
+ggplot(rr.g2, aes(x=Group.1, y = 100*(perc_rec_mdr - perc_rec_mdr_kids)/perc_rec_mdr)) + geom_point()
+ggplot(rr.g, aes(x=g_whoregion, y = 100*(perc_rec_mdr - perc_rec_mdr_kids)/perc_rec_mdr)) + geom_point()
 
 
 

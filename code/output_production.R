@@ -604,8 +604,6 @@ for(i in 1:9){
 dev.off()
 
 
-
-
 ### By region
 wwm <- merge(w_data, WHOkey, by = "iso3")
 wwr <- merge(all0, WHOkey, by = "iso3")
