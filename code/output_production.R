@@ -631,12 +631,14 @@ colnames(sea.lb) <- c("year","country","lb")
 sea.rib <- merge(sea.ub, sea.lb, by = c("year","country"))
 sea.rib <- merge(sea.rib, sea.med, by = c("year","country"))
 
+theme_set(theme_bw(base_size = 24))
+
 ggplot(wwm[which(wwm$g_whoregion == "SEA"),], aes(x=year_new)) + # points won't plot over lines unless do points first?!
   geom_point( aes(x=year_new, y = new_mdr_prop),col="red",pch = 10, size = 3) + 
   facet_wrap(~country, scales = "free") + 
-  theme(strip.text.x = element_text(size = 10)) + 
+  theme(strip.text.x = element_text(size = 13)) + 
   geom_line(data = sea.rib, aes(x=year, y = med)) +
-  scale_y_continuous("Prop. new with MDR") + scale_x_continuous("Year",lim=c(1970,2020), breaks = c(1970, 1990, 2010)) +
+  scale_y_continuous("Prop. new TB cases with MDR") + scale_x_continuous("Year",lim=c(1970,2020), breaks = c(1970, 1990, 2010)) +
   geom_errorbar(data = wwm[which(wwm$g_whoregion == "SEA"),], aes(ymin = mlo, ymax = mhi), col = "red") + 
   geom_ribbon(data = sea.rib, aes(x = year, ymin = lb, ymax = ub), alpha = 0.3, fill = "blue")
 ggsave(paste0("~/Dropbox/MDR/output/SEA_mdr_trends_with_data_ribbon_",pp,".pdf"),width=13, height=11)

@@ -1,10 +1,10 @@
 ### Which countries included?
 library(magrittr)
 library(dplyr)
+library(ggplot2)
 
 ### Original WHO data on MDR
 w_data <- read.csv("~/Dropbox/MDR/who/new_who_edited.csv",stringsAsFactors = FALSE)[,-1]
-#w_data <- read.csv("~/Dropbox/MRC SD Fellowship/RESEARCH/MDR/WHO_data/new_who_edited.csv", stringsAsFactors = FALSE)
 u <- unique(w_data$iso3)
 length(unique(w_data$iso3)) # 159
 
@@ -22,11 +22,6 @@ setdiff(uu,u)
 
 setdiff(u,uu)
 
-# new <- c(intersect(uu,u),setdiff(u,uu))
-# setdiff(u,new)
-# setdiff(new,u)
-
-
 ## SCG = Serbia and Montenegro prior to split in 2005 - already chagned in new_who_edited
 
 
@@ -37,6 +32,7 @@ inlnw <- setdiff(uu,u) # in latent not MDR - what percentage of global populatio
 # have to aggregate over age groups for each country
 apop <- aggregate(POP2014$value, by=list(iso3=POP2014$iso3), FUN=sum) # in 1,000s
 totalp14 <- sum(apop$x)
+
 # what population size are the countries in latent but not WHO MDR
 wm <- match(inlnw, apop$iso3)
 psizewm <- sum(apop[wm,"x"])
@@ -71,7 +67,7 @@ mdr30 <- read.csv("~/Dropbox/MRC SD Fellowship/Research/MDR/WHO_data/top30_mdr_c
 #mdr30 <- mdr30[indexmdr,]
 #write.csv(mdr30,"mdr30.csv")
 
-# MDR TB burden 2018
+# MDR TB burden 2016
 mtb18 <- read.csv("~/Dropbox/MRC SD Fellowship/Research/MDR/WHO_data/MDR_RR_TB_burden_estimates_2018-08-10.csv", stringsAsFactors = FALSE)
 mtb18$mdr_inc_num <- mtb18$mdr_inc_num/1000
 
@@ -93,7 +89,7 @@ perc_wm <- sum(mtb18[wm,"perc_total"]) # 96.4% of incident MDR-TB cases
 perc_wm
 round(mtb18[wm,"perc_total"],2) # two contribute 0.9 and 1.5% individually
 
-# only Angola missing?!
+# only Angola and COD missing?!
 w<-which(mdr30$iso3 == "AGO")
 100*mdr30[w,"mdr_inc_num"]/totalmtb14
 
@@ -158,6 +154,11 @@ perc_wm <- sum(mtb18[wm,"perc_total"]) # 82.8%
 perc_wm
 round(mtb18[wm,"perc_total"],2) #
 max(round(mtb18[wm,"perc_total"],2)) # one contributes 26% = CHINA
+
+# tb 2014 percentage
+wm <- match(final_list, tb14$iso3, nomatch = 0)
+perc_wm <- sum(tb14[wm,"perc_tb_14"]) # 93.4%
+perc_wm
 
 # contribution of those missing
 wmm <- match(rem_1_dp, mtb18$iso3, nomatch = 0)
