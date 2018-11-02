@@ -58,6 +58,14 @@ perc_wm <- 100*tbsizewm / totaltb14 # 6%
 perc_wm
 round(100*whotb2014[wm,"e_inc_num"]/ totaltb14,2) # all contribute < 1% individually except 14 COD = 2.3%
 
+missing <- whotb2014[wm,]
+missing$perc <- 100*missing$e_inc_num/ totaltb14
+
+ggplot(missing, aes(x=iso3, y = perc)) + 
+  geom_bar(stat="identity") +coord_flip() + aes(x=reorder(iso3,perc),y=perc) +
+   geom_text(aes(label=round(perc,2)), position=position_dodge(width=0.9), hjust=-0.1)
+
+
 ## Top 30 HBC MDR
 mdr30 <- read.csv("~/Dropbox/MRC SD Fellowship/Research/MDR/WHO_data/top30_mdr_countries.csv")
 
@@ -91,10 +99,10 @@ round(mtb18[wm,"perc_total"],2) # two contribute 0.9 and 1.5% individually
 
 # only Angola and COD missing?!
 w<-which(mdr30$iso3 == "AGO")
-100*mdr30[w,"mdr_inc_num"]/totalmtb14
+100*mdr30[w,"mdr_inc_num"]/totalmtb18
 
 w<-which(mdr30$iso3 == "COD")
-100*mdr30[w,"mdr_inc_num"]/totalmtb14
+100*mdr30[w,"mdr_inc_num"]/totalmtb18
 
 ### Some only have data for sub-regions. 
 w<-which(w_data$all_areas_covered_new < 1)

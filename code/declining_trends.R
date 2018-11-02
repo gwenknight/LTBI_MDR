@@ -30,15 +30,25 @@ colnames(coefs) <- c("cn","rep","coef")
 coefs$iso3 <- cni[coefs$cn]
 write.csv(coefs, paste0("~/Dropbox/MDR/output/coef_trend.csv"))
 
+#coefs <- read.csv("~/Dropbox/MDR/output/coef_trend.csv")[,-1]
+
+ggplot(coefs, aes(x=iso3, y = coef)) + geom_boxplot()
+
 coefsm <- coefs %>% group_by(cn,iso3) %>%
   summarise_at(c("coef"),funs(median)) 
+
+w<-which(coefsm$coef > 0)
+length(w)
 
 w<-which(coefsm$coef < 0)
 length(w)
 
 dec <- coefsm[w,"iso3"]
 
+
 ggplot(coefsm, aes(x=iso3, y = coef)) + geom_point()
+
+
 
 ## Top 30 HBC MDR
 mdr30 <- read.csv("~/Dropbox/MRC SD Fellowship/Research/MDR/WHO_data/top30_mdr_countries.csv")

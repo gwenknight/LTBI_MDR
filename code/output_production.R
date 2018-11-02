@@ -71,7 +71,7 @@ ltbi_global$perc_dr_kids_all <- 100*ltbi_global$pltbir_kids / (ltbi_global$pltbi
 ltbi_global$perc_ltbi_mdr <- 100*ltbi_global$pltbir / (ltbi_global$pltbir + ltbi_global$pltbis)
 
 ### Risk ratio
-ltbi_global$rr <- (ltbi_global$pltbir_kids / (ltbi_global$pltbir_kids + ltbi_global$pltbis_kids) ) / (ltbi_global$pltbir / (ltbi_global$pltbir + ltbi_global$pltbis))
+ltbi_global$rr <- (ltbi_global$pltbir_kids / (ltbi_global$pltbir_kids + ltbi_global$pltbis_kids) ) / ((ltbi_global$pltbir) / (ltbi_global$pltbir + ltbi_global$pltbis))
 
 rr.med.g <- aggregate(ltbi_global[,"rr"],list(ltbi_global$Group.1),median)
 rr.ub.g <- aggregate(ltbi_global[,"rr"],list(ltbi_global$Group.1),ub)
@@ -105,7 +105,7 @@ lb.total <- colwise(lb)(ltbi_total[,c("pltbir","pltbis","pltbir_kids","pltbis_ki
 ub.total <- colwise(ub)(ltbi_total[,c("pltbir","pltbis","pltbir_kids","pltbis_kids","pop","pop_kids","perc_ds_kids","perc_dr_kids","perc_ltbi_mdr","perc_ds_kids_all","perc_dr_kids_all")])
 
 ### Risk ratio: global
-ltbi_total$rr <- (ltbi_total$pltbir_kids / (ltbi_total$pltbir_kids + ltbi_total$pltbis_kids) ) / (ltbi_total$pltbir / (ltbi_total$pltbir + ltbi_total$pltbis))
+ltbi_total$rr <- (ltbi_total$pltbir_kids / (ltbi_total$pltbir_kids + ltbi_total$pltbis_kids) ) / ((ltbi_total$pltbir - ltbi_total$pltbir_kids) / (ltbi_total$pltbir - ltbi_total$pltbir_kids + ltbi_total$pltbis - ltbi_total$pltbis_kids))
 
 paste0(round(median(ltbi_total$rr),2), " [",round(lb(ltbi_total$rr),2),"-",round(ub(ltbi_total$rr),2),"]")
 

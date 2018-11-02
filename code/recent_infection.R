@@ -120,6 +120,7 @@ write.csv(recinf, paste0("~/Dropbox/MDR/output/rec_infec_",nari,"_infor_prior.cs
 recinf <- read.csv(paste0("~/Dropbox/MDR/output/rec_infec_",nari,"_infor_prior.csv"))[,-1]
 
 
+
 # sum over years. Population size assumed same for both years. 
 rr <- recinf %>% group_by(iso3, mdr_rep,pop,pop_kids) %>% 
   summarise_at(c("pltbir","pltbis","pltbir_kids","pltbis_kids",
