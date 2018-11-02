@@ -223,6 +223,7 @@ ggplot(curves[1:(50*ny),], aes(x = year, y = y, group = rep)) + geom_line() +
 ggsave("~/Dropbox/MDR/output/priors_examples_rhotrunc5_1975.pdf")
 
 ###**** different t = 1985 **##################################################################################################################################
+mm <- as.data.frame(mm)
 tseq <- 1985
 mm$years <- mm$year - tseq
 
