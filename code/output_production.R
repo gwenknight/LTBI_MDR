@@ -690,18 +690,19 @@ mplot14$med.perc <- 100*mplot14$value.x / (mplot14$pop_size)
 mplot14$ub.perc <- 100*mplot14$value.y / (mplot14$pop_size)
 mplot14$lb.perc <- 100*mplot14$value / (mplot14$pop_size)
 
-ggplot(mplot14, aes(x=age, y = med.perc/100)) + geom_bar(aes(fill = variable),stat='identity', pos = "dodge") + 
+mplot14s <- mplot14[which(mplot14$variable == "s"),]
+ggplot(mplot14s, aes(x=age, y = med.perc/100)) + geom_bar(fill = "blue",stat='identity', pos = "dodge") + 
   facet_wrap(~g_who) + scale_fill_discrete("LTBI",labels = c("MDR-","DS-")) + theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
   geom_errorbar(aes(ymin = lb.perc/100, ymax = ub.perc/100)) +
-  scale_y_continuous("Percentage infected",labels = scales::percent_format(accuracy = 1)) +
+  scale_y_continuous("DS-LTBI prevalence",labels = scales::percent_format(accuracy = 1)) +
   scale_x_discrete("Age")
-ggsave(paste0("~/Dropbox/MDR/output/LTBI_by_ds_mdr_region_",pp,".pdf"),width=14, height=11)
+ggsave(paste0("~/Dropbox/MDR/output/LTBI_by_ds_region_",pp,".pdf"),width=14, height=11)
 
 mplot14r <- mplot14[which(mplot14$variable == "r"),]
 ggplot(mplot14r, aes(x=age, y = med.perc/100)) + geom_bar(aes(fill = variable),stat='identity') + 
   geom_errorbar(aes(ymin = lb.perc/100, ymax = ub.perc/100)) + 
   facet_wrap(~g_who)  + theme(axis.text.x = element_text(angle = 90, hjust = 1)) + guides(fill=FALSE) + 
-  scale_y_continuous("Percentage infected",labels = scales::percent_format(accuracy = .1)) +
+  scale_y_continuous("MDR-LTBI prevalence",labels = scales::percent_format(accuracy = .1)) +
   scale_x_discrete("Age")
 ggsave(paste0("~/Dropbox/MDR/output/LTBI_mdr_region_",pp,".pdf"),width=14, height=11)
 
