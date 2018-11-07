@@ -266,7 +266,7 @@ write.csv(table1_global, paste0("~/Dropbox/MDR/paper_output/table1_global_",labl
 write.csv(table1_global_numb, paste0("~/Dropbox/MDR/paper_output/table1_global_numb_",labl,".csv"))
 
 table1_paper <- merge(table1_countries, table1_countries_numb, by = c("iso3","WHO region"))
-write.csv(table1_paper, paste0("~/Dropbox/MDR/paper_output/S3_results.csv"))
+write.csv(table1_paper, paste0("~/Dropbox/MDR/paper_output/S2_results.csv"))
 
 ### Plot these levels
 plot.g <- merge(med.ltbir.g[,c("Group.1","ltbir")], ub.ltbir.g[,c("Group.1","ltbir")], by = "Group.1")
