@@ -42,6 +42,7 @@ perc_wm
 ### TB burden 2014
 whotb <- read.csv("~/Dropbox/MRC SD Fellowship/Research/MDR/WHO_data/TB_burden_countries_2018-08-10.csv")
 whotb2014 <- subset(whotb,whotb$year == 2014)
+whotb2016 <- subset(whotb,whotb$year == 2016)
 utb <- unique(whotb2014$iso3)
 length(utb)
 
@@ -50,8 +51,9 @@ setdiff(uu,utb) # none in LTBI that aren't in here = correct
 length(setdiff(utb,u)) # 57 in here that aren't in WHO MDR
 
 totaltb14 <- sum(whotb2014$e_inc_num)
+totaltb16 <- sum(whotb2016$e_inc_num)
 
-# what TB contribution are the countries in latent but not WHO MDR
+# what TB contribution are the countries in latent but not WHO MDR 2014
 wm <- match(inlnw, whotb2014$iso3)
 tbsizewm <- sum(whotb2014[wm,"e_inc_num"])
 perc_wm <- 100*tbsizewm / totaltb14 # 6% 
@@ -64,6 +66,21 @@ missing$perc <- 100*missing$e_inc_num/ totaltb14
 ggplot(missing, aes(x=iso3, y = perc)) + 
   geom_bar(stat="identity") +coord_flip() + aes(x=reorder(iso3,perc),y=perc) +
    geom_text(aes(label=round(perc,2)), position=position_dodge(width=0.9), hjust=-0.1)
+
+# what TB contribution are the countries in latent but not WHO MDR 2016
+wm <- match(inlnw, whotb2016$iso3)
+tbsizewm <- sum(whotb2016[wm,"e_inc_num"])
+perc_wm <- 100*tbsizewm / totaltb16 # 6.8% 
+perc_wm
+100 - perc_wm
+round(100*whotb2016[wm,"e_inc_num"]/ totaltb16,2) # all contribute < 1% individually except 14 COD = 2.3%
+
+missing <- whotb2016[wm,]
+missing$perc <- 100*missing$e_inc_num/ totaltb16
+
+ggplot(missing, aes(x=iso3, y = perc)) + 
+  geom_bar(stat="identity") +coord_flip() + aes(x=reorder(iso3,perc),y=perc) +
+  geom_text(aes(label=round(perc,2)), position=position_dodge(width=0.9), hjust=-0.1)
 
 
 ## Top 30 HBC MDR
