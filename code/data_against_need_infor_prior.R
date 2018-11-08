@@ -144,8 +144,17 @@ store_metric[w,"mean_s"] <- mean_s}
 
 # medians for each country
 store_median <- cbind(store_median, countries)
+w<-c(which(store_median[,2] == "TGO"),which(store_median[,2] == "DJI"),
+     which(store_median[,2] == "SDN"),which(store_median[,2] == "BTN"))
+s <- store_median[-w,]
+median(as.numeric(s[,1]))
+range(as.numeric(s[,1]))
 
+# order
+oo <- order(as.numeric(store_median[,1]), decreasing = TRUE)
+store_median[oo,]
 
+## mdr30 
 w<-c()
 for(i in 1:30){w<-c(w,which(as.character(store_metric$cnn) == as.character(mdr30[i,"iso3"])))}
 theme_set(theme_bw())
@@ -153,7 +162,7 @@ theme_set(theme_bw())
 ggplot(store_metric[w,], aes(x=cnn, y = sum_metric )) + geom_boxplot(outlier.shape = NA) + 
   scale_x_discrete("Country") + scale_y_continuous("Metric for MDR-LTBI data coverage") +
   theme(axis.text.y = element_text(size = 10)) + 
-  coord_flip() + aes(x=reorder(cnn,sum_metric),y=sum_metric) 
+  coord_flip() + aes(x=reorder(cnn,mean_s),y=sum_metric) 
 ggsave(paste0("~/Dropbox/MDR/output/MDR_metric_data_against_need_",nari,"_",labl,"_top30.pdf"), width = 14, height = 14)
 
 store_metric[w,]
