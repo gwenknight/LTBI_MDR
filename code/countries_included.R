@@ -56,12 +56,19 @@ totaltb16 <- sum(whotb2016$e_inc_num)
 # what TB contribution are the countries in latent but not WHO MDR 2014
 wm <- match(inlnw, whotb2014$iso3)
 tbsizewm <- sum(whotb2014[wm,"e_inc_num"])
-perc_wm <- 100*tbsizewm / totaltb14 # 6% 
+perc_wm <- 100*tbsizewm / totaltb14 # 6.4% 
+perc_wm
+round(100*whotb2014[wm,"e_inc_num"]/ totaltb14,2) # all contribute < 1% individually except 14 COD = 2.3%
+# 2016
+wm <- match(inlnw, whotb2016$iso3)
+tbsizewm <- sum(whotb2016[wm,"e_inc_num"])
+perc_wm <- 100*tbsizewm / totaltb16 # 6.8% 
 perc_wm
 round(100*whotb2014[wm,"e_inc_num"]/ totaltb14,2) # all contribute < 1% individually except 14 COD = 2.3%
 
+
 missing <- whotb2014[wm,]
-missing$perc <- 100*missing$e_inc_num/ totaltb14
+missing$perc <- 100*missing$e_inc_num/ totaltb16
 
 ggplot(missing, aes(x=iso3, y = perc)) + 
   geom_bar(stat="identity") +coord_flip() + aes(x=reorder(iso3,perc),y=perc) +

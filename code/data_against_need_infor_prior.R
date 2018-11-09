@@ -160,7 +160,7 @@ for(i in 1:30){w<-c(w,which(as.character(store_metric$cnn) == as.character(mdr30
 theme_set(theme_bw())
 
 ggplot(store_metric[w,], aes(x=cnn, y = sum_metric )) + geom_boxplot(outlier.shape = NA) + 
-  scale_x_discrete("Country") + scale_y_continuous("Metric for MDR-LTBI data coverage") +
+  scale_x_discrete("Country") + scale_y_continuous("Metric for MDR-LTBI data coverage", lim = c(0,1)) +
   theme(axis.text.y = element_text(size = 10)) + 
   coord_flip() + aes(x=reorder(cnn,mean_s),y=sum_metric) 
 ggsave(paste0("~/Dropbox/MDR/output/MDR_metric_data_against_need_",nari,"_",labl,"_top30.pdf"), width = 14, height = 14)
