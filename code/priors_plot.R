@@ -162,7 +162,7 @@ curves <- as.data.frame(curves)
 
 ggplot(curves, aes(x=year, y = y, group = rep, colour = factor(rho))) + geom_line(lwd = 2) + scale_y_continuous("Proportion of new TB cases\nthat are MDR-TB",limits = c(0,0.6)) + 
   geom_vline(xintercept = 2014) + scale_color_discrete("r") 
-ggsave("~/Dropbox/MDR/output/prior_curves_r.pdf")
+ggsave("~/Dropbox/MDR/output/prior_curves_r.pdf", width = 12, height = 10)
 
 
 
