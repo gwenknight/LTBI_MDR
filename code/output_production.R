@@ -189,7 +189,7 @@ table1_countries_numb <- as.data.frame(cbind( as.character(med.ltbir$iso3),
 ))
 
 colnames(table1_countries_numb) <- c("iso3","WHO region", "Number with LTBIS","Number with LTBIR", "Total with LTBI")
-
+write.csv(med.ltbir, "med_pop_ltbir.csv")
 
 ## Global
 table1_global <- as.data.frame(cbind( as.character(med.ltbir.g$Group.1),
