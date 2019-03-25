@@ -415,8 +415,21 @@ ggplot(ppg0, aes(x=year, y = med, group = region)) + geom_point() + facet_wrap(~
   geom_errorbar(aes(x=year, ymin = min, ymax = max)) + scale_y_continuous("MDR-LTBI prevalence") + scale_x_continuous("Year")
 ggsave(paste0("~/Dropbox/MDR/output/region_levels_ltbir_over_time.pdf"),width=13, height=8)
 
+
+# Change labels 
+region_names <- list(
+  "AFR" = "African",
+  "AMR" = "Americas",
+  "EMR" = "Eastern Mediterranean",
+  "EUR" = "European",
+  "SEA" = "South-East Asia",
+  "WPR" = "Western Pacific"
+)
+
+region_labeller <- function(variable,value){return(region_names[value])}
+
 ggplot(ppg0, aes(x=year)) + geom_line(aes(y = med)) + 
   geom_ribbon(aes(ymin=min, ymax=max), alpha=0.3, fill = "red") +
-  facet_wrap(~region) + 
+  facet_wrap(~region,labeller=region_labeller) + 
   scale_y_continuous("MDR-LTBI prevalence (%)") + scale_x_continuous("Year")
 ggsave(paste0("~/Dropbox/MDR/output/region_levels_ltbir_over_time_ribbon.pdf"),width=13, height=8)

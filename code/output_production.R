@@ -1,4 +1,6 @@
 ### Combine results to give output
+## updated with reviewers suggestions 
+## (1) map of 2035 levels
 
 library(plyr)
 library(xtable)
@@ -187,7 +189,7 @@ table1_countries_numb <- as.data.frame(cbind( as.character(med.ltbir$iso3),
 ))
 
 colnames(table1_countries_numb) <- c("iso3","WHO region", "Number with LTBIS","Number with LTBIR", "Total with LTBI")
-
+write.csv(med.ltbir, "med_pop_ltbir.csv")
 
 ## Global
 table1_global <- as.data.frame(cbind( as.character(med.ltbir.g$Group.1),
@@ -435,6 +437,29 @@ fruns$pLTBIS <- fruns$pop35 * fruns$pr_ds
 
 # fac*tmp[,list(mid=median(nLTBI)/N2035,lo=lb(nLTBI)/N2035,hi=ub(nLTBI)/N2035)]
 
+# Map of level in 2035 with no transmission 
+# define color buckets
+# if run above this will be the best one
+fruns.total.35.country <- aggregate(fruns[,c("pLTBIR","pLTBIS","pop35")], list(fruns$mdr_rep, fruns$iso3), sum)
+fruns.total.35.country$propr <- fruns.total.35.country$pLTBIR / fruns.total.35.country$pop35
+fruns.total.35.country$props <- fruns.total.35.country$pLTBIS / fruns.total.35.country$pop35
+colnames(fruns.total.35.country) <- c("run","iso3","pLTBIR","pLTBIS","pop35","propr","props")
+fruns.mean.35.country <- aggregate(fruns.total.35.country[,c("propr","props")], list(fruns.total.35.country$iso3), mean)
+colnames(fruns.mean.35.country) <- c("iso3","propr","props")
+fruns.mean.35.country$propr <- fruns.mean.35.country$propr*100
+fruns.mean.35.country$props <- fruns.mean.35.country$props*100
+
+mapped_data <- joinCountryData2Map(fruns.mean.35.country, joinCode = "ISO3", nameJoinColumn = "iso3")
+
+pdf(paste0("~/Dropbox/MDR/output/map_2035.pdf"))
+mapParams <- mapCountryData(mapped_data, nameColumnToPlot = "propr", catMethod = seq(0,4,0.25),
+                            colourPalette = cols,
+                            addLegend = FALSE,missingCountryCol = gray(.8))
+do.call( addMapLegend, c( mapParams
+                          , legendLabels="all"
+                          , legendWidth=0.5))
+dev.off()
+
 # each number in POP2035 is the actual number divided by 1,000
 fruns.total.35 <- aggregate(fruns[,c("pLTBIR","pLTBIS")], list(fruns$mdr_rep), sum)
 med.fruns.total.35 <- colwise(median)(fruns.total.35) 
@@ -477,6 +502,30 @@ fruns$pLTBIR <- fruns$pop50 * fruns$pr_dr
 fruns$pLTBIS <- fruns$pop50 * fruns$pr_ds
 
 # fac*tmp[,list(mid=median(nLTBI)/N2050,lo=lb(nLTBI)/N2050,hi=ub(nLTBI)/N2050)]
+
+# Map of level in 2035 with no transmission 
+# define color buckets
+# if run above this will be the best one
+fruns.total.50.country <- aggregate(fruns[,c("pLTBIR","pLTBIS","pop50")], list(fruns$mdr_rep, fruns$iso3), sum)
+fruns.total.50.country$propr <- fruns.total.50.country$pLTBIR / fruns.total.50.country$pop50
+fruns.total.50.country$props <- fruns.total.50.country$pLTBIS / fruns.total.50.country$pop50
+colnames(fruns.total.50.country) <- c("run","iso3","pLTBIR","pLTBIS","pop50","propr","props")
+fruns.mean.50.country <- aggregate(fruns.total.50.country[,c("propr","props")], list(fruns.total.50.country$iso3), mean)
+colnames(fruns.mean.50.country) <- c("iso3","propr","props")
+fruns.mean.50.country$propr <- fruns.mean.50.country$propr*100
+fruns.mean.50.country$props <- fruns.mean.50.country$props*100
+
+mapped_data <- joinCountryData2Map(fruns.mean.50.country, joinCode = "ISO3", nameJoinColumn = "iso3")
+
+pdf(paste0("~/Dropbox/MDR/output/map_2050.pdf"))
+mapParams <- mapCountryData(mapped_data, nameColumnToPlot = "propr", catMethod = seq(0,4,0.25),
+                            colourPalette = cols,
+                            addLegend = FALSE,missingCountryCol = gray(.8))
+do.call( addMapLegend, c( mapParams
+                          , legendLabels="all"
+                          , legendWidth=0.5))
+dev.off()
+
 
 # each number in POP2050 is the actual number divided by 1,000
 fruns.total.50 <- aggregate(fruns[,c("pLTBIR","pLTBIS")], 
@@ -541,6 +590,48 @@ print(c(paste0(sprintf('%.2f',med.rate.50$pLTBIR)," [",
                sprintf('%.2f',lb.rate.50$pLTBIR),", ",
                sprintf('%.2f',ub.rate.50$pLTBIR),"]")))
 
+
+#### NEW (REVISED) lower reactivation rate
+### 
+react <- 0.03
+
+med.rate.35 <- (react*0.01) * med.fruns.total.35/N2035 * 1e6 # 0.15% reactivation x total  / total population x 1,000,000
+ub.rate.35 <- (react*0.01) * ub.fruns.total.35/N2035 * 1e6 
+lb.rate.35 <- (react*0.01) * lb.fruns.total.35/N2035 * 1e6 
+
+print(c(paste0(sprintf('%.2f',med.rate.35$pLTBIR)," [",
+               sprintf('%.2f',lb.rate.35$pLTBIR),", ",
+               sprintf('%.2f',ub.rate.35$pLTBIR),"]")))
+
+
+med.rate.50 <- (react*0.01) * med.fruns.total.50/N2050 * 1e6 # 0.15% reactivation x total  / total population x 1,000,000
+ub.rate.50 <- (react*0.01) * ub.fruns.total.50/N2050 * 1e6
+lb.rate.50 <- (react*0.01) * lb.fruns.total.50/N2050 * 1e6 
+
+print(c(paste0(sprintf('%.2f',med.rate.50$pLTBIR)," [",
+               sprintf('%.2f',lb.rate.50$pLTBIR),", ",
+               sprintf('%.2f',ub.rate.50$pLTBIR),"]")))
+
+#### UPDATED SENSITIVITY ANALYSIS: lower reactivation
+### 
+react <- 0.03*0.6
+
+med.rate.35 <- (react*0.01) * med.fruns.total.35/N2035 * 1e6 # 0.15% reactivation x total  / total population x 1,000,000
+ub.rate.35 <- (react*0.01) * ub.fruns.total.35/N2035 * 1e6 
+lb.rate.35 <- (react*0.01) * lb.fruns.total.35/N2035 * 1e6 
+
+print(c(paste0(sprintf('%.2f',med.rate.35$pLTBIR)," [",
+               sprintf('%.2f',lb.rate.35$pLTBIR),", ",
+               sprintf('%.2f',ub.rate.35$pLTBIR),"]")))
+
+
+med.rate.50 <- (react*0.01) * med.fruns.total.50/N2050 * 1e6 # 0.15% reactivation x total  / total population x 1,000,000
+ub.rate.50 <- (react*0.01) * ub.fruns.total.50/N2050 * 1e6 
+lb.rate.50 <- (react*0.01) * lb.fruns.total.50/N2050 * 1e6 
+
+print(c(paste0(sprintf('%.2f',med.rate.50$pLTBIR)," [",
+               sprintf('%.2f',lb.rate.50$pLTBIR),", ",
+               sprintf('%.2f',ub.rate.50$pLTBIR),"]")))
 
 ####**** Group trend figures *****######
 
@@ -656,6 +747,7 @@ ggsave(paste0("~/Dropbox/MDR/output/SEA_ari_trends_",pp,".pdf"),width=13, height
 theme_set(theme_bw(base_size = 24))
 ## 2014
 # need iso, replicate, act, prev, g_whoregion 
+load('~/Documents/LTBI_MDR/data/POP2014.Rdata')
 POP2014$acat <- 0:16
 fruns <- merge(new_data2[,c("iso3","mdr_rep","acat","pr_dr","pr_ds","g_whoregion")],
                POP2014,by=c('iso3','acat'),all=TRUE)
@@ -690,6 +782,19 @@ mplot14$med.perc <- 100*mplot14$value.x / (mplot14$pop_size)
 mplot14$ub.perc <- 100*mplot14$value.y / (mplot14$pop_size)
 mplot14$lb.perc <- 100*mplot14$value / (mplot14$pop_size)
 
+# Change labels 
+region_names <- list(
+  "AFR" = "African",
+  "AMR" = "Americas",
+  "EMR" = "Eastern Mediterranean",
+  "EUR" = "European",
+  "SEA" = "South-East Asia",
+  "WPR" = "Western Pacific"
+)
+
+region_labeller <- function(variable,value){return(region_names[value])}
+
+
 mplot14s <- mplot14[which(mplot14$variable == "s"),]
 ggplot(mplot14s, aes(x=age, y = med.perc/100)) + geom_bar(fill = "blue",stat='identity', pos = "dodge") + 
   facet_wrap(~g_who) + scale_fill_discrete("LTBI",labels = c("MDR-","DS-")) + theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
@@ -698,6 +803,13 @@ ggplot(mplot14s, aes(x=age, y = med.perc/100)) + geom_bar(fill = "blue",stat='id
   scale_x_discrete("Age")
 ggsave(paste0("~/Dropbox/MDR/output/LTBI_by_ds_region_",pp,".pdf"),width=14, height=11)
 
+ggplot(mplot14s, aes(x=age, y = med.perc/100)) + geom_bar(fill = "blue",stat='identity', pos = "dodge") + 
+  facet_wrap(~g_who,labeller=region_labeller) + scale_fill_discrete("LTBI",labels = c("MDR-","DS-")) + theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
+  geom_errorbar(aes(ymin = lb.perc/100, ymax = ub.perc/100)) +
+  scale_y_continuous("DS-LTBI prevalence",labels = scales::percent_format(accuracy = 1)) +
+  scale_x_discrete("Age")
+ggsave(paste0("~/Dropbox/MDR/output/LTBI_by_ds_region_",pp,"regions.pdf"),width=14, height=11)
+
 mplot14r <- mplot14[which(mplot14$variable == "r"),]
 ggplot(mplot14r, aes(x=age, y = med.perc/100)) + geom_bar(aes(fill = variable),stat='identity') + 
   geom_errorbar(aes(ymin = lb.perc/100, ymax = ub.perc/100)) + 
@@ -705,6 +817,13 @@ ggplot(mplot14r, aes(x=age, y = med.perc/100)) + geom_bar(aes(fill = variable),s
   scale_y_continuous("MDR-LTBI prevalence",labels = scales::percent_format(accuracy = .1)) +
   scale_x_discrete("Age")
 ggsave(paste0("~/Dropbox/MDR/output/LTBI_mdr_region_",pp,".pdf"),width=14, height=11)
+
+ggplot(mplot14r, aes(x=age, y = med.perc/100)) + geom_bar(aes(fill = variable),stat='identity') + 
+  geom_errorbar(aes(ymin = lb.perc/100, ymax = ub.perc/100)) + 
+  facet_wrap(~g_who,labeller=region_labeller)  + theme(axis.text.x = element_text(angle = 90, hjust = 1)) + guides(fill=FALSE) + 
+  scale_y_continuous("MDR-LTBI prevalence",labels = scales::percent_format(accuracy = .1)) +
+  scale_x_discrete("Age")
+ggsave(paste0("~/Dropbox/MDR/output/LTBI_mdr_region_",pp,"regions.pdf"),width=14, height=11)
 
 
 ### ARI by region
